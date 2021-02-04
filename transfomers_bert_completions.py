@@ -43,10 +43,12 @@ def bert_completions(text, model, tokenizer, softmax_mask):
   probs = softmax(predictions[0, masked_index].data.numpy()[softmax_mask])  
   words = np.array(tokenizer.convert_ids_to_tokens(range(predictions.size()[2])))[softmax_mask]
   
-  word_predictions  = pd.DataFrame({'prob': probs[:,0], 'word':words[:,0]})
+  
+  word_predictions  = pd.DataFrame({'prob': probs, 'word':words})
   word_predictions = word_predictions.sort_values(by='prob', ascending=False)    
   word_predictions['rank'] = range(word_predictions.shape[0])
   return(probs, word_predictions)
+  
   
 def compare_completions(context, bertMaskedLM, tokenizer,
     candidates = None):
@@ -56,10 +58,13 @@ def compare_completions(context, bertMaskedLM, tokenizer,
   else:
     return(continuations)
 
-def get_completions_for_mask(utt_df, true_word, bertMaskedLM, tokenizer, softmax_mask) :
+def get_completions_for_mask(utt_df, true_word, bertMaskedLM, tokenizer, softmax_mask) :    
+    
     gloss_with_mask =  tokenizer.convert_tokens_to_ids(['[CLS]']
         ) + utt_df.token_id.tolist() + tokenizer.convert_tokens_to_ids(['[SEP]'])    
     priors, completions = bert_completions(gloss_with_mask, bertMaskedLM, tokenizer, softmax_mask)
+    
+    
     if true_word in completions['word'].tolist():
         true_completion = completions.loc[completions['word'] == true_word].iloc[0]
         rank = true_completion['rank']
@@ -67,13 +72,15 @@ def get_completions_for_mask(utt_df, true_word, bertMaskedLM, tokenizer, softmax
     else:
         rank = np.nan
         prob = np.nan
+    
         
     
     entropy = scipy.stats.entropy(completions.prob, base=2)
     return(priors, completions , pd.DataFrame({'rank':[rank], 'prob': [prob], 'entropy':[entropy], 'num_tokens_in_context':[utt_df.shape[0]-1],
     'bert_token_id' : utt_df.loc[utt_df.token == '[MASK]'].bert_token_id}))
 
-def get_stats_for_failure(all_tokens, selected_utt_id, bertMaskedLM, tokenizer, softmax_mask,context_width_in_utts = None, use_speaker_labels = False, preserve_errors=False):
+def get_stats_for_failure(all_tokens, selected_utt_id, bertMaskedLM, tokenizer, softmax_mask, context_width_in_utts, use_speaker_labels = False, preserve_errors=False):
+    
     '''dummy function because failures mostly just use get_completions_for_mask'''    
     t1 = time.time()    
     utt_df = all_tokens.loc[all_tokens.id == selected_utt_id]
@@ -92,9 +99,9 @@ def get_stats_for_failure(all_tokens, selected_utt_id, bertMaskedLM, tokenizer, 
         this_transcript_id = utt_df.iloc[0].transcript_id
 
         this_seq_utt_id = utt_df.iloc[0].seq_utt_id
-        before_utt_df = all_tokens.loc[(all_tokens.seq_utt_id < this_seq_utt_id) & (all_tokens.seq_utt_id > this_seq_utt_id - (context_width_in_utts+1)) &all_tokens.transcript_id == this_transcript_id]
+        before_utt_df = all_tokens.loc[(all_tokens.seq_utt_id < this_seq_utt_id) & (all_tokens.seq_utt_id > (this_seq_utt_id - (context_width_in_utts+1))) & (all_tokens['transcript_id'] == this_transcript_id)]
 
-        after_utt_df = all_tokens.loc[(all_tokens.seq_utt_id > this_seq_utt_id) & (all_tokens.seq_utt_id < this_seq_utt_id + (context_width_in_utts + 1)) &all_tokens.transcript_id == this_transcript_id]
+        after_utt_df = all_tokens.loc[(all_tokens.seq_utt_id > this_seq_utt_id) & (all_tokens.seq_utt_id < this_seq_utt_id + (context_width_in_utts + 1)) & (all_tokens.transcript_id == this_transcript_id)]
     
         # ready to use before_utt_df and after_utt_df    
         sep_row = pd.DataFrame({'token':['[SEP]'], 'token_id':tokenizer.convert_tokens_to_ids(['[SEP]'])})
@@ -148,7 +155,7 @@ def get_stats_for_failure(all_tokens, selected_utt_id, bertMaskedLM, tokenizer, 
     if utt_df.shape[0] > 0:
         t2 = time.time()        
         #print('GPU retrieval time: '+str(time.time() - t2))
-        #print('Total time: '+str(time.time() - t1))
+        #print('Total time: '+str(time.time() - t1))    
         return(get_completions_for_mask(utt_df, None, bertMaskedLM, tokenizer, softmax_mask))
     else:
         print('Empty tokens for utterance '+str(selected_utt_id))
@@ -157,6 +164,7 @@ def get_stats_for_failure(all_tokens, selected_utt_id, bertMaskedLM, tokenizer, 
 
 def get_stats_for_success(all_tokens, selected_utt_id, bertMaskedLM, tokenizer, softmax_mask, context_width_in_utts=None, use_speaker_labels=False, preserve_errors=False):
     '''replace each token one at a time, sending it through get_completions_for_mask'''
+    
     utt_df = all_tokens.loc[all_tokens.id ==     selected_utt_id]    
     
     if utt_df.shape[0] == 0:
@@ -172,10 +180,10 @@ def get_stats_for_success(all_tokens, selected_utt_id, bertMaskedLM, tokenizer, 
     if utt_df.loc[utt_df.partition == 'success'].shape[0] == 0:
         return(None)
     else:
-        mask_positions = np.argwhere((utt_df['partition'] == 'success').to_numpy())[0]            
+        mask_positions = np.argwhere((utt_df['partition'] == 'success').to_numpy())            
+        #this had ben restricted to 0 in some cases
 
-    for mask_position in mask_positions: 
-
+    for mask_position in mask_positions.flatten().tolist(): 
         utt_df_local = copy.deepcopy(utt_df)    
         utt_df_local.iloc[mask_position, np.argwhere(utt_df_local.columns == 'token')[0][0]] = ['[MASK]']
         utt_df_local.iloc[mask_position,np.argwhere(utt_df_local.columns == 'token_id')[0][0]] = tokenizer.convert_tokens_to_ids(['[MASK]'])
@@ -187,9 +195,9 @@ def get_stats_for_success(all_tokens, selected_utt_id, bertMaskedLM, tokenizer, 
 
             this_seq_utt_id = utt_df_local.iloc[0].seq_utt_id
             
-            before_utt_df = all_tokens.loc[(all_tokens.seq_utt_id < this_seq_utt_id) & (all_tokens.seq_utt_id > this_seq_utt_id - (context_width_in_utts+1)) & all_tokens.transcript_id == this_transcript_id]
+            before_utt_df = all_tokens.loc[(all_tokens.seq_utt_id < this_seq_utt_id) & (all_tokens.seq_utt_id > this_seq_utt_id - (context_width_in_utts+1)) & (all_tokens.transcript_id == this_transcript_id)]
             
-            after_utt_df = all_tokens.loc[(all_tokens.seq_utt_id > this_seq_utt_id) & (all_tokens.seq_utt_id < this_seq_utt_id + (context_width_in_utts + 1)) & all_tokens.transcript_id == this_transcript_id]
+            after_utt_df = all_tokens.loc[(all_tokens.seq_utt_id > this_seq_utt_id) & (all_tokens.seq_utt_id < this_seq_utt_id + (context_width_in_utts + 1)) & (all_tokens.transcript_id == this_transcript_id)]
         
             # ready to use before_utt_df and after_utt_df    
             sep_row = pd.DataFrame({'token':['[SEP]'], 'token_id':tokenizer.convert_tokens_to_ids(['[SEP]'])})
@@ -245,11 +253,11 @@ def get_stats_for_success(all_tokens, selected_utt_id, bertMaskedLM, tokenizer, 
         this_stats['mask_position'] = mask_position
         this_stats['token'] = utt_df.iloc[mask_position]['token']
         this_stats['utterance_id'] = selected_utt_id
-        
+
         priors.append(this_priors)
         completions.append(this_completions)        
-        stats.append(this_stats)
-    return(np.transpose(np.vstack(priors)), completions, pd.concat(stats))
+        stats.append(this_stats)    
+    return(np.vstack(priors), completions, pd.concat(stats))
 
     
 def get_softmax_mask(tokenizer, token_list):
@@ -283,12 +291,16 @@ def compare_successes_failures(all_tokens, selected_success_utts, selected_yyy_u
             failure_priors_store.append(prior)
     
     rdict = {}    
-    failure_scores = pd.concat(failure_scores_store)
-    failure_scores['set'] = 'failure'    
-    failure_priors = np.transpose(np.hstack(failure_priors_store))
+    if len(failure_scores_store) > 0:
+        failure_scores = pd.concat(failure_scores_store)
+        failure_scores['set'] = 'failure'         
+        failure_priors = np.vstack(failure_priors_store)
+    else:        
+        failure_scores = pd.DataFrame()
+        failure_priors = None
+    
     
     print('Computing success scores')
-    
     success_priors_store = []
     success_scores_store = []
 
@@ -303,14 +315,17 @@ def compare_successes_failures(all_tokens, selected_success_utts, selected_yyy_u
             success_scores_store.append(score)
             success_priors_store.append(prior)
     
-    
-    success_scores = pd.concat(success_scores_store)    
-    success_scores['set'] = 'success' 
-    success_priors = np.vstack(success_priors_store)
+    if len(success_scores_store) > 0:
+        success_scores = pd.concat(success_scores_store)    
+        success_scores['set'] = 'success' 
+        success_priors = np.vstack(success_priors_store)
+    else:
+        success_scores = pd.DataFrame()
+        success_priors = None
 
     rdict['scores'] = pd.concat([failure_scores, success_scores])
     
-    rdict['priors'] = np.vstack([failure_priors, success_priors])
+    rdict['priors'] = np.vstack([x for x in [failure_priors, success_priors] if x is not None])
 
     warnings.filterwarnings('default')
 
@@ -353,21 +368,27 @@ def compare_successes_failures_unigram_model(all_tokens, selected_success_utts, 
 
     failure_scores['entropy'] = constant_entropy
     failure_scores['set'] = 'failure'
-    
-    rdict = {}
-    rdict['scores'] = pd.concat([failure_scores, success_scores])
-
-    # needs slicing and dicing
 
     prior_vec = unigram_model['prob'].to_numpy()
     # where is 1017609.0 or 1369403.0
+    
+    rdict = {}
+    prior_list =[]
+    scores_list = []
+    
+    if failure_scores.shape[0] > 0:
+        prior_list.append(np.vstack([prior_vec for x in range(failure_scores.shape[0])]))
+        scores_list.append(failure_scores )
 
-    rdict['priors'] = test = np.vstack([
-        np.vstack([prior_vec for x in range(failure_scores.shape[0])]),
-        np.vstack([prior_vec for x in range(success_scores.shape[0])])
-    ]) 
-    # needs a switch to use a flat prior
+    if success_scores.shape[0] > 0:
+        prior_list.append(np.vstack([prior_vec for x in range(success_scores.shape[0])]))
+        scores_list.append(success_scores)
+   
+    if len(scores_list) == 0:
+        raise ValueError('Neither successes nor failures in given ids')
 
+    rdict['priors'] = np.vstack(prior_list)
+    rdict['scores'] = pd.concat(scores_list) 
     return(rdict)
 
 
@@ -396,7 +417,7 @@ def find_in_vocab(x, initial_vocab):
     except:
         return(np.nan)
 
-def get_posteriors(prior_data, levdists, initial_vocab, bert_token_ids=None):
+def get_posteriors(prior_data, levdists, initial_vocab, bert_token_ids=None, beta_value = 3.2):
     
     if bert_token_ids is not None:
         btis = set(bert_token_ids)   
@@ -409,28 +430,41 @@ def get_posteriors(prior_data, levdists, initial_vocab, bert_token_ids=None):
         # correction for unigram models, which have priors for additional tokens
         # that are excluded deep in the bowels of the BERT retrieval methods. 
         # need to subset to bert_token_ods found by other models        
-        # also need to limit the scores in some way\
-        
-    likelihoods = np.exp(-1*levdists)
+        # also need to limit the scores in some way
+
+    likelihoods = np.exp(-1*beta_value*levdists)
     unnormalized = np.multiply(prior_data['priors'], likelihoods)
     row_sums = np.sum(unnormalized,1)
     normalized =  unnormalized / row_sums[:, np.newaxis]
     
     # add entropies
-    entropies = np.apply_along_axis(scipy.stats.entropy, 1, normalized) 
-    prior_data['scores']['posterior_entropy'] = entropies
+    posterior_entropies = np.apply_along_axis(scipy.stats.entropy, 1, normalized) 
+    prior_data['scores']['posterior_entropy'] = posterior_entropies
+    
+    
+    prior_entropies = np.apply_along_axis(scipy.stats.entropy, 1, prior_data['priors']) 
+    prior_data['scores']['prior_entropy'] = prior_entropies
     # get posterior probability of the correct item into the scores
 
     # for succesesses, get the word's position in the vocabulary 
     # and add the posterior probability and levenshtein distance
     initial_vocab = list(initial_vocab)
-    prior_data['scores']['position_in_mask'] = [find_in_vocab(x, initial_vocab) if type(x) \
-        is str else np.nan for x in prior_data['scores'].token ]
+    try:
+        prior_data['scores']['position_in_mask'] = [find_in_vocab(x, initial_vocab) if type(x) is str else np.nan for x in prior_data['scores'].token]
+    except:
+        prior_data['scores']['position_in_mask'] = np.nan #communicative failure
     prior_data['scores']['kl_flat_to_prior'] = np.nan
     prior_data['scores']['kl_flat_to_posterior'] = np.nan
     prior_data['scores']['posterior_surprisal'] = np.nan
     prior_data['scores']['prior_surprisal'] = np.nan
     prior_data['scores']['edit_distance'] = np.nan
+
+    for x in ['highest_posterior_words', 'highest_prior_words', 'highest_posterior_probabilities',
+        'highest_prior_probabilities']:
+            prior_data['scores'][x] = np.nan
+            prior_data['scores'][x] = prior_data['scores'][x].astype(object) 
+
+
     prior_data['scores']['sample_index'] = range(prior_data['scores'].shape[0])
     prior_data['scores'].set_index('sample_index')
     
@@ -454,9 +488,28 @@ def get_posteriors(prior_data, levdists, initial_vocab, bert_token_ids=None):
             prior_data['scores'].loc[prior_data['scores'].sample_index == i, 
                 'kl_flat_to_posterior'] = scipy.stats.entropy(flat_prior, normalized[i,:])
 
+
+        # get the highest prior probability words + probs
+        num_highest_to_keep = 10 
+        highest_prior_indices = np.argsort(prior_data['priors'][i, :])[::-1]
+        highest_prior_words = np.array(initial_vocab)[highest_prior_indices][0:num_highest_to_keep]
+        
+        prior_data['scores'].loc[prior_data['scores'].sample_index == i,  'highest_prior_words'] = ' ' .join(highest_prior_words)
+        prior_data['scores'].loc[prior_data['scores'].sample_index == i, 
+               'highest_prior_probabilities'] = ' '.join([str(x) for x in prior_data['priors'][i, highest_prior_indices]])
+
+        # get the highest poseterior probability words + probs                
+        highest_posterior_indices = np.argsort(normalized[i, :])[::-1]
+        highest_posterior_words = np.array(initial_vocab)[highest_posterior_indices][0:num_highest_to_keep]
+
+        prior_data['scores'].loc[prior_data['scores'].sample_index == i, 
+               'highest_posterior_words'] = ' '.join(highest_posterior_words)
+        prior_data['scores'].loc[prior_data['scores'].sample_index == i, 
+               'highest_posterior_probabilities'] = ' '.join([str(x) for x in normalized[i, highest_posterior_indices]])
+
     return(prior_data)
 
-def sample_models_across_time(utts_with_ages, all_tokens_phono, models, initial_vocab, cmu_in_initial_vocab, num_samples = 2000):
+def sample_models_across_time(utts_with_ages, all_tokens_phono, models, initial_vocab, cmu_in_initial_vocab, num_samples = 1000):
 
     score_store = []
     for age in np.unique(utts_with_ages.year):
@@ -479,9 +532,6 @@ def sample_models_across_time(utts_with_ages, all_tokens_phono, models, initial_
                 priors_for_age_interval = compare_successes_failures(
                     all_tokens_phono, selected_success_utts.utterance_id, 
                     selected_yyy_utts.utterance_id, **model['kwargs'])
-            
-                edit_distances_for_age_interval = get_edit_distance_matrix(all_tokens_phono, 
-                priors_for_age_interval, cmu_in_initial_vocab)   
                               
             elif model['type'] == 'unigram':
                 priors_for_age_interval = compare_successes_failures_unigram_model(
@@ -489,7 +539,7 @@ def sample_models_across_time(utts_with_ages, all_tokens_phono, models, initial_
                     selected_yyy_utts.utterance_id, **model['kwargs'])
 
             edit_distances_for_age_interval = get_edit_distance_matrix(all_tokens_phono, 
-                priors_for_age_interval, cmu_in_initial_vocab)            
+                priors_for_age_interval, initial_vocab, cmu_in_initial_vocab)            
 
             if model['type'] == 'BERT':
                 posteriors_for_age_interval = get_posteriors(priors_for_age_interval, 
@@ -506,10 +556,58 @@ def sample_models_across_time(utts_with_ages, all_tokens_phono, models, initial_
     scores_across_time = pd.concat(score_store)
     return(scores_across_time)
 
-def get_edit_distance_matrix(all_tokens_phono, prior_data,  cmu_2syl_inchildes):    
+def get_edit_distance_matrix(all_tokens_phono, prior_data, initial_vocab,  cmu_2syl_inchildes):    
     bert_token_ids = prior_data['scores']['bert_token_id']
     ipa = pd.DataFrame({'bert_token_id':bert_token_ids}).merge(all_tokens_phono[['bert_token_id',
         'actual_phonology_no_dia']])
-    levdists = np.vstack([np.array([Levenshtein.distance(target,x) for x in cmu_2syl_inchildes.ipa_short
-    ]) for target in ipa.actual_phonology_no_dia])
+
+    iv = pd.DataFrame({'word':initial_vocab})
+    iv = iv.merge(cmu_2syl_inchildes, how='left')
+
+    levdists = np.vstack([np.array([Levenshtein.distance(target,x) for x in iv.ipa_short
+    ]) for target in ipa.actual_phonology_no_dia])    
     return(levdists)    
+
+
+
+def sample_across_models(utterance_ids, success_utts, yyy_utts, all_tokens_phono, models, initial_vocab, cmu_in_initial_vocab, beta_values):
+
+    score_store = []
+    for model in models:
+        print('Running model '+model['title']+'...')
+
+        selected_success_utts =   success_utts.loc[success_utts.utterance_id.isin(utterance_ids)]
+        selected_yyy_utts =  yyy_utts.loc[yyy_utts.utterance_id.isin(utterance_ids)]        
+
+        # get the priors
+        if model['type'] == 'BERT':
+            priors_for_age_interval = compare_successes_failures(
+                all_tokens_phono, selected_success_utts.utterance_id, 
+                selected_yyy_utts.utterance_id, **model['kwargs'])
+                            
+        elif model['type'] == 'unigram':
+            priors_for_age_interval = compare_successes_failures_unigram_model(
+                all_tokens_phono, selected_success_utts.utterance_id, 
+                selected_yyy_utts.utterance_id, **model['kwargs'])
+
+        edit_distances_for_age_interval = get_edit_distance_matrix(all_tokens_phono, 
+            priors_for_age_interval, initial_vocab, cmu_in_initial_vocab)            
+
+        for beta_value in beta_values:
+
+            # get the posteriors        
+            if model['type'] == 'BERT':
+                posteriors_for_age_interval = get_posteriors(priors_for_age_interval, 
+                    edit_distances_for_age_interval, initial_vocab, None, beta_value)
+            
+            elif model['type'] == 'unigram':
+                # special unigram hack
+                posteriors_for_age_interval = get_posteriors(priors_for_age_interval, edit_distances_for_age_interval, 
+                    initial_vocab, score_store[-1].bert_token_id, beta_value)
+            
+            posteriors_for_age_interval['scores']['beta_value'] = beta_value
+            posteriors_for_age_interval['scores']['model'] = model['title']
+            score_store.append(copy.deepcopy(posteriors_for_age_interval['scores']))
+    
+    scores_across_models = pd.concat(score_store)
+    return(scores_across_models)

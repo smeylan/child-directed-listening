@@ -8,12 +8,32 @@ from string import punctuation
 import Levenshtein
 
 def softmax(x, axis=None):
+    '''
+        Compute softmax on a vector or matrix
+
+        Args:
+        x: vector or matrix
+        axis: none if a vector, else dimension over which to compute the softmax
+    '''
     x = x - x.max(axis=axis, keepdims=True)
     y = np.exp(x)
     return y / y.sum(axis=axis, keepdims=True)
 
 
 def bert_completions(text, model, tokenizer, softmax_mask):
+  '''
+        Retrieve completions for a single masked token from a huggingface-format BERT model
+
+        Args:
+        text: a string to tokenize with [MASK] inserted, but without [CLS] and [SEP] markers
+        model: HuggingFace BERT model
+        tokenizer: tokenizer to use the string
+        softmax_mask: a vector of indices of vocabulary items over which to compute the softmax
+
+        Returns:
+        probs: a vector of prior probabilities for the completions, corresponding to the softmax_mask
+        word_predictions: a dataframe with the highest to lowest ranked completions for the single masked tokens
+  '''
   if type(text) is str:
     text = '[CLS] ' + text + ' [SEP]'
     tokenized_text = tokenizer.tokenize(text)
@@ -50,38 +70,78 @@ def bert_completions(text, model, tokenizer, softmax_mask):
   return(probs, word_predictions)
   
   
-def compare_completions(context, bertMaskedLM, tokenizer,
-    candidates = None):
-  continuations = bert_completions(context, bertMaskedLM, tokenizer)
-  if candidates is not None:
-    return(continuations.loc[continuations.word.isin(candidates)])
-  else:
-    return(continuations)
+def compare_completions(context, bertMaskedLM, tokenizer, candidates = None):
+    '''
+        Compare a set of possible completions for a context
+
+        Args
+        context: a string to tokenize with [MASK] inserted, but without [CLS] and [SEP] markers
+        bertMaskedLM: masked language model in the transformers format
+        tokenizer: BERT tokenizer
+        candidates: return completions in a limited set of words  
+
+        Returns:
+        continuations: a dataframe with the highest- to lowest- ranked completions for the single masked tokens
+    '''
+    continuations = bert_completions(context, bertMaskedLM, tokenizer)
+    if candidates is not None:
+        return(continuations.loc[continuations.word.isin(candidates)])
+    else:
+        return(continuations)
 
 def get_completions_for_mask(utt_df, true_word, bertMaskedLM, tokenizer, softmax_mask) :    
+    '''
+        Get a completion for an utterance dataframe (for retrieveing completions from subsets of a data frame)
+
+        Args:
+        utt_df: data frame with `token` column, inculding a [MASK] token
+        true_word: correct completion for the masked token (for computing surprisal) 
+        bertMaskedLM: masked language model in the transformers format
+        tokenizer: BERT tokenizer
+        softmax map: a vector of indices of vocabulary items over which to compute the softmax
+
+        Returns:
+        priors: an n * m  matrix of prior probabilities (n tokens/predictions, m vocabulary, reflecting the softmax mask)
+        completions: a list of dataframes with the rank and probability for each complation
+        scores: a datagrame with n rows, containing surprisal (wrt true_word) and entropy 
+    '''
     
     gloss_with_mask =  tokenizer.convert_tokens_to_ids(['[CLS]']
         ) + utt_df.token_id.tolist() + tokenizer.convert_tokens_to_ids(['[SEP]'])    
     priors, completions = bert_completions(gloss_with_mask, bertMaskedLM, tokenizer, softmax_mask)
-    
-    
+        
     if true_word in completions['word'].tolist():
         true_completion = completions.loc[completions['word'] == true_word].iloc[0]
         rank = true_completion['rank']
         prob =  true_completion['prob']
     else:
         rank = np.nan
-        prob = np.nan
-    
-        
+        prob = np.nan    
     
     entropy = scipy.stats.entropy(completions.prob, base=2)
     return(priors, completions , pd.DataFrame({'rank':[rank], 'prob': [prob], 'entropy':[entropy], 'num_tokens_in_context':[utt_df.shape[0]-1],
     'bert_token_id' : utt_df.loc[utt_df.token == '[MASK]'].bert_token_id}))
 
-def get_stats_for_failure(all_tokens, selected_utt_id, bertMaskedLM, tokenizer, softmax_mask, context_width_in_utts, use_speaker_labels = False, preserve_errors=False):
+def get_stats_for_failure(all_tokens, selected_utt_id, bertMaskedLM, tokenizer, softmax_mask, context_width_in_utts, use_speaker_labels = False):
     
-    '''dummy function because failures mostly just use get_completions_for_mask'''    
+    '''
+        Retrieve completions for a communicative failure (containing one mask corresponding to a yyy token)
+        
+        Args:
+        all_tokens: data frame containing selected_utt_id plus surrounding context
+        selected_utt_id: utternce id to pull from all_tokens as the target utterance
+        bertMaskedLM: masked language model in the transformers format
+        tokenizer: BERT tokenizer
+        softmax map: a vector of indices of vocabulary items over which to compute the softmax
+        context_width_in_utts: number of utterances on either side of the target utterance to feed as context to the model
+        use_speaker_labels: is the first token of every utterance sequence (after [SEP]) a speaker identification token like [cgv] or [chi]        
+
+        Returns: (returns directly from get_completions_for_mask)
+        priors: an n * m  matrix of prior probabilities (n tokens/predictions, m vocabulary, reflecting the softmax mask)
+        completions: a list of dataframes of length n with the rank and probability for each completion
+        scores: a datagrame with n rows, containing surprisal (wrt true_word) and entropy 
+    
+    '''    
     t1 = time.time()    
     utt_df = all_tokens.loc[all_tokens.id == selected_utt_id]
         
@@ -128,25 +188,18 @@ def get_stats_for_failure(all_tokens, selected_utt_id, bertMaskedLM, tokenizer, 
 
         utt_df = pd.concat([before_by_sent_df, sep_row, utt_df, sep_row, after_by_sent_df])
 
-        if preserve_errors:
-            #convert @ back to yyy for context items
-            utt_df.loc[utt_df.token == '@','token'] = 'yyy'
-            utt_df.loc[utt_df.token == 'yyy','token_id'] = tokenizer.convert_tokens_to_ids(['yyy'])[0]
-            #convert @ back to xxx for context items
-            utt_df.loc[utt_df.token == '$','token'] = 'xxx'
-            utt_df.loc[utt_df.token == 'xxx','token_id'] = tokenizer.convert_tokens_to_ids(['xxx'])[0]
+        # if preserve_errors:
+        #     #convert @ back to yyy for context items
+        #     utt_df.loc[utt_df.token == '@','token'] = 'yyy'
+        #     utt_df.loc[utt_df.token == 'yyy','token_id'] = tokenizer.convert_tokens_to_ids(['yyy'])[0]
+        #     #convert @ back to xxx for context items
+        #     utt_df.loc[utt_df.token == '$','token'] = 'xxx'
+        #     utt_df.loc[utt_df.token == 'xxx','token_id'] = tokenizer.convert_tokens_to_ids(['xxx'])[0]
 
-            if np.sum(utt_df.token == '[MASK]') > 1:
-                print('Multiple masks in the surrounding context')
-                import pdb
-                pdb.set_trace()
-        else: 
-            utt_df.loc[utt_df.token == '@','token'] = '[MASK]'
-            utt_df.loc[utt_df.token == '[MASK]','token_id'] = tokenizer.convert_tokens_to_ids(['[MASK]'])[0]
-            #convert @ back to xxx for context items
-            utt_df.loc[utt_df.token == '$','token'] = '[MASK]'
-            utt_df.loc[utt_df.token == '[MASK]','token_id'] = tokenizer.convert_tokens_to_ids(['[MASK]'])[0]
-
+        if np.sum(utt_df.token == '[MASK]') > 1:
+            print('Multiple masks in the surrounding context')
+            import pdb
+            pdb.set_trace()        
     
     if not use_speaker_labels:
         # remove the speaker labels
@@ -162,8 +215,25 @@ def get_stats_for_failure(all_tokens, selected_utt_id, bertMaskedLM, tokenizer, 
         return(None)
 
 
-def get_stats_for_success(all_tokens, selected_utt_id, bertMaskedLM, tokenizer, softmax_mask, context_width_in_utts=None, use_speaker_labels=False, preserve_errors=False):
-    '''replace each token one at a time, sending it through get_completions_for_mask'''
+def get_stats_for_success(all_tokens, selected_utt_id, bertMaskedLM, tokenizer, softmax_mask, context_width_in_utts=None, use_speaker_labels=False):
+    '''
+        Retrieve completions for ALL success tokens in a communicative success (converting each token to a mask in turn)        
+        
+        Args:
+        all_tokens: data frame containing selected_utt_id plus surrounding context
+        selected_utt_id: utternce id to pull from all_tokens as the target utterance
+        bertMaskedLM: masked language model in the transformers format
+        tokenizer: BERT tokenizer
+        softmax map: a vector of indices of vocabulary items over which to compute the softmax
+        context_width_in_utts: number of utterances on either side of the target utterance to feed as context to the model
+        use_speaker_labels: is the first token of every utterance sequence (after [SEP]) a speaker identification token like [cgv] or [chi]        
+
+        Returns: (returns directly from get_completions_for_mask)
+        priors: an n * m  matrix of prior probabilities (n tokens/predictions, m vocabulary, reflecting the softmax mask)
+        completions: a list of dataframes of length n with the rank and probability for each completion
+        scores: a datagrame with n rows, containing surprisal (wrt true_word) and entropy 
+    
+    '''    
     
     utt_df = all_tokens.loc[all_tokens.id ==     selected_utt_id]    
     
@@ -223,25 +293,25 @@ def get_stats_for_success(all_tokens, selected_utt_id, bertMaskedLM, tokenizer, 
 
             utt_df_local = pd.concat([before_by_sent_df, sep_row, utt_df_local, sep_row, after_by_sent_df])
 
-            if preserve_errors:
-                #convert @ back to yyy for context items
-                utt_df_local.loc[utt_df_local.token == '@','token'] = 'yyy'
-                utt_df_local.loc[utt_df_local.token == 'yyy','token_id'] = tokenizer.convert_tokens_to_ids(['yyy'])[0]
-                #convert @ back to xxx for context items
-                utt_df_local.loc[utt_df_local.token == '$','token'] = 'xxx'
-                utt_df_local.loc[utt_df_local.token == 'xxx','token_id'] = tokenizer.convert_tokens_to_ids(['xxx'])[0]
+            # if preserve_errors:
+            #     #convert @ back to yyy for context items
+            #     utt_df_local.loc[utt_df_local.token == '@','token'] = 'yyy'
+            #     utt_df_local.loc[utt_df_local.token == 'yyy','token_id'] = tokenizer.convert_tokens_to_ids(['yyy'])[0]
+            #     #convert @ back to xxx for context items
+            #     utt_df_local.loc[utt_df_local.token == '$','token'] = 'xxx'
+            #     utt_df_local.loc[utt_df_local.token == 'xxx','token_id'] = tokenizer.convert_tokens_to_ids(['xxx'])[0]
 
-                if np.sum(utt_df_local.token == '[MASK]') > 1:
-                    print('Multiple masks in the surrounding context')
-                    import pdb
-                    pdb.set_trace()
-            else: 
-                #convert xxx and yyy in the context to masks
-                utt_df_local.loc[utt_df_local.token == '@','token'] = '[MASK]'
-                utt_df_local.loc[utt_df_local.token == '[MASK]','token_id'] = tokenizer.convert_tokens_to_ids(['[MASK]'])[0]
-                #convert @ back to xxx for context items
-                utt_df_local.loc[utt_df_local.token == '$','token'] = '[MASK]'
-                utt_df_local.loc[utt_df_local.token == '[MASK]','token_id'] = tokenizer.convert_tokens_to_ids(['[MASK]'])[0]
+            #     if np.sum(utt_df_local.token == '[MASK]') > 1:
+            #         print('Multiple masks in the surrounding context')
+            #         import pdb
+            #         pdb.set_trace()
+            # else: 
+            #     #convert xxx and yyy in the context to masks
+            #     utt_df_local.loc[utt_df_local.token == '@','token'] = '[MASK]'
+            #     utt_df_local.loc[utt_df_local.token == '[MASK]','token_id'] = tokenizer.convert_tokens_to_ids(['[MASK]'])[0]
+            #     #convert @ back to xxx for context items
+            #     utt_df_local.loc[utt_df_local.token == '$','token'] = '[MASK]'
+            #     utt_df_local.loc[utt_df_local.token == '[MASK]','token_id'] = tokenizer.convert_tokens_to_ids(['[MASK]'])[0]
 
         if not use_speaker_labels:
             # remove the speaker labels
@@ -261,6 +331,16 @@ def get_stats_for_success(all_tokens, selected_utt_id, bertMaskedLM, tokenizer, 
 
     
 def get_softmax_mask(tokenizer, token_list):
+    '''
+        Generate a mask (numpy array of indices) of words in the tokenizer over which to compute the softmax
+
+        Args:
+        tokenizer: BERT tokenizer
+        token_list: list of words to include in the softmax
+
+        Returns: numpy array of indices in the vocabulary
+    '''
+
     vocab_size = len(tokenizer.get_vocab())
     words = np.array(tokenizer.convert_ids_to_tokens(range(vocab_size)))
     mask = np.ones([vocab_size])
@@ -270,7 +350,24 @@ def get_softmax_mask(tokenizer, token_list):
     mask[~np.array([x in token_list for x in words])] = 0
     return(np.argwhere(mask)[:,0], words[np.argwhere(mask)][:,0])
 
-def compare_successes_failures(all_tokens, selected_success_utts, selected_yyy_utts, modelLM, tokenizer, softmax_mask, num_context_utts, use_speaker_labels=True, preserve_errors=True):    
+def compare_successes_failures(all_tokens, selected_success_utts, selected_yyy_utts, modelLM, tokenizer, softmax_mask, context_width_in_utts, use_speaker_labels=True):    
+    '''
+        Get prior probabilities, completions, and scores from a BERT model for a list of utterance ids for communicative successes and a list of utterance ids for communicative failures 
+
+        Args:
+        all_tokens: data frame containing selected_utt_id plus surrounding context
+        selected_suuccess_utts: utterance ids known to be communicative successes
+        selected_yyy_utts: utterance ids known to be communicative failures
+        modelLM: masked language model in the transformers format
+        tokenizer: BERT tokenizer
+        softmax_mask: a vector of indices of vocabulary items over which to compute the softmax
+        context_width_in_utts: number of utterances on either side of the target utterance to feed as context to the model
+        use_speaker_labels: is the first token of every utterance sequence (after [SEP]) a speaker identification token like [cgv] or [chi]        
+
+        Returns: dictionary with two keys:            
+            priors: n * m matrix of prior probabilities, where n is the number of communicative failures + communicative successes, and m is the size of the vocab identified by the softmax map. Failures are stacked on top of successes and are identified by a bert_token_id
+            scores: a datframe of length n containing concatenated entropy scores, ranks, surprisals. Failures are stacked on top of successes and are identified by a bert_token_id
+    '''
     
     print('Computing failure scores')
     import warnings
@@ -281,7 +378,7 @@ def compare_successes_failures(all_tokens, selected_success_utts, selected_yyy_u
     
     for sample_yyy_id in selected_yyy_utts:
 
-        rv = get_stats_for_failure(all_tokens, sample_yyy_id, modelLM, tokenizer, softmax_mask, num_context_utts, use_speaker_labels, preserve_errors) 
+        rv = get_stats_for_failure(all_tokens, sample_yyy_id, modelLM, tokenizer, softmax_mask, context_width_in_utts, use_speaker_labels) 
 
         if rv is None:
             pass
@@ -306,7 +403,7 @@ def compare_successes_failures(all_tokens, selected_success_utts, selected_yyy_u
 
     for success_id in selected_success_utts:
     
-        rv = get_stats_for_success(all_tokens, success_id, modelLM, tokenizer, softmax_mask, num_context_utts, use_speaker_labels, preserve_errors) 
+        rv = get_stats_for_success(all_tokens, success_id, modelLM, tokenizer, softmax_mask, context_width_in_utts, use_speaker_labels, preserve_errors) 
         if rv is None:
             pass
             #!!! may want to pass throug a placeholder here 
@@ -332,11 +429,23 @@ def compare_successes_failures(all_tokens, selected_success_utts, selected_yyy_u
     return(rdict)
 
 def compare_successes_failures_unigram_model(all_tokens, selected_success_utts, selected_yyy_utts, tokenizer, softmax_mask,  child_counts_path, vocab):
-    '''unigram model on CHILDES productions''' 
+    '''
+        Get prior probaiblities, completions, and scores from a unigram model (limiting to the vocab) or flat prior for a list of utterance ids for communicative successes and a list of utterance ids for communicative failures 
 
-    
-    # child production stats only
-    
+        Args:
+        all_tokens: data frame containing selected_utt_id plus surrounding context
+        selected_suuccess_utts: utterance ids known to be communicative successes
+        selected_yyy_utts: utterance ids known to be communicative failures        
+        tokenizer: BERT tokenizer
+        softmax_mask: a vector of indices of vocabulary items over which to compute the softmax
+        child_counts_path: file to read with 'word' and 'count' in the column titles to use for unigram counts. If set to None, return a uniform prior
+        vocab: a string representation of the vocab
+
+        Returns: dictionary with two keys:            
+            priors: n * m matrix of prior probabilities, where n is the number of communicative failures + communicative successes, and m is the size of the vocab identified by the softmax map. Failures are stacked on top of successes and are identified by a bert_token_id
+            scores: a datframe of length n containing concatenated entropy scores, ranks, surprisals. Failures are stacked on top of successes and are identified by a bert_token_id
+    '''    
+
     unigram_model = pd.DataFrame({'word':vocab})
     
     if child_counts_path is not None: 
@@ -392,11 +501,22 @@ def compare_successes_failures_unigram_model(all_tokens, selected_success_utts, 
     return(rdict)
 
 
-def augment_with_ipa(successes, tokens_with_phono,tokenizer, field):
-     
+def augment_with_ipa(utterances, tokens_with_phono,tokenizer, field):
+    '''
+        Get a vector of ipa forms corresponding to the length of utterances. If more than one token piece, then jump ahead by the number of token pieces
+
+        Args:
+        utterances: utterance form to feed to the model, to be segmented by BERT 
+        tokens_with_phono: tokens from PhonBank with ipa forms
+        tokenizer: BERT tokenizer
+        field: column in tokens_with_phono to return from the map, e.g., actual_phonology or model_phonology
+        
+        Return:
+        mapped_ipa: a vector of tokenized forms from the utterance augmented with phonetic forms from tokens_with_phono as specified by field 
+    '''         
     tokens_with_phono['tokens'] = [tokenizer.tokenize(x) for x in tokens_with_phono.gloss]
     
-    mapped_ipa = list(np.repeat('', successes.shape[0]))
+    mapped_ipa = list(np.repeat('', utterances.shape[0]))
     i = 1
     for x in tokens_with_phono.to_dict('record'):
         token_pieces = x['tokens']
@@ -412,12 +532,31 @@ def augment_with_ipa(successes, tokens_with_phono,tokenizer, field):
     return(mapped_ipa)
 
 def find_in_vocab(x, initial_vocab): 
+    '''
+        Return the label for an index in the vocab
+
+        Args:
+        x: index
+        initial_vocab: vocabulary of word types in the form of a list
+    '''    
     try:
         return(initial_vocab.index(x))
     except:
         return(np.nan)
 
 def get_posteriors(prior_data, levdists, initial_vocab, bert_token_ids=None, beta_value = 3.2):
+    '''
+        Get the posterior probability of candidate words by combining the priors with a likelihood dependent on levenshtein distances and a free parameter beta
+
+        Args:
+        prior_data: prior data of the format put out by  compare_successes_failures
+        levdists: a matrix of levenshtein distance. for n target words, n,m is the distance of the nth form to the mth word in the initial vocab
+        initial_vocab: natural language vocabulary
+        bert_token_ids: set of bert_token_ids to limit the contents of prior_data and levdists. This handles the fact that a few utterances are not retrievalbe through BERT but 
+        are retrievable through the unigram model query (it is necessary to exclude such forms) 
+        beta_value: free parameter in the likelihood; see the paper. Higher values assign lower probabilities to larger edit distances
+    '''
+
     
     if bert_token_ids is not None:
         btis = set(bert_token_ids)   
@@ -510,6 +649,20 @@ def get_posteriors(prior_data, levdists, initial_vocab, bert_token_ids=None, bet
     return(prior_data)
 
 def sample_models_across_time(utts_with_ages, all_tokens_phono, models, initial_vocab, cmu_in_initial_vocab, num_samples = 1000):
+    '''
+    Top-level method to sample all models for a set of communicative successes and failures split across different ages
+
+        Args:
+        utts_with_ages: utterances with ages associated (sampling occurs within the function)
+        all_tokens_phono: corpus in tokenized from, with phonological transcriptions
+        models: list of models and their associated tokenizers, softmax masks, and parameters
+        initial_vocab: word types corresponding to the softmask mask !!! potentially brittle:  different softmax masks per model 
+        cmu_in_initial_vocab: cmu pronunciations for the initial vocabulary !!! potentially brittle interaction with initial voca
+
+        Returns:
+        scores_across_time: a dataframe of scores for each word for each model for each time period
+    '''
+
 
     score_store = []
     for age in np.unique(utts_with_ages.year):
@@ -557,6 +710,15 @@ def sample_models_across_time(utts_with_ages, all_tokens_phono, models, initial_
     return(scores_across_time)
 
 def get_edit_distance_matrix(all_tokens_phono, prior_data, initial_vocab,  cmu_2syl_inchildes):    
+    '''
+    Get an edit distance matrix for matrix-based computation of the prior
+
+    all_tokens_phono: corpus in tokenized from, with phonological transcriptions
+    prior_data: priors of the form output by `compare_successes_failures_*`
+    initial_vocab: word types corresponding to the softmask mask
+    cmu_2syl_inchildes: cmu pronunctiations, must have 'word' and 'ipa_short' columns 
+    '''
+
     bert_token_ids = prior_data['scores']['bert_token_id']
     ipa = pd.DataFrame({'bert_token_id':bert_token_ids}).merge(all_tokens_phono[['bert_token_id',
         'actual_phonology_no_dia']])
@@ -571,6 +733,23 @@ def get_edit_distance_matrix(all_tokens_phono, prior_data, initial_vocab,  cmu_2
 
 
 def sample_across_models(utterance_ids, success_utts, yyy_utts, all_tokens_phono, models, initial_vocab, cmu_in_initial_vocab, beta_values):
+    '''
+        Top-level method to sample all models for a set of communicative successes and failures. Allows for adjusting the beta value
+
+        Args:
+        utterance_ids: set of utterance ids to retrieve
+        success_utts: set of communicative success utterances 
+        yyy_utts: set of communicative failure utterances 
+        all_tokens_phono: corpus in tokenized from, with phonological transcriptions
+        models: list of models and their associated tokenizers, softmax masks, and parameters
+        initial_vocab: word types corresponding to the softmask mask !!! potentially brittle:  different softmax masks per model 
+        cmu_in_initial_vocab: cmu pronunciations for the initial vocabulary !!! potentially brittle interaction with initial vocab       
+        beta values: list of beta values over which to iterate
+
+        Returns:
+        scores_across_models: a dataframe of scores for each word for each model for each beta
+
+    '''
 
     score_store = []
     for model in models:

@@ -63,14 +63,13 @@ def bert_completions(text, model, tokenizer, softmax_mask):
   probs = softmax(predictions[0, masked_index].data.numpy()[softmax_mask])  
   words = np.array(tokenizer.convert_ids_to_tokens(range(predictions.size()[2])))[softmax_mask]
   
-  
   word_predictions  = pd.DataFrame({'prob': probs, 'word':words})
   word_predictions = word_predictions.sort_values(by='prob', ascending=False)    
   word_predictions['rank'] = range(word_predictions.shape[0])
   return(probs, word_predictions)
   
   
-def compare_completions(context, bertMaskedLM, tokenizer, candidates = None):
+def compare_completions(context, bertMaskedLM, tokenizer, softmax_mask, candidates = None):
     '''
         Compare a set of possible completions for a context
 
@@ -83,7 +82,7 @@ def compare_completions(context, bertMaskedLM, tokenizer, candidates = None):
         Returns:
         continuations: a dataframe with the highest- to lowest- ranked completions for the single masked tokens
     '''
-    continuations = bert_completions(context, bertMaskedLM, tokenizer)
+    continuations = bert_completions(context, bertMaskedLM, tokenizer, softmax_mask)
     if candidates is not None:
         return(continuations.loc[continuations.word.isin(candidates)])
     else:
@@ -122,7 +121,7 @@ def get_completions_for_mask(utt_df, true_word, bertMaskedLM, tokenizer, softmax
     return(priors, completions , pd.DataFrame({'rank':[rank], 'prob': [prob], 'entropy':[entropy], 'num_tokens_in_context':[utt_df.shape[0]-1],
     'bert_token_id' : utt_df.loc[utt_df.token == '[MASK]'].bert_token_id}))
 
-def get_stats_for_failure(all_tokens, selected_utt_id, bertMaskedLM, tokenizer, softmax_mask, context_width_in_utts, use_speaker_labels = False):
+def get_stats_for_failure(all_tokens, selected_utt_id, bertMaskedLM, tokenizer, softmax_mask, context_width_in_utts, use_speaker_labels):
     
     '''
         Retrieve completions for a communicative failure (containing one mask corresponding to a yyy token)
@@ -350,7 +349,7 @@ def get_softmax_mask(tokenizer, token_list):
     mask[~np.array([x in token_list for x in words])] = 0
     return(np.argwhere(mask)[:,0], words[np.argwhere(mask)][:,0])
 
-def compare_successes_failures(all_tokens, selected_success_utts, selected_yyy_utts, modelLM, tokenizer, softmax_mask, context_width_in_utts, use_speaker_labels=True):    
+def compare_successes_failures(all_tokens, selected_success_utts, selected_yyy_utts, modelLM, tokenizer, softmax_mask, context_width_in_utts, use_speaker_labels=False):    
     '''
         Get prior probabilities, completions, and scores from a BERT model for a list of utterance ids for communicative successes and a list of utterance ids for communicative failures 
 
@@ -403,7 +402,7 @@ def compare_successes_failures(all_tokens, selected_success_utts, selected_yyy_u
 
     for success_id in selected_success_utts:
     
-        rv = get_stats_for_success(all_tokens, success_id, modelLM, tokenizer, softmax_mask, context_width_in_utts, use_speaker_labels, preserve_errors) 
+        rv = get_stats_for_success(all_tokens, success_id, modelLM, tokenizer, softmax_mask, context_width_in_utts, use_speaker_labels) 
         if rv is None:
             pass
             #!!! may want to pass throug a placeholder here 

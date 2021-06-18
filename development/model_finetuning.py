@@ -102,10 +102,10 @@ def get_trainer(model, tokenizer, model_save_path, with_tags = True):
 
 if __name__ == '__main__':
     
-    #model_save_folder = '/om2/user/wongn/model_checkpoints/'
-    model_save_folder = './model_checkpoints/'
+    model_save_folder = '/om2/user/wongn/model_checkpoints/'
+    #model_save_folder = './model_checkpoints/'
     
-    model_save_path = join(model_save_folder, 'bert_finetune')
+    model_save_path = join(model_save_folder, 'bert/remote_data/replication_no_tags')
     
     if not exists(model_save_folder):
         os.makedirs(model_save_folder)

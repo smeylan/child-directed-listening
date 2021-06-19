@@ -1,1 +1,1 @@
-python3 ./model_finetuning.py
+python3 ./model_finetuning_replication.py

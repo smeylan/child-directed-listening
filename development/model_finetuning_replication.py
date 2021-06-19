@@ -1,6 +1,7 @@
 import os
 from os.path import join, exists
 
+import torch
 import transformers
 
 from transformers import BertForMaskedLM, BertTokenizer
@@ -54,10 +55,11 @@ def get_bert_model():
 
     #2/20: https://huggingface.co/transformers/quickstart.html
 
-    model = BertForMaskedLM.from_pretrained('bert-large-uncased-whole-word-masking')
+    model = BertForMaskedLM.from_pretrained('bert-large-uncased')
+    
     model.eval()
 
-    tokenizer = BertTokenizer.from_pretrained("bert-large-uncased-whole-word-masking")
+    tokenizer = BertTokenizer.from_pretrained("bert-large-uncased")
     # 6/17 From Dr. Meylan
     tokenizer.add_tokens(['[chi]','[cgv]']) # Needed because of pre-tokenization of datasets.
     # Note that need lower case probably because bert is lowercase. Capitals won't work
@@ -77,15 +79,11 @@ def get_trainer(model, tokenizer, model_save_path, with_tags = True):
     # 6/17/21 : https://huggingface.co/transformers/main_classes/data_collator.html
     data_collator = transformers.data.data_collator.DataCollatorForWholeWordMask(
         tokenizer=tokenizer, mlm=True, mlm_probability=0.15
-    )
+    ) # mlm and mlm probability are both defaults
 
     training_args = TrainingArguments(
         output_dir=model_save_path,
         overwrite_output_dir=True,
-        num_train_epochs=100,
-        save_steps=10_000,
-        save_total_limit=2,
-        prediction_loss_only=True,
     )
 
     trainer = Trainer(
@@ -112,13 +110,20 @@ if __name__ == '__main__':
             
     this_model, this_tokenizer = get_bert_model()
     
+    # 6/18: GPU code
+    # https://github.com/huggingface/transformers/issues/2704
+    device = "cuda:0" if torch.cuda.is_available() else "cpu"
+    this_model = this_model.to(device)
+    # This doesn't seem to work -- the training period is still very long.
+    
     trainer = get_trainer(this_model, this_tokenizer, model_save_path, with_tags = False)
     
     #Still from 6/3: https://colab.research.google.com/github/huggingface/blog/blob/master/notebooks/01_how_to_train.ipynb#scrollTo=VmaHZXzmkNtJ
     train_results = trainer.train()
-    new_results = trainer.evaluate()
     
-    
+    # 6/18: https://github.com/huggingface/transformers/blob/master/examples/pytorch/language-modeling/run_mlm.py
+    trainer.save_model()  # Saves the tokenizer too for easy upload
+    trainer.save_state()
     
     
     

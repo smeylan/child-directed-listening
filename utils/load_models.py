@@ -8,10 +8,10 @@ import transformers
 from pytorch_pretrained_bert import BertForMaskedLM
 from transformers import BertTokenizer
 
-import transfomers_bert_completions
+from utils import transfomers_bert_completions
 
 
-def get_model(model_path, with_tags, root_dir = '..'):
+def get_model(model_path, with_tags, root_dir):
     
     # 6/21/21 Naming convention and general code from Dr. Meylan's original yyy code 
     
@@ -26,7 +26,7 @@ def get_model(model_path, with_tags, root_dir = '..'):
     return {'modelLM' : model, 'tokenizer' : tokenizer, 'softmax_mask' : softmax_mask, 'vocab' : vocab, 'use_speaker_labels' : with_tags }
     
     
-def get_all_data_models(with_tags, root_dir = '..'):
+def get_all_data_models(with_tags, root_dir):
     
     """
     Note: no_tags is the replication of Dr. Meylan's model_output 
@@ -40,19 +40,20 @@ def get_all_data_models(with_tags, root_dir = '..'):
     # These are actually my replications of Dr. Meylan's original models
     # -- Dr. Meylan's models are located in "model_output" and "model_output2"
     
-    return get_model(path, with_tags)
+    return get_model(path, with_tags, root_dir)
     
     
-def get_meylan_original_model(with_tags, root_dir = '..'):
+def get_meylan_original_model(with_tags, root_dir):
     
     # Fine-tuned model 
     # Temporarily local for now
     
     model_name = '' if not with_tags else '2'
-    return get_model(join(root_dir, join('models', f'model_output{model_name}')), with_tags)
+    model_path = join(root_dir, join('models', f'model_output{model_name}'))
+    return get_model(model_path, with_tags, root_dir)
 
 
-def get_cmu_dict_info(root_dir = '..'):
+def get_cmu_dict_info(root_dir):
     
     # 6/21/21 Dr. Meylan's original yyy code
     cmu_in_childes = pd.read_csv(join(root_dir, 'phon/cmu_in_childes.csv'))

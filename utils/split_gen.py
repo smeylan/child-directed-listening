@@ -7,8 +7,23 @@ from os.path import join, exists
 import pandas as pd
 import numpy as np
 
+from utils import data_cleaning
+
 SEED = 0
 np.random.seed(SEED)
+
+
+def get_age_split_data(data, months = 36):
+    
+    mask = data['target_child_age'] <= months * 30.5
+
+    # Implied that target_child_age is in days,
+    # and 30.5 days/month is used in the original Generalized Phonological analysis.
+
+    young_df = data[mask]
+    old_df = data[~mask]
+
+    return young_df, old_df
 
 def get_split_folder(split_type, dataset_name, base_dir = 'data/new_splits'):
    
@@ -18,9 +33,6 @@ def get_split_folder(split_type, dataset_name, base_dir = 'data/new_splits'):
         os.makedirs(path)
     
     return path
-
-def fix_gloss(gloss):
-    return(str(gloss).replace('+','').replace('_',''))
 
 
 def get_token_frequencies(raw_data, split_type, dataset_name, data_base_path = 'data/new_splits'):
@@ -90,86 +102,45 @@ def save_vocab(cleaned_glosses, split, dataset, base_dir = 'data/new_splits'):
     
     return tok_freq, chi_freq
     
-    
-    
-def drop_errors(utt_data):
-    
-    utt_data['contains_error'] = ['xxx' in str(x) or 'yyy' in str(x) for x in utt_data.gloss]
-    utt_data = utt_data.loc[~utt_data.contains_error]
-    
-    return utt_data.copy() # Avoid setting based on a slice of a dataframe.
 
-
-def clean_glosses(data, fill_punct_val, verbose = False):
-        
-    punct_for_type = {
-    'question':'?',
-    'declarative':'.',
-    'interruption':'!',
-    'trail off':'...',
-    'trail off question':'?',
-    'imperative_emphatic':'!' 
-    }
-    
-    assert fill_punct_val in ['.', None], "Tried to use a fill punctuation value that wasn't present in either yyy or finetune notebooks. For yyy behavior, use '.'. For finetune behavior, use None."
-    
-    data.gloss = [fix_gloss(x) for x in data.gloss]
-    
-    if verbose: print(data['type'].value_counts())
-    
-    # Cell 237
-    data['punct'] = [punct_for_type[x] if x in punct_for_type else fill_punct_val
-                        for x in data.type ]
-    
-    if verbose: print('Cell 238', data.iloc[0])
-        
-    # Cell 267
-    data['speaker_code_simple'] = ['[CHI]' if x == 'CHI' else '[CGV]'
-                                          for x in data.speaker_code]
-    
-    # Cell 268
-    data = data.loc[[x is not None for x in data.punct]]
-    data['gloss_with_punct'] = [x['speaker_code_simple'] + ' '+ x['gloss'].lower() + x['punct'] for x in data.to_dict('records')]
-    
-    return data
-   
-    
-def prep_utt_glosses_for_split(data, fill_punct_val, verbose = False):
-    
+def glosses_random_split(unsorted_cleaned_data, val_ratio = None, val_num = None):
     """
-    Highest level call.
- 
-    Cleans a given utt_glosses dataframe (to_clean_data) from its original query return
-        (or close to original for children -- use the filtered chi_phono csv)
-    Drops all types of errors.
-    
-    This function expects the raw query/utt_glosses dataframe equivalent.
-    
-    verbose controls whether or not printouts are active
-        (for checking correctness relative to unfactored code on all/all split)
+    Split off a subset of a pool of data to be used as validation.
     """
+    
+    assert (val_ratio is not None) ^ (val_num is not None), 'Exactly one of val_ratio and val_num should be specified.'
+    
+    data = unsorted_cleaned_data.copy()
+    
+    data = data.sort_values(by=['transcript_id', 'utterance_order'])
+    
+    # select 20 % of the transcripts for training
+    
+    transcript_inventory = np.unique(data.transcript_id)
+    sample_num = val_num if val_ratio is None else int(val_ratio * len(transcript_inventory))
+    validation_idx = np.random.choice(transcript_inventory, 
+                                          sample_num)
+    
+    return validation_idx
 
-    # Changed to drop xxx and yyy for all of the splits.
-    
-    if verbose: print('Cell 232 output', data.shape)
-    
-    # Cell 233 in the notebook relative to Dr Meylan's commit
-    data = drop_errors(data)
-    
-    if verbose: print('Cell 233 output', data.shape)
-        
-    data = clean_glosses(data, None)
-   
-    if verbose: print('Cell 269', data.head(5).gloss_with_punct)
-    
-    # Cell 271: This was moved outside of token cleaning because it's needed for the CHI analysis.
-    data['tokens'] = [str(x).lower().split(' ') for x in data.gloss]
-    
-    return data # Ready for input into token cleaning, get_chi_frequencies, get_token_frequencies
-    
 
+def write_data_partitions_text(data_pool, split_folder, validation_indices):
     
-
+    data_pool['phase'] = 'train'
+    data_pool.loc[data.transcript_id.isin(validation_indices),
+             'phase'] = 'validation'
+    
+    data_pool.loc[data_pool.phase =='validation'] \
+          [['gloss_with_punct']].to_csv(join(split_folder, 'validation.txt'), index=False, header=False)
+    
+    data_pool.loc[data_pool.phase =='train'] \
+          [['gloss_with_punct']].to_csv(join(split_folder, 'train.txt'), index=False, header=False)
+     
+    print(f'Files written to {this_split_folder}')
+    
+    return data_pool
+    
+    
 def split_glosses_shuffle(unsorted_cleaned_data, split_type, dataset_type, base_dir = 'data/new_splits', val_ratio = None, val_num = None):
     """
     Highest level call.
@@ -183,37 +154,24 @@ def split_glosses_shuffle(unsorted_cleaned_data, split_type, dataset_type, base_
         (child uses its own phase splitting logic)
     """
     
-    assert (val_ratio is not None) ^ (val_num is not None), 'Exactly one of val_ratio and val_num should be specified.'
-    
-    data = unsorted_cleaned_data.copy()
-    
-    data = data.sort_values(by=['transcript_id', 'utterance_order'])
-    
-    # select 20 % of the transcripts for training
-    
-    transcript_inventory = np.unique(data.transcript_id)
-    sample_num = val_num if val_ratio is None else int(val_ratio * len(transcript_inventory))
-    validation_indices = np.random.choice(transcript_inventory, 
-                                          sample_num)
+    data = unsorted_cleaned_data.sort_values(by=['transcript_id', 'utterance_order'])
     
     this_split_folder = get_split_folder(split_type, dataset_type, base_dir)
+    validation_indices = glosses_random_split(unsorted_cleaned_data, val_ratio = val_ratio, val_num = val_num)
     
-    data['partition'] = 'train'
-    data.loc[data.transcript_id.isin(validation_indices),
-             'partition'] = 'validation'
-    
-    data.loc[data.partition =='validation'] \
-          [['gloss_with_punct']].to_csv(join(this_split_folder, 'validation.txt'), index=False, header=False)
-    
-    data.loc[data.partition =='train'] \
-          [['gloss_with_punct']].to_csv(join(this_split_folder, 'train.txt'), index=False, header=False)
-     
-    print(f'Files written to {this_split_folder}')
+    data = write_data_partitions_text(data, this_split_folder, validation_indices) 
     
     return data
        
 
+# This will perform all of the cleaning, splits, etc.
+# I would just do repetitive cleaning.
+
 def exec_split_gen(raw_data, split_name, dataset_name, base_dir = 'data/new_splits', verbose = False):
+    
+    """
+    This should be executed for all and age splits -- child splits are external.
+    """
     
     if not exists(base_dir):
         os.makedirs(base_dir)
@@ -221,15 +179,12 @@ def exec_split_gen(raw_data, split_name, dataset_name, base_dir = 'data/new_spli
     print('Beginning split gen call:', split_name, dataset_name)
     
     # Note: yyy uses "." as the default punct val. Splits use "None" as the default punct val.
-    cleaned_utt_glosses = prep_utt_glosses_for_split(raw_data, None, verbose = verbose)
+    cleaned_utt_glosses = data_cleaning.prep_utt_glosses_for_split(raw_data, None, verbose = verbose)
     
     tok_freq, chi_tok_freq = save_vocab(cleaned_utt_glosses, split_name, dataset_name, base_dir)
 
-    if split_name == 'child':
-        split_glosses_df = split_glosses_shuffle(cleaned_utt_glosses, split_name, dataset_name, base_dir, val_num = 400)
-    else:
-        assert split_name in ['all', 'age'], "Unrecognized split type argument. Should be one of 'all', 'age', or 'child'."
-        split_glosses_df = split_glosses_shuffle(cleaned_utt_glosses, split_name, dataset_name, base_dir, val_ratio = 0.8)
+    assert split_name in ['all', 'age'], "Unrecognized split type argument. Should be one of 'all', 'age', or 'child'."
+    split_glosses_df = split_glosses_shuffle(cleaned_utt_glosses, split_name, dataset_name, base_dir, val_ratio = 0.8)
     
     return split_glosses_df, tok_freq, chi_tok_freq
     

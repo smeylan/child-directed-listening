@@ -10,6 +10,18 @@ from transformers import BertTokenizer
 
 from utils import transfomers_bert_completions
 
+def get_initial_vocab_info():
+    
+    # tokenize with the most extensive tokenizer, which is the one used for model #2
+    initial_tokenizer = BertTokenizer.from_pretrained('model_output2')
+    initial_tokenizer.add_tokens(['yyy','xxx']) #must maintain xxx and yyy for alignment,
+    # otherwwise, BERT tokenizer will try to separate these into x #x and #x and y #y #y
+    inital_vocab_mask, initial_vocab = transfomers_bert_completions.get_softmax_mask(initial_tokenizer,
+        cmu_2syl_inchildes.word)
+    
+    cmu_in_initial_vocab = cmu_2syl_inchildes.loc[cmu_2syl_inchildes.word.isin(initial_vocab)]
+
+    return initial_vocab, cmu_in_initial_vocab
 
 def get_model(model_path, with_tags, root_dir):
     

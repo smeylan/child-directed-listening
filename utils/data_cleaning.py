@@ -8,11 +8,38 @@ from os.path import join, exists
 import pandas as pd
 import numpy as np
 
+def gloss_df_augmentation(tokens_df, utt_ids):
+    """
+    Used for augmenting the utts_with_age dataframe with the joined gloss.
+    Used for writing the train/val txt files for child splits.
+    """
+    glosses = []
+    for i, utt_id in enumerate(utt_ids):
+        if i % 10000 == 0: print(f'Computing gloss df augmentation, {round(i / len(utt_ids) * 100.0, 4)}% complete.')
+        glosses.append(join_gloss_tokens(utt_id, tokens_df))
+    return pd.DataFrame.from_dict({'utterance_id' : utt_ids, 'gloss' : glosses})
+    
+    
+def join_gloss_tokens(utt_id, all_tokens_df):
+    """
+    Joins the tokens given per entry of the query of Providence data in their token order, such that they represent the tokens of utt_id.
+    """
+    
+    entry = all_tokens_df[all_tokens_df.utterance_id == utt_id]
+       
+    # Assume that all_tokens_df will append each token in token_order, and check that this is true.
+    composed_gloss = []; order_gloss = []
+    for g, idx in zip(entry.gloss, entry.token_order):
+        composed_gloss.append(g)
+        order_gloss.append(idx)
+       
+    assert order_gloss == list(range(1, len(entry.gloss) + 1)), "Tokens were not joined in ascending order."
+    
+    return ' '.join(composed_gloss)
+   
 def fix_gloss(gloss):
     return(str(gloss).replace('+','').replace('_',''))
-
-
-    
+ 
 def drop_errors(utt_data):
     
     utt_data['contains_error'] = ['xxx' in str(x) or 'yyy' in str(x) for x in utt_data.gloss]
@@ -77,11 +104,11 @@ def prep_utt_glosses(data, fill_punct_val, verbose = False):
     if verbose: print('Cell 232 output', data.shape)
     
     # Cell 233 in the notebook relative to Dr Meylan's commit
-    data = data_cleaning.drop_errors(data)
+    data = drop_errors(data)
     
     if verbose: print('Cell 233 output', data.shape)
         
-    data = data_cleaning.clean_glosses(data, None)
+    data = clean_glosses(data, None)
    
     if verbose: print('Cell 269', data.head(5).gloss_with_punct)
     

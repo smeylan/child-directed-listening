@@ -112,7 +112,7 @@ def glosses_random_split(unsorted_cleaned_data, val_ratio = None, val_num = None
     
     data = unsorted_cleaned_data.copy()
     
-    data = data.sort_values(by=['transcript_id', 'utterance_order'])
+    data = data.sort_values(by=['transcript_id'])
     
     # select 20 % of the transcripts for training
     
@@ -127,23 +127,23 @@ def glosses_random_split(unsorted_cleaned_data, val_ratio = None, val_num = None
 def write_data_partitions_text(data_pool, split_folder, validation_indices):
     
     data_pool['phase'] = 'train'
-    data_pool.loc[data.transcript_id.isin(validation_indices),
+    data_pool.loc[data_pool.transcript_id.isin(validation_indices),
              'phase'] = 'validation'
     
-    data_pool.loc[data_pool.phase =='validation'] \
-          [['gloss_with_punct']].to_csv(join(split_folder, 'validation.txt'), index=False, header=False)
+    train_df = data_pool.loc[data_pool.phase =='train']
+    val_df = data_pool.loc[data_pool.phase =='validation']
     
-    data_pool.loc[data_pool.phase =='train'] \
-          [['gloss_with_punct']].to_csv(join(split_folder, 'train.txt'), index=False, header=False)
+    val_df[['gloss_with_punct']].to_csv(join(split_folder, 'validation.txt'), index=False, header=False)
+    
+    train_df[['gloss_with_punct']].to_csv(join(split_folder, 'train.txt'), index=False, header=False)
      
     print(f'Files written to {this_split_folder}')
     
-    return data_pool
+    return data_pool, train_df, val_df
     
     
 def split_glosses_shuffle(unsorted_cleaned_data, split_type, dataset_type, base_dir = 'data/new_splits', val_ratio = None, val_num = None):
     """
-    Highest level call.
     
     Randomly split the train and validation data by the number of unique transcript ids.
     Expects the output of prep_utt_glosses_for_split
@@ -153,8 +153,6 @@ def split_glosses_shuffle(unsorted_cleaned_data, split_type, dataset_type, base_
         dataset_type = is this part of the age-based splits? or does it have all data?
         (child uses its own phase splitting logic)
     """
-    
-    data = unsorted_cleaned_data.sort_values(by=['transcript_id', 'utterance_order'])
     
     this_split_folder = get_split_folder(split_type, dataset_type, base_dir)
     validation_indices = glosses_random_split(unsorted_cleaned_data, val_ratio = val_ratio, val_num = val_num)
@@ -179,7 +177,7 @@ def exec_split_gen(raw_data, split_name, dataset_name, base_dir = 'data/new_spli
     print('Beginning split gen call:', split_name, dataset_name)
     
     # Note: yyy uses "." as the default punct val. Splits use "None" as the default punct val.
-    cleaned_utt_glosses = data_cleaning.prep_utt_glosses_for_split(raw_data, None, verbose = verbose)
+    cleaned_utt_glosses = data_cleaning.prep_utt_glosses(raw_data, None, verbose = verbose)
     
     tok_freq, chi_tok_freq = save_vocab(cleaned_utt_glosses, split_name, dataset_name, base_dir)
 

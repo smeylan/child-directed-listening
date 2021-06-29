@@ -8,12 +8,44 @@ from utils import split_gen
 import glob
 
 
+def sample_successes(task_name, split_name, dataset_name, data_dir, n = None, regenerate = False):
+    """
+    task_name = designates the cached value to use for optimizations.
+        The cache should be different for beta optimization and run_models_across_time.
+    """
+    
+    if n is None: # Assign the default values.
+        assert task_name in ['beta', 'models_across_time'], "Invalid task name for sample successes -- use either 'beta' or 'models_across_time'."
+        n = 5000 if task_name == 'beta' else 1000
+        
+    print('Note that this function will need to be changed for the eval data for the child optimizations -- rather than sample from the function, you should just probably use the val set.')
+    
+    this_data_folder = split_gen.get_split_folder(split_name, dataset_name, data_dir)
+    success_utts = pd.read_csv(join(this_data_folder, 'success_utts.csv'))
+    this_data_path = join(this_data_folder, f'success_utts_{task_name}_{n}.csv')
+    
+    if regenerate or not exists(this_data_path):
+        # Need to sample the successes again and save them.
+        success_utts_sample = success_utts.sample(n, replace=False).utterance_id
+        success_utts_sample.to_csv(this_data_path)
+    else:
+        success_utts_sample = pd.read_csv(this_data_path)
+    
+    return success_utts_sample
 
-def 
+
 ##################
 ## TEXT LOADING ##
 ##################
 
+
+def load_model_analysis_dict():
+    
+    """
+    Try to load this model dictionary once at the beginning of the script, as it may take a while to initialize all of the models.
+    """
+    
+    
 
 def load_splits_folder_text(split, base_dir):
     

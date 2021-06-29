@@ -10,6 +10,90 @@ from transformers import BertTokenizer
 
 from utils import transfomers_bert_completions
 
+def get_model_dict():
+    
+    print('Note: This is all using old data from Dr. Meylan for now. Will need to update the model names, as well as the initialization data for the unigram models.') 
+    
+    # The format for the name is:
+    # split name/dataset name/tags/{context width}_context
+    
+    # If it's a unigram model, it's just: split name/dataset name/unigram_{unigram type}
+    
+    # Note all_old and meylan refer to the same split -- meylan means that Dr. Meylan trained the model and it's loaded from those weights.
+    # all_old means that I trained it from Dr. Meylan's data
+    
+    all_model_dict = {
+        'all_old/all_old/no_tags/0_context' : {
+            'title': 'CHILDES BERT no speaker replication, same utt only', 
+            'kwargs': load_models.get_all_data_models(with_tags = False).update({'context_width_in_utts' : 0}),
+           'type' : 'BERT'
+        },
+        'all_old/all_old/with_tags/0_context' : {
+           'title': 'CHILDES BERT, speaker tags, same utt only', 
+           'kwargs': load_models.get_all_data_models(with_tags = True).update({'context_width_in_utts' : 0}),
+           'type' : 'BERT',
+        },
+        'all_old/all_old/no_tags/20_context' : {
+           'title': 'CHILDES BERT no speaker replication, +-20 utts context', 
+           'kwargs': load_models.get_all_data_models(with_tags = True).update({'context_width_in_utts' : 20}),
+           'type' : 'BERT',
+        },
+        'meylan/meylan/no_tags/20_context' : {'title': 'CHILDES BERT, +-20 utts context',
+         'kwargs': {'modelLM': ft1_bertMaskedLM,
+                    'tokenizer': ft1_tokenizer,
+                    'softmax_mask': ft1_softmax_mask,
+                    'context_width_in_utts': 20,
+                    'use_speaker_labels':False
+                   },
+         'type': 'BERT'
+        },
+        'meylan/meylan/no_tags/0_context' : {'title': 'CHILDES BERT, same utt only',
+         'kwargs': {'modelLM': ft1_bertMaskedLM,
+                    'tokenizer': ft1_tokenizer,
+                    'softmax_mask': ft1_softmax_mask,
+                    'context_width_in_utts': 0,
+                    'use_speaker_labels':False
+                   },
+         'type': 'BERT'
+        },
+        'meylan/meylan/no_tags/20_context' : {'title': 'Adult BERT, +-20 utts context',
+        'kwargs': {'modelLM': adult_bertMaskedLM,
+                    'tokenizer': adult_tokenizer,
+                    'softmax_mask': adult_softmax_mask,
+                    'context_width_in_utts': 20,
+                   'use_speaker_labels':False
+                   },
+         'type': 'BERT'
+        },
+        'meylan/meylan/no_tags/0_context' : {'title': 'Adult BERT, same utt only',
+        'kwargs': {'modelLM': adult_bertMaskedLM,
+                    'tokenizer': adult_tokenizer,
+                    'softmax_mask': adult_softmax_mask,
+                    'context_width_in_utts': 0,
+                   'use_speaker_labels':False
+                   },
+         'type': 'BERT'
+        },        
+        'meylan/meylan/unigram_childes' : {'title': 'CHILDES Unigram',
+        'kwargs': {'child_counts_path': 'data/chi_vocab.csv',
+                    'tokenizer': adult_tokenizer,
+                    'softmax_mask': adult_softmax_mask,
+                    'vocab': initial_vocab
+                   },
+         'type': 'unigram'
+        },
+        'meylan/meylan/unigram_flat' : {'title': 'Flat Unigram',
+        'kwargs': {'child_counts_path': None,
+                    'tokenizer': adult_tokenizer,
+                    'softmax_mask': adult_softmax_mask,
+                    'vocab': initial_vocab
+                   },
+         'type': 'unigram'
+        }
+    }
+    
+    return all_model_dict
+
 def get_initial_vocab_info():
     
     # tokenize with the most extensive tokenizer, which is the one used for model #2

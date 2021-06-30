@@ -2,22 +2,25 @@
 # Code to replace run_models_across_time.
 # This is for GPU/tmuxable scripts.
 
+from utils import load_models
 import transfomers_bert_completions as transformers_bert_completions
 
-def successes_across_time_per_model(age, utts, model, all_tokens_phono, model_dict):
+def successes_across_time_per_model(age, utts, model, all_tokens_phono, cmu_dict_root_dir):
     """
     model = a dict of a model like that in the yyy analysis 
     vocab is only invoked for unigram, which correspond to original yyy analysis.
     
-    Unlike original code assume that utts = the sample of utts_with_ages
+    Unlike original code assume that utts = the sample of utts_with_ages, not the whole dataframe
     """
+    
+    initial_vocab, cmu_in_initial_vocab = load_models.get_cmu_dict_info(cmu_dict_root_dir)
     
     print('Running model '+model['title']+'...')
     
-    selected_success_utts = utts.loc[(utts_with_ages.set == 'success') 
+    selected_success_utts = utts.loc[(utts.set == 'success') 
             & (utts_with_ages.year == age)]
     
-    selected_yyy_utts = utts.loc[(utts_with_ages.set == 'failure') 
+    selected_yyy_utts = utts.loc[(utts.set == 'failure') 
             & (utts_with_ages.year == age)]
     
     

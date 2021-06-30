@@ -137,7 +137,7 @@ def write_data_partitions_text(data_pool, split_folder, validation_indices):
     
     train_df[['gloss_with_punct']].to_csv(join(split_folder, 'train.txt'), index=False, header=False)
      
-    print(f'Files written to {this_split_folder}')
+    print(f'Files written to {split_folder}')
     
     return data_pool, train_df, val_df
     

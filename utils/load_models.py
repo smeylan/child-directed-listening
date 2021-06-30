@@ -10,7 +10,7 @@ from transformers import BertTokenizer
 
 from utils import transfomers_bert_completions
 
-def get_model_dict():
+def get_model_dict(root_dir):
     
     print('Note: This is all using old data from Dr. Meylan for now. Will need to update the model names, as well as the initialization data for the unigram models.') 
     
@@ -22,38 +22,42 @@ def get_model_dict():
     # Note all_old and meylan refer to the same split -- meylan means that Dr. Meylan trained the model and it's loaded from those weights.
     # all_old means that I trained it from Dr. Meylan's data
     
+    adult_bertMaskedLM = BertForMaskedLM.from_pretrained('bert-base-uncased')
+    adult_bertMaskedLM.eval()
+    adult_tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+    adult_softmax_mask, adult_vocab = transfomers_bert_completions.get_softmax_mask(adult_tokenizer, cmu_2syl_inchildes.word)
+    
+    # From the original code, initial_vocab is declared with tokenizer from model 2
+    initial_tokenizer = get_meylan_original_model(with_tags = True)['tokenizer']
+    cmu_2syl_inchildes = get_cmu_dict_info(root_dir)
+    
+    _, initial_vocab = transfomers_bert_completions.get_softmax_mask(initial_tokenizer,
+    cmu_2syl_inchildes.word)  
+    
+    
+    
     all_model_dict = {
         'all_old/all_old/no_tags/0_context' : {
             'title': 'CHILDES BERT no speaker replication, same utt only', 
-            'kwargs': load_models.get_all_data_models(with_tags = False).update({'context_width_in_utts' : 0}),
+            'kwargs': get_all_data_models(with_tags = False).update({'context_width_in_utts' : 0}),
            'type' : 'BERT'
         },
         'all_old/all_old/with_tags/0_context' : {
            'title': 'CHILDES BERT, speaker tags, same utt only', 
-           'kwargs': load_models.get_all_data_models(with_tags = True).update({'context_width_in_utts' : 0}),
+           'kwargs': get_all_data_models(with_tags = True).update({'context_width_in_utts' : 0}),
            'type' : 'BERT',
         },
         'all_old/all_old/no_tags/20_context' : {
            'title': 'CHILDES BERT no speaker replication, +-20 utts context', 
-           'kwargs': load_models.get_all_data_models(with_tags = True).update({'context_width_in_utts' : 20}),
+           'kwargs': get_all_data_models(with_tags = True).update({'context_width_in_utts' : 20}),
            'type' : 'BERT',
         },
-        'meylan/meylan/no_tags/20_context' : {'title': 'CHILDES BERT, +-20 utts context',
-         'kwargs': {'modelLM': ft1_bertMaskedLM,
-                    'tokenizer': ft1_tokenizer,
-                    'softmax_mask': ft1_softmax_mask,
-                    'context_width_in_utts': 20,
-                    'use_speaker_labels':False
-                   },
+        'meylan/meylan/no_tags/0_context' : {'title': 'CHILDES BERT, same utt only',
+         'kwargs': get_meylan_original_model(with_tags = False).update({'context_width_in_utts' : 0}),
          'type': 'BERT'
         },
-        'meylan/meylan/no_tags/0_context' : {'title': 'CHILDES BERT, same utt only',
-         'kwargs': {'modelLM': ft1_bertMaskedLM,
-                    'tokenizer': ft1_tokenizer,
-                    'softmax_mask': ft1_softmax_mask,
-                    'context_width_in_utts': 0,
-                    'use_speaker_labels':False
-                   },
+        'all_old/all_old/no_tags/20_context' : {'title': 'CHILDES BERT, +-20 utts context',
+         'kwargs': get_meylan_original_model(with_tags = False).update({'context_width_in_utts' : 20}),
          'type': 'BERT'
         },
         'meylan/meylan/no_tags/20_context' : {'title': 'Adult BERT, +-20 utts context',

@@ -8,6 +8,18 @@ from os.path import join, exists
 import pandas as pd
 import numpy as np
 
+
+def filter_speaker_tags(this_df):
+    """
+    Used for loading appropriate data for the run models across time functions.
+    """
+    filtered_df = this_df[this_df.token != '[cgv]']
+    filtered_df = filtered_df[this_df.token != '[chi]']
+    
+    assert all(' ' not in token for token in this_df.token), "There is a multiword token, check if it has speaker tags."
+    
+    return filtered_df
+
 def gloss_df_augmentation(tokens_df, utt_ids):
     """
     Used for augmenting the utts_with_age dataframe with the joined gloss.

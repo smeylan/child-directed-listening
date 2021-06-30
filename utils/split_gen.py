@@ -122,16 +122,31 @@ def glosses_random_split(unsorted_cleaned_data, val_ratio = None, val_num = None
                                           sample_num)
     
     return validation_idx
+    
 
-
-def write_data_partitions_text(data_pool, split_folder, validation_indices):
+def assign_phase_and_split(data_pool, val_idxs):
     
     data_pool['phase'] = 'train'
-    data_pool.loc[data_pool.transcript_id.isin(validation_indices),
+    data_pool.loc[data_pool.transcript_id.isin(val_idxs),
              'phase'] = 'validation'
     
-    train_df = data_pool.loc[data_pool.phase =='train']
-    val_df = data_pool.loc[data_pool.phase =='validation']
+    this_train_df = data_pool.loc[data_pool.phase =='train']
+    this_val_df = data_pool.loc[data_pool.phase =='validation']
+    
+    return this_train_df, this_val_df, data_pool
+    
+def write_all_tokens_phono_partitions(split_folder, train_df, val_df):
+    train_df.to_csv(split_folder, 'tokens_phono_train.csv')
+    val_df.to_csv(split_folder, 'tokens_phono_val.csv')
+    
+    print(f'All tokens_phono partitions for this split written to {split_folder}/tokens_phono_{phase}') 
+    
+    return train_df, val_df
+    
+
+def write_data_partitions_text(all_data, split_folder, validation_indices):
+    
+    train_df, val_df, all_data = assign_phase_and_split(all_data, validation_indices)
     
     val_df[['gloss_with_punct']].to_csv(join(split_folder, 'validation.txt'), index=False, header=False)
     

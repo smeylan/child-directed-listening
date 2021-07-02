@@ -219,7 +219,7 @@ def exec_split_gen(raw_data, split_name, dataset_name, base_dir = 'data/new_spli
     
     tok_freq, chi_tok_freq = save_vocab(cleaned_utt_glosses, split_name, dataset_name, base_dir)
 
-    train_idxs, val_idxs = determine_split_idxs(cleaned_utt_glosses, 'transcript_id', val_ratio = 0.8)
+    train_idxs, val_idxs = determine_split_idxs(cleaned_utt_glosses, 'transcript_id', val_ratio = 0.2)
     
     
     split_glosses_df, train_df = write_data_partitions_text(cleaned_utt_glosses, this_split_folder, 'train', train_idxs, 'transcript_id')

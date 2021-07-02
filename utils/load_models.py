@@ -24,6 +24,8 @@ def get_model_dict(root_dir):
     # Note all_old and meylan refer to the same split -- meylan means that Dr. Meylan trained the model and it's loaded from those weights.
     # all_old means that I trained it from Dr. Meylan's data
     
+    cmu_2syl_inchildes = get_cmu_dict_info(root_dir)
+    
     adult_bertMaskedLM = BertForMaskedLM.from_pretrained('bert-base-uncased')
     adult_bertMaskedLM.eval()
     adult_tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
@@ -31,7 +33,7 @@ def get_model_dict(root_dir):
     
     # From the original code, initial_vocab is declared with tokenizer from model 2
     initial_tokenizer = get_meylan_original_model(with_tags = True)['tokenizer']
-    cmu_2syl_inchildes = get_cmu_dict_info(root_dir)
+    
     
     _, initial_vocab = transfomers_bert_completions.get_softmax_mask(initial_tokenizer,
     cmu_2syl_inchildes.word)  

@@ -16,18 +16,24 @@ def scripts_get_split_folder(split_type, dataset_name, base_dir = 'data/new_spli
     
     return path
 
+def models_get_split_folder(split_type, dataset_type, with_tags, base_dir = 'data/new_splits'):
+    
+    tags_str = '_with_tags' if with_tags else '_no_tags' # For naming the model folder
+    split_dir = scripts_get_split_folder(split_type, dataset_type, '')
+    return join(base_dir, join('models', join(split_dir, tags_str)))
 
 def get_training_shell_script(split_name, dataset_name, with_tags, om2_user = 'wongn'):
     """
     Make sure you copy the latest, proper data folder to OM2.
     """
-    tags_str = '_with_tags' if with_tags else '_no_tags' # For naming the model folder
+    
     tags_data_str  = '' if with_tags else '_no_tags' # For loading the proper data
     base_dir = f'/om2/user/{om2_user}/childes_run'
     #base_dir = f'./om2/user/{om2_user}/childes_run' # The version with . is to test script on chompsky
     
     this_split_dir = scripts_get_split_folder(split_name, dataset_name, '')
-    this_model_dir = join(base_dir, join('models', join(this_split_dir, tags_str)))
+    this_model_dir = models_get_split_folder(split_name, dataset_name, with_tags, '')
+    
     this_data_dir = join(base_dir, join('data/new_splits', this_split_dir))
     
     if not exists(this_model_dir):

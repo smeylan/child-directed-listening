@@ -15,6 +15,3 @@ def get_beta_search_values(low = 2.5, high = 3.5, num_values = 10, grid = False)
         test_beta_vals = np.arange(low, high, (high - low) / num_values)
     
     return beta_samples
-
-def x():
-    pass

@@ -56,9 +56,20 @@ def bert_completions(text, model, tokenizer, softmax_mask):
   tokens_tensor = torch.tensor([indexed_tokens])
   segments_tensors = torch.tensor([segments_ids])
 
+  # 7/1/21: https://stackoverflow.com/questions/48152674/how-to-check-if-pytorch-is-using-the-gpu
+  
+  if torch.cuda.is_available():
+        tokens_tensor = tokens_tensor.cuda()
+        segments_tensors = segments_tensors.cuda()
+        model = model.cuda()
+
   # Predict all tokens
   with torch.no_grad():
       predictions = model(tokens_tensor, segments_tensors)
+   
+  # 7/1/21: https://stackoverflow.com/questions/48152674/how-to-check-if-pytorch-is-using-the-gpu
+  if torch.cuda.is_available():
+      predictions = predictions.detach().cpu()
 
   probs = softmax(predictions[0, masked_index].data.numpy()[softmax_mask])  
   words = np.array(tokenizer.convert_ids_to_tokens(range(predictions.size()[2])))[softmax_mask]

@@ -14,6 +14,7 @@ def successes_across_time_per_model(age, utts, model, all_tokens_phono, cmu_dict
     """
     
     initial_vocab, cmu_in_initial_vocab = load_models.get_cmu_dict_info(cmu_dict_root_dir)
+    model['type']
     
     print('Running model '+model['title']+'...')
     
@@ -39,10 +40,10 @@ def successes_across_time_per_model(age, utts, model, all_tokens_phono, cmu_dict
 
     if model['type'] == 'BERT':
         posteriors_for_age_interval = transformers_bert_completions.get_posteriors(priors_for_age_interval, 
-            edit_distances_for_age_interval, initial_vocab)
+            edit_distances_for_age_interval, initial_vocab, beta_value = optimal_beta)
     elif model['type'] == 'unigram':
         # special unigram hack
-        posteriors_for_age_interval = transformers_bert_completions.get_posteriors(priors_for_age_interval, edit_distances_for_age_interval, initial_vocab, score_store[-1].bert_token_id)
+        posteriors_for_age_interval = transformers_bert_completions.get_posteriors(priors_for_age_interval, edit_distances_for_age_interval, initial_vocab, score_store[-1].bert_token_id, beta_value = optimal_beta)
 
 
     posteriors_for_age_interval['scores']['model'] = model['title']

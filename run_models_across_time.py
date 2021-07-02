@@ -18,13 +18,16 @@ def load_sample_model_across_time_args(model_name):
     this_utts_save_path = join('eval/new_splits', model_name)
     
     if model_name == 'all/all' or ('meylan/meylan' in model_name) or ('all_old/all_old' in model_name):
-        # From the original split, for replications.
-        # I don't think these actually quite exist -- because the yyy needs to be regenerated, and the original sample was not saved.
-        print('To cross-check this function with the original, you will need to load a cached value into the original yyy code -- and change that code.')
+        # Note that meylan/meylan and all_old/all_old won't actually fully replicate
+        # because original splits are lost for yyy.
         utts_filename = pd.read_csv(join('all/all', ))
         all_tokens_phono_filename = pd.read_csv()
     else if model_name == None:
         utt_filenames
+        
+    eval_data_dict = load_splits.load_eval_data_all(split_name, dataset_name, base_dir) 
+    utts_with_ages = pd.concat([eval_data_dict['success_utts'], eval_data_dict['yyy_utts']])
+    this_tokens_phono = eval_data_dict['']
     
     utts = pd.read_csv(utts_filename)
     tokens_phono = pd.read_csv(all_tokens_phono_filename)
@@ -50,9 +53,7 @@ if __name__ == '__main__':
     
     # Optimize beta on eval split for age, child analyses.
                                     
-    eval_data_dict = load_splits.load_eval_data_all(split_name, dataset_name, base_dir) 
-    utts_with_ages = pd.concat([eval_data_dict['success_utts'], eval_data_dict['yyy_utts']])
-    this_tokens_phono = eval_data_dict['']
+    
     
     # Load the appropriate 
     ages = np.unique(utts_with_ages.year)

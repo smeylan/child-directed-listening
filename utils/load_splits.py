@@ -66,7 +66,7 @@ def load_split_text_path(split, dataset, base_dir):
     # What else is needed?
     
     train_text_path = join(split_gen.get_split_folder(split, dataset, base_dir), 'train.txt')
-    val_text_path = join(split_gen.get_split_folder(split, dataset, base_dir), 'validation.txt')
+    val_text_path = join(split_gen.get_split_folder(split, dataset, base_dir), 'val.txt')
     
     # For the analyses? Think about what is required for yyy analysis.
     
@@ -98,7 +98,30 @@ def load_eval_data_all(split_name, dataset_name, base_dir):
         data_dict[data_name[f]] = pd.read_csv(this_path) if f.endswith('.csv') else pd.read_pickle(this_path)
     
     return data_dict
+
+def write_tagless_txt(orig_file_path):
     
+    # You will need to remove "cgv" and "chi" from the text. How to do this?
+    # you can remove it from the beginning and the end...
+    # Is it OK just to string replace?
     
+    # Remove the speaker tags
+    clean_text = lambda text : text.strip('[CGV] ').strip('[CHI] ')
+            
+    # 6/17: https://stackoverflow.com/questions/10406135/unicodedecodeerror-ascii-codec-cant-decode-byte-0xd1-in-position-2-ordinal
+    
+    new_file_path = orig_file_path.split('.txt')[0] + '_no_tags.txt'
+    
+    all_clean_text = []
+    with open(orig_file_path, 'r', encoding="utf-8") as f:
+        for idx, line in enumerate(f.readlines()):
+            all_clean_text.append(clean_text(line))
+    
+    with open(new_file_path, 'w') as nf:
+        nf.writelines(all_clean_text)
+    
+    print(f'Wrote tagless train/val data to {new_file_path}.')
+
+    return all_clean_text 
     
     

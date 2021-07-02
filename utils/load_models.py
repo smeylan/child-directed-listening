@@ -36,8 +36,7 @@ def get_model_dict(root_dir):
     _, initial_vocab = transfomers_bert_completions.get_softmax_mask(initial_tokenizer,
     cmu_2syl_inchildes.word)  
     
-    
-    
+   
     all_model_dict = {
         'all_old/all_old/no_tags/0_context' : {
             'title': 'CHILDES BERT no speaker replication, same utt only', 

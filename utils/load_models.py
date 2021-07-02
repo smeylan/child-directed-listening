@@ -14,6 +14,8 @@ def get_model_dict(root_dir):
     
     print('Note: This is all using old data from Dr. Meylan for now. Will need to update the model names, as well as the initialization data for the unigram models.') 
     
+    print('Note that if a child model is being run, it must have None passed in as its context argument.')
+    
     # The format for the name is:
     # split name/dataset name/tags/{context width}_context
     

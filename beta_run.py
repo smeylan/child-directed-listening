@@ -40,6 +40,8 @@ def optimize_beta(model_dict, uses_tags, uses_context, split_name, dataset_name,
     # this folder = contains the base directory, then the split, then the dataset name
     
     # Calculated over all of CHILDES (data pool for all/all split).
+    # Note that you need to calculate sample across models on CUDA, not on normal inference.
+    
     this_raw_beta_results = transfomers_bert_completions.sample_across_models(success_utts_sample,
                                                                               data_dict['success_utts'],
                                                                               data_dict['yyy_utts'],

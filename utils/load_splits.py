@@ -7,6 +7,8 @@ from os.path import join, exists
 from utils import split_gen
 import glob
 
+import pandas as pd
+import pickle
 
 def sample_successes(task_name, split_name, dataset_name, data_dir, n = None, regenerate = False):
     """
@@ -49,7 +51,7 @@ def load_model_analysis_dict():
 
 def load_splits_folder_text(split, base_dir):
     
-    folders = glob.glob(base_dir+'/*') # List the child names
+    folders = glob.glob(join(base_dir, split) +'/*') # List the child names
     
     data = {}
     for path in folders:
@@ -90,8 +92,12 @@ def load_eval_data_all(split_name, dataset_name, base_dir):
        'yyy_utts.csv' : 'yyy_utts',
     }
     
-    return {data_name[f] : pd.read_csv(join(this_folder_path, f)) for f in filenames }
-
+    data_dict = {}
+    for f in data_filenames:
+        this_path = join(this_folder_path, f)
+        data_dict[data_name[f]] = pd.read_csv(this_path) if f.endswith('.csv') else pd.read_pickle(this_path)
+    
+    return data_dict
     
     
     

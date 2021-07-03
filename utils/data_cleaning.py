@@ -8,6 +8,7 @@ from os.path import join, exists
 import pandas as pd
 import numpy as np
 
+import config
 
 def filter_speaker_tags(this_df):
     """
@@ -61,7 +62,7 @@ def drop_errors(utt_data):
 
 
 
-def clean_glosses(data, fill_punct_val, verbose = False):
+def clean_glosses(data, fill_punct_val):
         
     punct_for_type = {
     'question':'?',
@@ -76,13 +77,13 @@ def clean_glosses(data, fill_punct_val, verbose = False):
     
     data.gloss = [fix_gloss(x) for x in data.gloss]
     
-    if verbose: print(data['type'].value_counts())
+    if config.verbose: print(data['type'].value_counts())
     
     # Cell 237
     data['punct'] = [punct_for_type[x] if x in punct_for_type else fill_punct_val
                         for x in data.type ]
     
-    if verbose: print('Cell 238', data.iloc[0])
+    if config.verbose: print('Cell 238', data.iloc[0])
         
     # Cell 267
     data['speaker_code_simple'] = ['[CHI]' if x == 'CHI' else '[CGV]'
@@ -96,7 +97,7 @@ def clean_glosses(data, fill_punct_val, verbose = False):
 
 
    
-def prep_utt_glosses(data, fill_punct_val, verbose = False):
+def prep_utt_glosses(data, fill_punct_val, config.verbose = False):
     
     """
     Highest level call for converting and augmenting raw queried data.
@@ -113,16 +114,16 @@ def prep_utt_glosses(data, fill_punct_val, verbose = False):
 
     # Changed to drop xxx and yyy for all of the splits.
     
-    if verbose: print('Cell 232 output', data.shape)
+    if config.verbose: print('Cell 232 output', data.shape)
     
     # Cell 233 in the notebook relative to Dr Meylan's commit
     data = drop_errors(data)
     
-    if verbose: print('Cell 233 output', data.shape)
+    if config.verbose: print('Cell 233 output', data.shape)
         
     data = clean_glosses(data, None)
    
-    if verbose: print('Cell 269', data.head(5).gloss_with_punct)
+    if config.verbose: print('Cell 269', data.head(5).gloss_with_punct)
     
     # Cell 271: This was moved outside of token cleaning because it's needed for the CHI analysis.
     data['tokens'] = [str(x).lower().split(' ') for x in data.gloss]

@@ -11,12 +11,13 @@ import sklearn
 from sklearn import model_selection
 
 from utils import data_cleaning
+import config
 
-SEED = 0
+SEED = config.SEED
 np.random.seed(SEED)
 
 
-def get_age_split_data(raw_data, months = 36):
+def get_age_split_data(raw_data, months = config.age_split):
     
     data = raw_data.dropna(subset = ['target_child_age'])
     
@@ -31,7 +32,7 @@ def get_age_split_data(raw_data, months = 36):
 
     return young_df, old_df
 
-def get_split_folder(split_type, dataset_name, base_dir = 'data/new_splits'):
+def get_split_folder(split_type, dataset_name, base_dir):
    
     path = join(base_dir, join(split_type, dataset_name))
     
@@ -41,7 +42,7 @@ def get_split_folder(split_type, dataset_name, base_dir = 'data/new_splits'):
     return path
 
 
-def get_token_frequencies(raw_data, split_type, dataset_name, data_base_path = 'data/new_splits'):
+def get_token_frequencies(raw_data, split_type, dataset_name):
     
     """
     This is equivalent of Cell 271 - 277
@@ -60,16 +61,14 @@ def get_token_frequencies(raw_data, split_type, dataset_name, data_base_path = '
     token_frequencies = pd.Series(tokens).value_counts().reset_index()
     token_frequencies.columns = ['word','count']
     
-    # Note: The vocab will be different for different splits of the data! Need to include a "dataset_name"
+    print('In get frequencies. Note: The vocab will be different for different splits of the data! Need to include a "dataset_name')
     
-    this_folder = get_split_folder(split_type, dataset_name, data_base_path)
+    this_folder = get_split_folder(split_type, dataset_name, config.data_dir)
     token_frequencies.to_csv(join(this_folder, 'vocab.csv'))
     
-    # Omit in_dict attribute: doesn't seem to be in any of the other notebooks/major py files
-   
-    return token_frequencies # Sort separately in the train/validation split if you want?
+    return token_frequencies 
 
-def get_chi_frequencies(raw_data, split_type, dataset_name, data_base_path = 'data/new_splits'):
+def get_chi_frequencies(raw_data, split_type, dataset_name):
     
     """
     Note: These are frequencies, so it needs to be different per sub-dataset
@@ -79,7 +78,7 @@ def get_chi_frequencies(raw_data, split_type, dataset_name, data_base_path = 'da
     Note: This expects cleaned "utt_glosses" (data) with all errors removed.
     """
     
-    this_folder = get_split_folder(split_type, dataset_name, data_base_path)
+    this_folder = get_split_folder(split_type, dataset_name, config.data_dir)
     
     data = raw_data.copy()
     
@@ -91,7 +90,7 @@ def get_chi_frequencies(raw_data, split_type, dataset_name, data_base_path = 'da
    
     return token_frequencies
     
-def save_vocab(cleaned_glosses, split, dataset, base_dir = 'data/new_splits'):
+def save_vocab(cleaned_glosses, split, dataset):
     """
     
     Highest level call.
@@ -103,8 +102,8 @@ def save_vocab(cleaned_glosses, split, dataset, base_dir = 'data/new_splits'):
     Returns the freq. csv for tokens, child speaker tokens
     """
     
-    tok_freq = get_token_frequencies(cleaned_glosses, split, dataset, base_dir)
-    chi_freq = get_chi_frequencies(cleaned_glosses, split, dataset, base_dir)
+    tok_freq = get_token_frequencies(cleaned_glosses, split, dataset)
+    chi_freq = get_chi_frequencies(cleaned_glosses, split, dataset)
     
     return tok_freq, chi_freq
     
@@ -199,7 +198,7 @@ def split_glosses_shuffle(unsorted_cleaned_data, split_type, dataset_type, split
 # This will perform all of the cleaning, splits, etc.
 # I would just do repetitive cleaning.
 
-def exec_split_gen(raw_data, split_name, dataset_name, base_dir = 'data/new_splits', verbose = False):
+def exec_split_gen(raw_data, split_name, dataset_name):
     
     """
     This should be executed for all and age splits -- child splits are external.
@@ -207,20 +206,19 @@ def exec_split_gen(raw_data, split_name, dataset_name, base_dir = 'data/new_spli
     
     assert split_name in ['all', 'age'], "Unrecognized split type argument. Should be one of 'all' or 'age'. Don't use child with this function."
 
-    if not exists(base_dir):
-        os.makedirs(base_dir)
+    if not exists(config.data_dir):
+        os.makedirs(config.data_dir)
     
-    this_split_folder = get_split_folder(split_name, dataset_name, base_dir)
+    this_split_folder = get_split_folder(split_name, dataset_name, config.data_dir)
     
     print('Beginning split gen call:', split_name, dataset_name)
     
     # Note: yyy uses "." as the default punct val. Splits use "None" as the default punct val.
-    cleaned_utt_glosses = data_cleaning.prep_utt_glosses(raw_data, None, verbose = verbose)
+    cleaned_utt_glosses = data_cleaning.prep_utt_glosses(raw_data, None)
     
-    tok_freq, chi_tok_freq = save_vocab(cleaned_utt_glosses, split_name, dataset_name, base_dir)
+    tok_freq, chi_tok_freq = save_vocab(cleaned_utt_glosses, split_name, dataset_name)
 
-    train_idxs, val_idxs = determine_split_idxs(cleaned_utt_glosses, 'transcript_id', val_ratio = 0.2)
-    
+    train_idxs, val_idxs = determine_split_idxs(cleaned_utt_glosses, 'transcript_id', val_ratio = config.val_ratio)
     
     split_glosses_df, train_df = write_data_partitions_text(cleaned_utt_glosses, this_split_folder, 'train', train_idxs, 'transcript_id')
     split_glosses_df, val_df = write_data_partitions_text(cleaned_utt_glosses, this_split_folder, 'val', val_idxs, 'transcript_id')

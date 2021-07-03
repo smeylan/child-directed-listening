@@ -2,10 +2,43 @@
 # Code to replace run_models_across_time.
 # This is for GPU/tmuxable scripts.
 
-from utils import load_models
+from utils import load_models, load_splits
 import transfomers_bert_completions as transformers_bert_completions
 
-def successes_across_time_per_model(age, utts, model, all_tokens_phono, cmu_dict_root_dir):
+def assemble_across_time_results():
+    
+    """
+    Assemble the "score store" across models that was present in the original function
+        and is used for visualizations.
+    Outer loop is by age.
+    Inner loop is by model, for that pool.
+    Note that different splits have different samples of data.
+    """
+    
+    # First, load the appropriate arguments to call.
+    
+    model_args = []
+    
+    # For now, just append whichever ages are available per model.
+    # Need to be careful when doing visualizations in yyy later.
+    
+    
+    for model_args in config.model_args_set:
+        for use_tags in [True, False]:
+            for context in config.context_list:
+                this_split, this_dataset_name = model_args
+
+                this_sample = load_splits.load_sample_successes('models_across_time', this_split, this_dataset_name) # What if you don't know the n?
+
+                this_beta_folder = load_beta_folder(this_split, this_dataset_name, use_tags, context)
+
+                # Need to retrieve the ages from the sample -- how?
+
+                this_data_path = join(this_beta_folder, 'run_models_across_time_{age}.csv')
+                data_df = pd.read_csv(this_data_path)
+
+    
+def successes_across_time_per_model(age, utts, model, all_tokens_phono):
     """
     model = a dict of a model like that in the yyy analysis 
     vocab is only invoked for unigram, which correspond to original yyy analysis.
@@ -13,8 +46,7 @@ def successes_across_time_per_model(age, utts, model, all_tokens_phono, cmu_dict
     Unlike original code assume that utts = the sample of utts_with_ages, not the whole dataframe
     """
     
-    initial_vocab, cmu_in_initial_vocab = load_models.get_cmu_dict_info(cmu_dict_root_dir)
-    
+    initial_vocab, cmu_in_initial_vocab = load_models.get_cmu_dict_info()
     
     print('Running model '+model['title']+'...')
     

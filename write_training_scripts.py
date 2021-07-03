@@ -4,14 +4,14 @@ import os
 from os.path import join, exists
 
 
-def scripts_get_split_folder(split_type, dataset_name, base_dir = 'data/new_splits'):
+def scripts_get_split_folder(split_type, dataset_name, gen_folder = True, base_dir = 'data/new_splits'):
     """
     The same function as in split_gen. This is copied here to prevent having two versions of the same split_gen file.
     """
    
     path = join(base_dir, join(split_type, dataset_name))
     
-    if not exists(path):
+    if gen_folder and (not exists(path)):
         os.makedirs(path)
     
     return path
@@ -19,7 +19,7 @@ def scripts_get_split_folder(split_type, dataset_name, base_dir = 'data/new_spli
 def models_get_split_folder(split_type, dataset_type, with_tags, base_dir = 'data/new_splits'):
     
     tags_str = '_with_tags' if with_tags else '_no_tags' # For naming the model folder
-    split_dir = scripts_get_split_folder(split_type, dataset_type, '')
+    split_dir = scripts_get_split_folder(split_type, dataset_type, gen_folder = False, base_dir = '')
     return join(base_dir, join('models', join(split_dir, tags_str)))
 
 def get_training_shell_script(split_name, dataset_name, with_tags, om2_user = 'wongn'):

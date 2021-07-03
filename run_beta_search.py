@@ -2,9 +2,9 @@
 import os
 from os.path import join, exists
 from utils import load_splits, load_models
-from utils_model_sampling import beta_utils
+from utils_model_sampling import beta_utils, sample_across_models
 
-def optimize_beta(model_dict, uses_tags, uses_context, split_name, dataset_name, data_dir, grid_search = False):
+def optimize_beta(split_name, dataset_name, model_dict, data_dir, grid_search = False):
     
     """
     For now, specify the model separately from the split_name/dataset_name.
@@ -12,8 +12,6 @@ def optimize_beta(model_dict, uses_tags, uses_context, split_name, dataset_name,
     
     model_dict = the dictionary entry as specified in yyy
     """
-     
-    model = model_dict['kwargs']['modelLM']
     this_folder = split_gen.get_split_folder(split_name, dataset_name, data_dir)
     
     success_utts_sample = load_splits.sample_successes('beta', split_name, dataset_name, data_dir)
@@ -32,15 +30,14 @@ def optimize_beta(model_dict, uses_tags, uses_context, split_name, dataset_name,
     
     # Calculated over all of CHILDES (data pool for all/all split).
     # Internally uses GPU if available.
+    # speaker tags handled internally in the transformers bert completions file.
     
-    # Need to remove speaker tags from?
-    this_raw_beta_results = transfomers_bert_completions.sample_across_models(success_utts_sample,
-                                                                              data_dict['success_utts'],
-                                                                              data_dict['yyy_utts'],
-                                                                              model,
-                                                                              initial_vocab,
-                                                                              cmu_in_initial_vocab,
-                                                                              beta_values = beta_sample)
+    # Only works for now on BERT models. Need to figure out the unigram stuff afterwards.
+    this_raw_beta_results = sample_across_models.sample_across_models(success_utts_sample,
+                                                                      model,
+                                                                      data_dict,
+                                                                      beta_sample,
+                                                                      './')
     
     this_beta_results_surp = this_raw_beta_results.groupby(['beta_value']).posterior_surprisal.agg(lambda x: np.mean(-1 * np.log(x))
 ).reset_index()
@@ -74,31 +71,30 @@ if __name__ == '__main__':
     
     regenerate = False
     data_dir_base = 'eval/new_splits'
-    # This is where the evaluation data is found.
-    
-    # Be careful of this! Because the 'all' split currently is not the same for the two models.
-    # For reproducibility purposes, redirect loading to all_old.
-    
+    # This is where the evaluation data is found.    
     # Consider using argparse + parallel jobs instead.
     
     which_args = [('all', 'all'), ('age', 'old'), ('age', 'young')]
     
-    this_split = 'all_old'
-    this_dataset_name = 'all_old'
-    use_tags = False
-    use_context = False
+    this_model_args = {
+        'split' : 'all_debug',
+        'dataset' : 'all_debug', 
+        'use_tags' : False,
+        'context_width' : 0,
+    }
     
-    tags_str = f"{'with' if use_tags else 'no'}_tags"
-    context_str = f"{20 if use_context else 0}_context" 
+    this_use_tags = this_model_args['use_tags']
+    tags_str = f"{'with' if this_use_tags else 'no'}_tags"
+    context_str = f"{this_model_args['context_width']}_context" 
         
-    this_utts_sample = load_splits.sample_successes('beta', this_split, this_dataset_name, data_dir_base, n = 5, regenerate = False)
+    this_utts_sample = load_splits.sample_successes('beta', this_model_args['split'], this_model_args['dataset'], data_dir_base, n = 5, regenerate = False)
     this_beta_values_sample = beta_utils.get_beta_search_values(num_values = 2) # For now, because you are just getting code to run.
     
     # This is currently only designed for querying BERT models -- generalize this later.
-    query_model_str = f'{this_split}/{this_dataset_name}/{tags_str}/{context_str}'
+    query_model_str = f"{this_model_args['split']}/{this_model_args['dataset']}/{tags_str}/{context_str}"
     all_models = load_models.get_model_dict('./')[query_model_str] # This is probably going to be slow, optimize later
     
-    raw_results, beta_results = optimize_beta(this_model_dict, use_tags, use_context,
+    raw_results, beta_results = optimize_beta(this_model_dict, this_model_args['use_tags'], use_context,
                                               this_split, this_dataset_name, data_dir_base)
     
     print(f'Computations complete for: {query_model_str}')

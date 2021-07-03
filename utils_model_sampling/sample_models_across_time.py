@@ -14,7 +14,7 @@ def successes_across_time_per_model(age, utts, model, all_tokens_phono, cmu_dict
     """
     
     initial_vocab, cmu_in_initial_vocab = load_models.get_cmu_dict_info(cmu_dict_root_dir)
-    model['type']
+    
     
     print('Running model '+model['title']+'...')
     

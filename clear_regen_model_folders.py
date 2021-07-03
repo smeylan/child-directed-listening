@@ -15,7 +15,7 @@ if __name__ == '__main__':
         for has_tags in [True, False]:
             
             t_split, t_dataset = split_args
-            this_model_dir = write_training_scripts.models_get_split_folder(t_split, t_dataset, has_tags, '')
+            this_model_dir = write_training_scripts.models_get_split_folder(t_split, t_dataset, has_tags, base_dir)
             
             if exists(this_model_dir):
                 print(f'Clearing folder {this_model_dir}')

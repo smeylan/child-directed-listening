@@ -8,13 +8,9 @@ import transformers
 from pytorch_pretrained_bert import BertForMaskedLM
 from transformers import BertTokenizer
 
-from utils import transfomers_bert_completions
+from utils import transfomers_bert_completions, split_gen
 
 def get_model_dict(root_dir):
-    
-    print('Note: This is all using old data from Dr. Meylan for now. Will need to update the model names, as well as the initialization data for the unigram models.') 
-    
-    print('Note that if a child model is being run, it must have None passed in as its context argument.')
     
     # The format for the name is:
     # split name/dataset name/tags/{context width}_context
@@ -32,74 +28,71 @@ def get_model_dict(root_dir):
     adult_softmax_mask, adult_vocab = transfomers_bert_completions.get_softmax_mask(adult_tokenizer, cmu_2syl_inchildes.word)
     
     # From the original code, initial_vocab is declared with tokenizer from model 2
-    initial_tokenizer = get_meylan_original_model(with_tags = True)['tokenizer']
+    # You should change this to be latest code eventually.
+    print('Change the initial tokenizer to be based on latest trained models, eventually.')
+    initial_tokenizer = get_meylan_original_model(with_tags = True,
+                                                 root_dir = root_dir)['tokenizer']
     
     
     _, initial_vocab = transfomers_bert_completions.get_softmax_mask(initial_tokenizer,
     cmu_2syl_inchildes.word)  
     
-   
-    all_model_dict = {
-        'all_old/all_old/no_tags/0_context' : {
-            'title': 'CHILDES BERT no speaker replication, same utt only', 
-            'kwargs': get_all_data_models(with_tags = False).update({'context_width_in_utts' : 0}),
-           'type' : 'BERT'
-        },
-        'all_old/all_old/with_tags/0_context' : {
-           'title': 'CHILDES BERT, speaker tags, same utt only', 
-           'kwargs': get_all_data_models(with_tags = True).update({'context_width_in_utts' : 0}),
-           'type' : 'BERT',
-        },
-        'all_old/all_old/no_tags/20_context' : {
-           'title': 'CHILDES BERT no speaker replication, +-20 utts context', 
-           'kwargs': get_all_data_models(with_tags = True).update({'context_width_in_utts' : 20}),
-           'type' : 'BERT',
-        },
-        'meylan/meylan/no_tags/0_context' : {'title': 'CHILDES BERT, same utt only',
-         'kwargs': get_meylan_original_model(with_tags = False).update({'context_width_in_utts' : 0}),
-         'type': 'BERT'
-        },
-        'all_old/all_old/no_tags/20_context' : {'title': 'CHILDES BERT, +-20 utts context',
-         'kwargs': get_meylan_original_model(with_tags = False).update({'context_width_in_utts' : 20}),
-         'type': 'BERT'
-        },
-        'meylan/meylan/no_tags/20_context' : {'title': 'Adult BERT, +-20 utts context',
-        'kwargs': {'modelLM': adult_bertMaskedLM,
-                    'tokenizer': adult_tokenizer,
-                    'softmax_mask': adult_softmax_mask,
-                    'context_width_in_utts': 20,
-                   'use_speaker_labels':False
-                   },
-         'type': 'BERT'
-        },
-        'meylan/meylan/no_tags/0_context' : {'title': 'Adult BERT, same utt only',
-        'kwargs': {'modelLM': adult_bertMaskedLM,
-                    'tokenizer': adult_tokenizer,
-                    'softmax_mask': adult_softmax_mask,
-                    'context_width_in_utts': 0,
-                   'use_speaker_labels':False
-                   },
-         'type': 'BERT'
-        },        
-        'meylan/meylan/unigram_childes' : {'title': 'CHILDES Unigram',
-        'kwargs': {'child_counts_path': 'data/chi_vocab.csv',
-                    'tokenizer': adult_tokenizer,
-                    'softmax_mask': adult_softmax_mask,
-                    'vocab': initial_vocab
-                   },
-         'type': 'unigram'
-        },
-        'meylan/meylan/unigram_flat' : {'title': 'Flat Unigram',
-        'kwargs': {'child_counts_path': None,
-                    'tokenizer': adult_tokenizer,
-                    'softmax_mask': adult_softmax_mask,
-                    'vocab': initial_vocab
-                   },
-         'type': 'unigram'
-        }
+    # Anything marked all_debug is for development purposes only -- it's me putting together
+    # the right file types to develop the loading code and such.
+    
+    # Order: split name, dataset name, with tags
+    args = [('all_debug', 'all_debug', True)] 
+    
+    titles = {
+        'all_debug/all_debug/with_tags/0_context' : 'CHILDES BERT debug, same utt only -- debug',
+        'all_debug/all_debug/with_tags/20_context' : 'CHILDES BERT debug, +-20 utts context -- debug'
     }
     
+    all_model_dict = {}
+    
+    for arg_set in args:
+        for context_width in [0, 20]:
+            split, dataset, tags = arg_set
+            tag_str = 'with_tags' if tags else 'no_tags'
+            model_id = '/'.join([split, dataset, tag_str, f'{context_width}_context'])
+            all_model_dict[model_id] = {
+                'title' : titles[model_id],
+                'kwargs' : get_model_from_split(split, dataset,
+                                                with_tags = tags, 
+                                                base_dir = root_dir).update({'context_width_in_utts' : context_width}),
+                'type' : 'BERT',
+            }
+            
     return all_model_dict
+
+#         'meylan/meylan/no_tags/0_context' : {'title': 'CHILDES BERT, same utt only',
+#          'kwargs': get_meylan_original_model(with_tags = False).update({'context_width_in_utts' : 0}),
+#          'type': 'BERT'
+#         },
+#         'meylan/meylan/no_tags/20_context' : {'title': 'CHILDES BERT, same utt only',
+#          'kwargs': get_meylan_original_model(with_tags = False).update({'context_width_in_utts' : 20}),
+#          'type': 'BERT'
+#         }, 
+        # You will need to fix this to be on the train.py only? If vocab == the frequency of the vocab words.
+#         'meylan/meylan/unigram_childes' : {'title': 'CHILDES Unigram',
+#         'kwargs': {'child_counts_path': 'data/chi_vocab.csv',
+#                     'tokenizer': adult_tokenizer,
+#                     'softmax_mask': adult_softmax_mask,
+#                     'vocab': initial_vocab
+#                    },
+#          'type': 'unigram'
+#         },
+#         'meylan/meylan/unigram_flat' : {'title': 'Flat Unigram',
+#         'kwargs': {'child_counts_path': None,
+#                     'tokenizer': adult_tokenizer,
+#                     'softmax_mask': adult_softmax_mask,
+#                     'vocab': initial_vocab
+#                    },
+#          'type': 'unigram'
+#         }
+#    }
+    
+
 
 def get_initial_vocab_info():
     
@@ -114,12 +107,26 @@ def get_initial_vocab_info():
 
     return initial_vocab, cmu_in_initial_vocab
 
-def get_model(model_path, with_tags, root_dir):
+
+def get_model_from_split(split, dataset, with_tags, base_dir = '/home/nwong/chompsky/childes/child_listening_continuation/child-directed-listening'):
+    """
+    For getting models trained on OM2.
+    """
+    
+    tag_folder = 'with_tags' if with_tags else 'no_tags'
+    this_path = join(split_gen.get_split_folder('all_debug', 'all_debug', join(base_dir, 'models/new_splits')), tag_folder)
+    
+    return get_model_from_path(this_path, with_tags, base_dir)
+    
+    
+def get_model_from_path(model_path, with_tags, root_dir):
     
     # 6/21/21 Naming convention and general code from Dr. Meylan's original yyy code 
     
     word_info_all = get_cmu_dict_info(root_dir)
     word_info = word_info_all.word 
+    
+    print(model_path)
     model = BertForMaskedLM.from_pretrained(model_path)
     
     model.eval()
@@ -127,24 +134,7 @@ def get_model(model_path, with_tags, root_dir):
     softmax_mask, vocab = transfomers_bert_completions.get_softmax_mask(tokenizer, word_info)
     
     return {'modelLM' : model, 'tokenizer' : tokenizer, 'softmax_mask' : softmax_mask, 'vocab' : vocab, 'use_speaker_labels' : with_tags }
-    
-    
-def get_all_data_models(with_tags, root_dir):
-    
-    """
-    Note: no_tags is the replication of Dr. Meylan's model_output 
-    """
-    
-    # Load from local paths
-    
-    tag_type = 'no_tags' if not with_tags else 'with_tags'
-    path = join(root_dir, join(join('models', 'meylan_model_output'), tag_type))
-    
-    # These are actually my replications of Dr. Meylan's original models
-    # -- Dr. Meylan's models are located in "model_output" and "model_output2"
-    
-    return get_model(path, with_tags, root_dir)
-    
+ 
     
 def get_meylan_original_model(with_tags, root_dir):
     
@@ -153,7 +143,7 @@ def get_meylan_original_model(with_tags, root_dir):
     
     model_name = '' if not with_tags else '2'
     model_path = join(root_dir, join('models', f'model_output{model_name}'))
-    return get_model(model_path, with_tags, root_dir)
+    return get_model_from_path(model_path, with_tags, root_dir)
 
 
 def get_cmu_dict_info(root_dir):
@@ -166,5 +156,4 @@ def get_cmu_dict_info(root_dir):
 
 if __name__ == '__main__':
     
-    get_all_data_models(False)
-    get_all_data_models(True)
+    pass

@@ -15,7 +15,7 @@ def optimize_beta(split_name, dataset_name, model_dict):
     model_dict = the dictionary entry as specified in yyy
     """
     
-    success_utts_sample = load_splits.sample_successes('beta', split_name, dataset_name)
+    success_utts_sample = load_splits.load_sample_successes('beta', split_name, dataset_name)
     beta_sample = beta_utils.get_beta_search_values()
     
     # Load the success utts/yyy utts information
@@ -35,7 +35,12 @@ def optimize_beta(split_name, dataset_name, model_dict):
     # speaker tags handled internally in the transformers bert completions file.
     
     # Only works for now on BERT models. Need to figure out the unigram stuff afterwards.
-    this_raw_beta_results = sample_across_models.sample_across_models(success_utts_sample,
+    
+    success_utts_sample = load_sample_successes('beta', split_name, dataset_name)
+    yyy_utts_sample = load_sample_yyy('beta', split_name, dataset_name)
+    
+    total_sample = pd.concat([success_utts_sample, yyy_utts_sample])
+    this_raw_beta_results = sample_across_models.sample_across_models(total_sample,
                                                                       model_dict,
                                                                       data_dict,
                                                                       beta_sample)
@@ -93,8 +98,10 @@ if __name__ == '__main__':
     
     # This is currently only designed for querying BERT models -- generalize this later.
     query_model_str = f"{this_model_args['split']}/{this_model_args['dataset']}/{tags_str}/{context_str}"
-    this_model_dict = load_models.get_model_dict('./')[query_model_str] # This is probably going to be slow, optimize later
+    this_model_dict = load_models.get_model_dict()[query_model_str] # This is probably going to be slow, optimize later
     
     raw_results, beta_results = optimize_beta(this_model_args['split'], this_model_args['dataset'], this_model_dict)
     
     print(f'Computations complete for: {query_model_str}')
+    
+    

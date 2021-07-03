@@ -97,7 +97,7 @@ def clean_glosses(data, fill_punct_val):
 
 
    
-def prep_utt_glosses(data, fill_punct_val, config.verbose = False):
+def prep_utt_glosses(data, fill_punct_val):
     
     """
     Highest level call for converting and augmenting raw queried data.

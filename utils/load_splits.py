@@ -18,37 +18,43 @@ def get_n(task):
     n = config.n_beta if task == 'beta' else config.n_across_time
     return n
 
-def get_sample_successes_path(task_name, split_name, dataset_name):
+def get_sample_path(data_type, task_name, split_name, dataset_name):
     
     n = get_n(task_name)
     
+    assert data_type in ['success', 'yyy'], "Invalid data type requested of sample path: choose one of {success, yyy}."
+    
     this_data_folder = split_gen.get_split_folder(split_name, dataset_name, config.eval_dir)
-    success_utts = pd.read_csv(join(this_data_folder, 'success_utts.csv'))
-    this_data_path = join(this_data_folder, f'success_utts_{task_name}_{n}.csv')
+    success_utts = pd.read_csv(join(this_data_folder, f'{data_type}_utts.csv'))
+    this_data_path = join(this_data_folder, f'{data_type}_utts_{task_name}_{n}.csv')
+    
+    return this_data_path
     
 
-def sample_successes(task, split, dataset):
+# You didn't pass in the success utts? -- you need to load accordingly.
+def sample_successes_yyy(pool, task, split, dataset, utts_pool):
     """
     task_name = designates the cached value to use for optimizations.
         The cache should be different for beta optimization and run_models_across_time.
     """
     
     n = get_n(task)
-    this_data_path = get_sample_successes_path(task, split, dataset, n)
+    this_data_path = get_sample_path(pool, task, split, dataset)
     
-    if config.regenerate or not exists(this_data_path):
-        # Need to sample the successes again and save them.
-        success_utts_sample = success_utts.sample(n, replace=False).utterance_id
-        success_utts_sample.to_csv(this_data_path)
-    else:
-        success_utts_sample = pd.read_csv(this_data_path)
+    # Need to sample the successes again and save them.
+    print(f"Resampling for: {pool}, {task}, {split}, {dataset}")
+    sample = utts_pool.sample(n, replace=False).utterance_id
+    sample.to_csv(this_data_path)
     
-    return success_utts_sample
+    return sample
 
 def load_sample_successes(task, split, dataset):
+    this_path = get_sample_path('success', task, split, dataset)
+    return pd.read_csv(this_path)
+
+def load_sample_yyy(task, split, dataset):
     
-    this_path = get_sample_successes_path(task, split, dataset)
-    
+    this_path = get_sample_path('yyy', task, split, dataset)
     return pd.read_csv(this_path)
 
 

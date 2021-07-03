@@ -7,7 +7,7 @@ import transformers
 from pytorch_pretrained_bert import BertForMaskedLM
 from transformers import BertTokenizer
 
-from utils import transfomers_bert_completions, split_gen
+from utils import transformers_bert_completions, split_gen
 import config
 
 
@@ -18,7 +18,7 @@ def get_model_id(split_name, dataset_name, with_tags, context_width):
     return model_id
 
 def query_model_title(split, dataset, is_tags, context_num):
-    return config.get_model_titles()[get_model_id(split, dataset, is_tags, context_num)]
+    return config.model_titles[get_model_id(split, dataset, is_tags, context_num)]
     
     
 def get_model_dict():
@@ -36,7 +36,7 @@ def get_model_dict():
     adult_bertMaskedLM = BertForMaskedLM.from_pretrained('bert-base-uncased')
     adult_bertMaskedLM.eval()
     adult_tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-    adult_softmax_mask, adult_vocab = transfomers_bert_completions.get_softmax_mask(adult_tokenizer, cmu_2syl_inchildes.word)
+    adult_softmax_mask, adult_vocab = transformers_bert_completions.get_softmax_mask(adult_tokenizer, cmu_2syl_inchildes.word)
     
     # From the original code, initial_vocab is declared with tokenizer from model 2
     # You should change this to be latest code eventually.
@@ -44,7 +44,7 @@ def get_model_dict():
     initial_tokenizer = get_meylan_original_model(with_tags = True)['tokenizer']
     
     
-    _, initial_vocab = transfomers_bert_completions.get_softmax_mask(initial_tokenizer,
+    _, initial_vocab = transformers_bert_completions.get_softmax_mask(initial_tokenizer,
     cmu_2syl_inchildes.word)  
     
     # Anything marked all_debug is for development purposes only -- it's me putting together
@@ -53,8 +53,6 @@ def get_model_dict():
     # Order: split name, dataset name, with tags
     args = [('all_debug', 'all_debug', True)]  # Need to change this to be a dynamic query later.
     
-    titles = config.get_model_titles()
-    
     all_model_dict = {}
     
     for arg_set in args:
@@ -62,7 +60,7 @@ def get_model_dict():
             split, dataset, tags = arg_set
             model_id = get_model_id(split, dataset, tags, context_width)
             all_model_dict[model_id] = {
-                'title' : titles[model_id],
+                'title' : config.model_titles[model_id],
                 'kwargs' : get_model_from_split(split, dataset,
                                                 with_tags = tags),
                 'type' : 'BERT',
@@ -110,7 +108,7 @@ def get_initial_vocab_info():
     
     initial_tokenizer.add_tokens(['yyy','xxx']) #must maintain xxx and yyy for alignment,
     # otherwise, BERT tokenizer will try to separate these into x #x and #x and y #y #y
-    inital_vocab_mask, initial_vocab = transfomers_bert_completions.get_softmax_mask(initial_tokenizer,
+    inital_vocab_mask, initial_vocab = transformers_bert_completions.get_softmax_mask(initial_tokenizer,
         cmu_2syl_inchildes.word)
     
     cmu_in_initial_vocab = cmu_2syl_inchildes.loc[cmu_2syl_inchildes.word.isin(initial_vocab)]
@@ -138,9 +136,9 @@ def get_model_from_path(model_path, with_tags):
     
     model.eval()
     tokenizer = BertTokenizer.from_pretrained(model_path)
-    softmax_mask, vocab = transfomers_bert_completions.get_softmax_mask(tokenizer, word_info)
+    softmax_mask, vocab = transformers_bert_completions.get_softmax_mask(tokenizer, word_info)
     
-    return {'modelLM' : model, 'tokenizer' : tokenizer, 'softmax_mask' : softmax_mask, 'vocab' : vocab, 'use_speaker_labels' : with_tags }
+    return {'modelLM' : model, 'tokenizer' : tokenizer, 'softmax_mask' : softmax_mask, 'use_speaker_labels' : with_tags }
  
     
 def get_meylan_original_model(with_tags):

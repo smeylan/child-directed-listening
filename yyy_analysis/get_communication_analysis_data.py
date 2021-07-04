@@ -15,8 +15,8 @@ import scipy.stats
 import copy
 from string import punctuation
 
-from util import load_models
-import transfomers_bert_completions # Check if this import is possible...
+from utils import load_models
+import config
 
 def count_transmission_errors(utt_vector, error_codes):
     return(np.sum([x in error_codes for x in  utt_vector]))
@@ -46,7 +46,7 @@ def get_communication_failures_data(verbose = False):
     and corpus_id = '+str(pvd_idx) ,
         db_version = "2020.1")
     
-    if verbose:
+    if config.verbose:
         print(phono_glosses.corpus_name.value_counts())
         print()
         print(phono_glosses.loc[phono_glosses.gloss == 'xxx'].actual_phonology.value_counts())
@@ -67,12 +67,12 @@ def get_communication_failures_data(verbose = False):
 
     yyy_utts = failures_per_utt.loc[(failures_per_utt.num_xxx == 0) &  (failures_per_utt.num_yyy == 1)]
     
-    if verbose:
+    if config.verbose:
         print(yyy_utts.shape)
         
     success_utts = failures_per_utt.loc[(failures_per_utt.num_xxx == 0) &  (failures_per_utt.num_yyy == 0)]
     
-    if verbose:
+    if config.verbose:
         print(success_utts.shape)
     
     tokens_from_errorless_utts = chi_phono.loc[chi_phono.utterance_id.isin(success_utts.utterance_id)]
@@ -81,14 +81,14 @@ def get_communication_failures_data(verbose = False):
     tokens_from_errorless_utts = tokens_from_errorless_utts.loc[~(tokens_from_errorless_utts.actual_phonology.isin(excludes) |
         tokens_from_errorless_utts.model_phonology.isin(excludes))]
     
-    if verbose:
+    if config.verbose:
         print(tokens_from_errorless_utts.shape)
         print()
         print(tokens_from_errorless_utts.actual_phonology)
         
     chi_phono = chi_phono.loc[chi_phono.gloss != "xxx"] # Part of Section 2 but the last place chi_phono is edited.
     
-    if verbose: print(chi_phono.shape)
+    if config.verbose: print(chi_phono.shape)
     
     return chi_phono
 

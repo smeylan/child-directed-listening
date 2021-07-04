@@ -5,6 +5,62 @@
 from utils import load_models
 import transfomers_bert_completions as transformers_bert_completions
 
+from collections import defaultdict
+
+def assemble_across_time_results():
+    
+    """
+    Assemble the "score store" across models that was present in the original function
+        and is used for visualizations.
+    Outer loop is by age.
+    Inner loop is by model, for that pool.
+    Note that different splits have different samples of data.
+    """
+    
+    model_args = [('debug_all', 'debug_all')]
+    
+    # For now, analyze whichever ages are available in the sample.
+    # Need to be careful when doing visualizations in yyy later.
+    
+    # First, access each pool for their samples
+    
+    age2models = defaultdict(list)
+    
+    for split, dataset in model_args:
+        this_sample_pool = load_sample_successes('models_across_time', split, dataset)
+        this_ages = np.unique(this_sample_pool.age)
+        age2models[age].append((split, dataset)) # Not sure if age is a float or int, be careful
+    
+    all_ages = sorted(list(age2models.keys()))
+    
+    
+    # Then, sort all of the model calls by age
+    # Age -> model -> scores nesting
+    
+    score_store = []
+    
+    for age in all_ages:
+        for model_args in config.model_args_set:
+            
+            if model_args not in age2models[age]: pass
+            
+            for use_tags in [True, False]:
+                for context in config.context_list:
+
+                    this_split, this_dataset_name = model_args
+
+                    this_sample = load_splits.load_sample_successes('models_across_time', this_split, this_dataset_name)
+
+                    this_beta_folder = load_beta_folder(this_split, this_dataset_name, use_tags, context)
+
+                    # Need to retrieve the ages from the sample -- how?
+
+                    this_data_path = join(this_beta_folder, 'run_models_across_time_{age}.csv')
+                    data_df = pd.read_csv(this_data_path)
+                    score_store.append(data_df)
+    
+    return score_store
+
 def successes_across_time_per_model(age, utts, model, all_tokens_phono):
     """
     model = a dict of a model like that in the yyy analysis 

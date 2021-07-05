@@ -1,6 +1,8 @@
 
 import copy
-from utils import load_models, transformers_bert_completions
+import pandas as pd
+
+from utils import load_models, transformers_bert_completions, unigram
 
 def sample_across_models(utterance_ids, model, eval_data_dict, beta_values):
     '''
@@ -27,7 +29,7 @@ def sample_across_models(utterance_ids, model, eval_data_dict, beta_values):
     initial_vocab, cmu_in_initial_vocab = load_models.get_initial_vocab_info()
 
     print('Running model '+model['title']+'...')
-
+    
     selected_success_utts = success_utts.loc[success_utts.utterance_id.isin(utterance_ids)]
     selected_yyy_utts = yyy_utts.loc[yyy_utts.utterance_id.isin(utterance_ids)] 
 
@@ -45,6 +47,8 @@ def sample_across_models(utterance_ids, model, eval_data_dict, beta_values):
     edit_distances_for_age_interval = transformers_bert_completions.get_edit_distance_matrix(all_tokens_phono, 
         priors_for_age_interval, initial_vocab, cmu_in_initial_vocab)         
 
+    score_store_single_model = []
+    
     for beta_value in beta_values:
 
         # get the posteriors        
@@ -53,8 +57,17 @@ def sample_across_models(utterance_ids, model, eval_data_dict, beta_values):
                 edit_distances_for_age_interval, initial_vocab, None, beta_value)
 
         elif model['type'] == 'unigram':
-            assert False, "Need to re-implement this by figuring out what the meaning of 'bert token id' is."
+            # special unigram hack
+            this_bert_token_ids = unigram.get_sample_bert_token_ids('beta')
+            
+            posteriors_for_age_interval = transformers_bert_completions.get_posteriors(priors_for_age_interval, edit_distances_for_age_interval, 
+                initial_vocab, this_bert_token_ids, beta_value)
+            print('If possible compare the bert_token_id in sample_across_models to the bert_token_id in one of the other scores sets from bert.')
+            
         posteriors_for_age_interval['scores']['beta_value'] = beta_value
         posteriors_for_age_interval['scores']['model'] = model['title']
     
-    return copy.deepcopy(posteriors_for_age_interval['scores'])
+        score_store_single_model.append(copy.deepcopy(posteriors_for_age_interval['scores']))
+        
+    all_scores = pd.concat(score_store_single_model)
+    return all_scores 

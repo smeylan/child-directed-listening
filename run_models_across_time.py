@@ -36,10 +36,9 @@ def call_single_across_time_model(this_split, this_dataset_name, is_tags, contex
     # Load the optimal beta
     optimal_beta = beta_utils.get_optimal_beta_value(this_split, this_dataset_name, this_model_dict)
     
-    for age in ages: # For which ages?
-        # Need to think about tags/ no tags
-        this_scores = successes_across_time_per_model(age, utts, this_model_dict, tokens, root_dir, beta_value = optimal_beta)
+    for age in ages:
         
+        this_scores = successes_across_time_per_model(age, utts, this_model_dict, tokens, root_dir, beta_value = optimal_beta)
         beta_folder = load_beta_folder(this_split, this_dataset_name, this_model_dict['kwargs']['use_speaker_labels'], this_model_dict['kwargs']['context_width_in_utts'])
         
         this_scores.to_csv(join(beta_folder, 'run_models_across_time_{age}.csv')) # Need to assemble via model, then age later.

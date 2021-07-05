@@ -4,7 +4,7 @@
 import os
 from os.path import join, exists
  
-from utils import split_gen
+from utils import split_gen, load_csvs
 import glob
 
 import pandas as pd
@@ -25,7 +25,7 @@ def get_sample_path(data_type, task_name, split_name, dataset_name):
     assert data_type in ['success', 'yyy'], "Invalid data type requested of sample path: choose one of {success, yyy}."
     
     this_data_folder = split_gen.get_split_folder(split_name, dataset_name, config.eval_dir)
-    success_utts = pd.read_csv(join(this_data_folder, f'{data_type}_utts.csv'))
+    success_utts = load_csvs.load_csv_with_lists(join(this_data_folder, f'{data_type}_utts.csv'))
     this_data_path = join(this_data_folder, f'{data_type}_utts_{task_name}_{n}.csv')
     
     return this_data_path
@@ -50,12 +50,12 @@ def sample_successes_yyy(pool, task, split, dataset, utts_pool):
 
 def load_sample_successes(task, split, dataset):
     this_path = get_sample_path('success', task, split, dataset)
-    return pd.read_csv(this_path)
+    return load_csvs.load_csv_with_lists(this_path)
 
 def load_sample_yyy(task, split, dataset):
     
     this_path = get_sample_path('yyy', task, split, dataset)
-    return pd.read_csv(this_path)
+    return load_csvs.load_csv_with_lists(this_path)
 
 
 ##################
@@ -107,7 +107,7 @@ def load_eval_data_all(split_name, dataset_name):
     
     for f in data_filenames:
         this_path = join(this_folder_path, f)
-        data_dict[data_name[f]] = pd.read_csv(this_path) if f.endswith('.csv') else pd.read_pickle(this_path)
+        data_dict[data_name[f]] = load_csvs.load_csv_with_lists(this_path) if f.endswith('.csv') else pd.read_pickle(this_path)
     
     return data_dict
     

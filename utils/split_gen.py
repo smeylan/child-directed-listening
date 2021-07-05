@@ -41,71 +41,45 @@ def get_split_folder(split_type, dataset_name, base_dir):
     
     return path
 
+# Removed 'vocab.csv' because it isn't used in latest run_mlm.py code.
 
-def get_token_frequencies(raw_data, split_type, dataset_name):
-    
-    """
-    This is equivalent of Cell 271 - 277
-    From Dr. Meylan: get the unigram counts for tokens and remap any problematic ones
-    
-    split_type = 'all, age, child': The type of data split, if any
-    dataset_name = the name of the split. 'all', 'young', 'old', and the child names in lowercase
-    
-    Note: This expects cleaned "utt_glosses" (data) with all errors removed.
-    """
-    
-    data = raw_data.copy()
-    
-    tokens = [y for x in data['tokens'] for y in x]
-    
-    token_frequencies = pd.Series(tokens).value_counts().reset_index()
-    token_frequencies.columns = ['word','count']
-    
-    print('In get frequencies. Note: The vocab will be different for different splits of the data! Need to include a "dataset_name')
-    
-    this_folder = get_split_folder(split_type, dataset_name, config.data_dir)
-    token_frequencies.to_csv(join(this_folder, 'vocab.csv'))
-    
-    return token_frequencies 
 
-def get_chi_frequencies(raw_data, split_type, dataset_name):
+def save_chi_vocab(train_data, split_type, dataset_name):
     
     """
     Note: These are frequencies, so it needs to be different per sub-dataset
         (i.e. each piece of each split)
+        used to initialize the unigrams.
         general "chi_vocab.csv" can't be used for the sub-analyses
         
     Note: This expects cleaned "utt_glosses" (data) with all errors removed.
+    
+    Note: If you load train_data from a saved df, it will convert list -> str which will mess up the token identification.
+    'token' should be re-cast to list for correct behavior, as seen below.
     """
     
     this_folder = get_split_folder(split_type, dataset_name, config.data_dir)
     
-    data = raw_data.copy()
+    chi_data = train_data.loc[train_data.speaker_code == 'CHI']
     
-    chi_data = data.loc[data.speaker_code == 'CHI']
+    #raw_tokens = list(chi_data['tokens'])
+    
+    #cast2list = lambda str_list : eval(str_list) # See the function comment for why
+    #eval_tokens = list(map(cast2list, raw_tokens)) if isinstance(raw_tokens[0], str) else raw_tokens
+    
+    #tokens = [y for x in eval_tokens for y in x]
+    
     tokens = [y for x in chi_data['tokens'] for y in x]
+    
     token_frequencies = pd.Series(tokens).value_counts().reset_index()
     token_frequencies.columns = ['word','count']
-    token_frequencies.to_csv(join(this_folder, 'chi_vocab.csv'))
+    
+    token_frequencies.to_csv(join(this_folder, 'chi_vocab_train.csv'))
+    
+    # Do not use things marked chi_vocab, they are from the past version.
    
     return token_frequencies
-    
-def save_vocab(cleaned_glosses, split, dataset):
-    """
-    
-    Highest level call.
-    
-    Save the respective vocabulary files for this dataset split
-    Expects the output of prep_utt_glosses_for_split.
-        (i.e. cleaned and no speaking errors)
-    
-    Returns the freq. csv for tokens, child speaker tokens
-    """
-    
-    tok_freq = get_token_frequencies(cleaned_glosses, split, dataset)
-    chi_freq = get_chi_frequencies(cleaned_glosses, split, dataset)
-    
-    return tok_freq, chi_freq
+
     
 
 def determine_split_idxs(unsorted_cleaned_data, split_on, val_ratio = None, val_num = None):
@@ -132,6 +106,13 @@ def determine_split_idxs(unsorted_cleaned_data, split_on, val_ratio = None, val_
     return train_idx, validation_idx 
     
 
+    
+def find_phase_data(phase, pool):
+
+    this_phase_data = pool.loc[pool.phase == phase]
+    return this_phase_data
+
+
 def assign_and_find_phase_data(phase, split_on, phase_idxs, data_pool):
     """
     Different from the original function, re-test
@@ -142,20 +123,9 @@ def assign_and_find_phase_data(phase, split_on, phase_idxs, data_pool):
     data_pool.loc[data_pool[split_on].isin(phase_idxs),
              'phase'] = phase
     
-    phase_data = data_pool.loc[data_pool.phase == phase]
+    phase_data = find_phase_data(phase, data_pool)
     
     return phase_data, data_pool
-    
-def write_all_tokens_phono_partitions(split_folder, train_df, val_df):
-    """
-    Probably remove this function.
-    """
-    train_df.to_csv(split_folder, 'tokens_phono_train.csv')
-    val_df.to_csv(split_folder, 'tokens_phono_val.csv')
-    
-    print(f'All tokens_phono partitions for this split written to {split_folder}/tokens_phono_{phase}') 
-    
-    return train_df, val_df
     
 
 def write_data_partitions_text(all_data, split_folder, phase, phase_idxs, split_on):
@@ -193,10 +163,7 @@ def split_glosses_shuffle(unsorted_cleaned_data, split_type, dataset_type, split
     data, val_df = write_data_partitions_text(data, this_split_folder, 'val', val_idxs, split_on)
     
     return data, train_df, val_df
-       
-
-# This will perform all of the cleaning, splits, etc.
-# I would just do repetitive cleaning.
+      
 
 def exec_split_gen(raw_data, split_name, dataset_name):
     
@@ -216,13 +183,15 @@ def exec_split_gen(raw_data, split_name, dataset_name):
     # Note: yyy uses "." as the default punct val. Splits use "None" as the default punct val.
     cleaned_utt_glosses = data_cleaning.prep_utt_glosses(raw_data, None)
     
-    tok_freq, chi_tok_freq = save_vocab(cleaned_utt_glosses, split_name, dataset_name)
-
     train_idxs, val_idxs = determine_split_idxs(cleaned_utt_glosses, 'transcript_id', val_ratio = config.val_ratio)
     
     split_glosses_df, train_df = write_data_partitions_text(cleaned_utt_glosses, this_split_folder, 'train', train_idxs, 'transcript_id')
     split_glosses_df, val_df = write_data_partitions_text(cleaned_utt_glosses, this_split_folder, 'val', val_idxs, 'transcript_id')
     
-    return split_glosses_df, tok_freq, chi_tok_freq
+    # chi_tok_freq = save_chi_vocab(train_df, split_name, dataset_name)
+    # Need to re-integrate this line later when everything is run at once.
+    # Along with the writing tagless files etc.
+    
+    return split_glosses_df, chi_tok_freq
     
     

@@ -7,6 +7,8 @@ import time
 from string import punctuation
 import Levenshtein
 
+from utils import unigram, load_csvs
+
 def softmax(x, axis=None):
     '''
         Compute softmax on a vector or matrix
@@ -460,7 +462,7 @@ def compare_successes_failures_unigram_model(all_tokens, selected_success_utts, 
     unigram_model = pd.DataFrame({'word':vocab})
     
     if child_counts_path is not None: 
-        childes_counts = pd.read_csv(child_counts_path)    
+        childes_counts = load_csvs.load_csv_with_lists(child_counts_path)    
         unigram_model = unigram_model.merge(childes_counts, how='left')
         unigram_model = unigram_model.fillna(0) 
         unigram_model['count'] = unigram_model['count'] + .01 #additive smoothing
@@ -555,7 +557,7 @@ def find_in_vocab(x, initial_vocab):
     except:
         return(np.nan)
 
-def get_posteriors(prior_data, levdists, initial_vocab, bert_token_ids=None, beta_value = 3.2):
+def get_posteriors(prior_data, levdists, initial_vocab, bert_token_ids=None, beta_value=None):
     '''
         Get the posterior probability of candidate words by combining the priors with a likelihood dependent on levenshtein distances and a free parameter beta
 
@@ -568,6 +570,7 @@ def get_posteriors(prior_data, levdists, initial_vocab, bert_token_ids=None, bet
         beta_value: free parameter in the likelihood; see the paper. Higher values assign lower probabilities to larger edit distances
     '''
 
+    if beta_value is None: assert False # Note to self to make it a non-default argument. Temporary before I figure out some stuff
     
     if bert_token_ids is not None:
         btis = set(bert_token_ids)   
@@ -619,6 +622,8 @@ def get_posteriors(prior_data, levdists, initial_vocab, bert_token_ids=None, bet
     prior_data['scores'].set_index('sample_index')
     
     flat_prior = np.repeat(1/len(initial_vocab), len(initial_vocab))
+    # Compare all of the distributions to the flat prior on CHILDES,
+    # regardless of the training split, etc. 
 
     for i in range(prior_data['scores'].shape[0]):
         if np.isnan(prior_data['scores'].iloc[i]['position_in_mask']):

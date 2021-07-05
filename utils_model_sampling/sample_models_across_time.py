@@ -2,12 +2,11 @@
 # Code to replace run_models_across_time.
 # This is for GPU/tmuxable scripts.
 
-from utils import load_models
-import transfomers_bert_completions as transformers_bert_completions
+from utils import load_models, transformers_bert_completions, load_csvs, unigram
 
 from collections import defaultdict
 
-def assemble_across_time_results():
+def assemble_across_time_scores():
     
     """
     Assemble the "score store" across models that was present in the original function
@@ -27,6 +26,7 @@ def assemble_across_time_results():
     age2models = defaultdict(list)
     
     for split, dataset in model_args:
+        # Not just successes! What else to load?
         this_sample_pool = load_sample_successes('models_across_time', split, dataset)
         this_ages = np.unique(this_sample_pool.age)
         age2models[age].append((split, dataset)) # Not sure if age is a float or int, be careful
@@ -56,7 +56,7 @@ def assemble_across_time_results():
                     # Need to retrieve the ages from the sample -- how?
 
                     this_data_path = join(this_beta_folder, 'run_models_across_time_{age}.csv')
-                    data_df = pd.read_csv(this_data_path)
+                    data_df = load_csvs.load_csv_with_lists(this_data_path)
                     score_store.append(data_df)
     
     return score_store
@@ -99,7 +99,8 @@ def successes_across_time_per_model(age, utts, model, all_tokens_phono):
             edit_distances_for_age_interval, initial_vocab, beta_value = optimal_beta)
     elif model['type'] == 'unigram':
         # special unigram hack
-        posteriors_for_age_interval = transformers_bert_completions.get_posteriors(priors_for_age_interval, edit_distances_for_age_interval, initial_vocab, score_store[-1].bert_token_id, beta_value = optimal_beta)
+        this_bert_token_ids = unigram.get_sample_bert_token_ids('models_across_time')
+        posteriors_for_age_interval = transformers_bert_completions.get_posteriors(priors_for_age_interval, edit_distances_for_age_interval, initial_vocab, this_bert_token_ids, beta_value = optimal_beta)
 
 
     posteriors_for_age_interval['scores']['model'] = model['title']

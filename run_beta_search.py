@@ -7,6 +7,10 @@ from utils_model_sampling import beta_utils, sample_across_models
 import config
 import pandas as pd
 
+import matplotlib.pyplot as plt
+ 
+import numpy as np
+
 def optimize_beta(split_name, dataset_name, model_dict):
     
     """
@@ -58,18 +62,18 @@ def optimize_beta(split_name, dataset_name, model_dict):
     
     print("Writing beta results to", {beta_results_path})
     
-    plot_beta_optimization(beta_sample, this_beta_results_surp, this_exp_path)
+    plot_beta_optimization(split_name, dataset_name, beta_sample, this_beta_results_surp['posterior_surprisal'])
     
     return this_raw_beta_results, this_beta_results_surp
     
-def plot_beta_optimization(split, dataset, data_dir, betas, beta_surprisals):
+def plot_beta_optimization(split, dataset, betas, beta_surprisals):
     
     plt.title(f'Beta optimization for Split: {split}, Dataset: {dataset}')
     plt.xlabel('Beta value')
     plt.ylabel('Posterior surprisal')
     plt.plot(betas, beta_surprisals)
     
-    fig_path = join(data_dir, 'beta_optimization.png')
+    fig_path = join(config.eval_dir, 'beta_optimization.png')
     plt.savefig(fname = fig_path)
     
     print(f'Writing optimization plot to: {fig_path}')

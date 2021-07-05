@@ -7,7 +7,7 @@ import transformers
 from pytorch_pretrained_bert import BertForMaskedLM
 from transformers import BertTokenizer
 
-from utils import transformers_bert_completions, split_gen
+from utils import transformers_bert_completions, split_gen, load_csvs
 import config
 
 
@@ -51,6 +51,9 @@ def get_model_dict():
     # the right file types to develop the loading code and such.
     
     # Order: split name, dataset name, with tags
+    
+    # Load the BERT-based models
+    
     args = [('all_debug', 'all_debug', True)]  # Need to change this to be a dynamic query later.
     
     all_model_dict = {}
@@ -67,35 +70,37 @@ def get_model_dict():
             }
             all_model_dict[model_id]['kwargs'].update({'context_width_in_utts' : context_width})
             
-    return all_model_dict
-
-#         'meylan/meylan/no_tags/0_context' : {'title': 'CHILDES BERT, same utt only',
-#          'kwargs': get_meylan_original_model(with_tags = False).update({'context_width_in_utts' : 0}),
-#          'type': 'BERT'
-#         },
-#         'meylan/meylan/no_tags/20_context' : {'title': 'CHILDES BERT, same utt only',
-#          'kwargs': get_meylan_original_model(with_tags = False).update({'context_width_in_utts' : 20}),
-#          'type': 'BERT'
-#         }, 
-        # You will need to fix this to be on the train.py only? If vocab == the frequency of the vocab words.
-#         'meylan/meylan/unigram_childes' : {'title': 'CHILDES Unigram',
-#         'kwargs': {'child_counts_path': 'data/chi_vocab.csv',
-#                     'tokenizer': adult_tokenizer,
-#                     'softmax_mask': adult_softmax_mask,
-#                     'vocab': initial_vocab
-#                    },
-#          'type': 'unigram'
-#         },
-#         'meylan/meylan/unigram_flat' : {'title': 'Flat Unigram',
-#         'kwargs': {'child_counts_path': None,
-#                     'tokenizer': adult_tokenizer,
-#                     'softmax_mask': adult_softmax_mask,
-#                     'vocab': initial_vocab
-#                    },
-#          'type': 'unigram'
-#         }
-#    }
+    # Load the unigram-based models
     
+    unigram_dict = {
+        'all/all/data_unigram' : {
+            'title': 'CHILDES Unigram',
+            'kwargs': {'child_counts_path': f'{config.data_dir}/all/all/chi_vocab_train .csv',
+                        'tokenizer': adult_tokenizer,
+                        'softmax_mask': adult_softmax_mask,
+                        'vocab': initial_vocab
+                       },
+             'type': 'unigram'
+        },
+        'all/all/flat_unigram' : {
+            'title': 'Flat Unigram',
+            # Note that this assumes that flat prior = no information at all.
+            # That means it doesn't observe any train/val split.
+            # It just assigns uniform probability to every single word,
+            # regardless of if that word appears in the train set or not. 
+            'kwargs': {'child_counts_path': None,
+                        'tokenizer': adult_tokenizer,
+                        'softmax_mask': adult_softmax_mask,
+                        'vocab': initial_vocab
+                       },
+             'type': 'unigram'
+        },
+        
+    }
+    
+    all_model_dict.update(unigram_dict)
+    
+    return all_model_dict
 
 
 def get_initial_vocab_info():
@@ -153,7 +158,12 @@ def get_meylan_original_model(with_tags):
 
 def get_cmu_dict_info():
     
-    cmu_in_childes = pd.read_csv(config.cmu_path)
+    cmu_in_childes = load_csvs.load_csv_with_lists(config.cmu_path)
+    
+    # Added check for loading list objects as list objects, rather than str
+    # Based on skimming the code this shouldn't affect the functionality
+    # because the lists are not used in the code.
+    
     cmu_2syl_inchildes = cmu_in_childes.loc[cmu_in_childes.num_vowels <=2]
     return cmu_2syl_inchildes 
 

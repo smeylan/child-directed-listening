@@ -24,9 +24,12 @@ def get_beta_search_values():
 
 def load_beta_folder(split, dataset, is_tags, context_num):
     
-    folder = split_gen.get_split_folder(split, dataset, config.eval_dir)
+    folder = split_gen.get_split_folder(split, dataset, config.exp_dir)
     this_title = load_models.query_model_title(split, dataset, is_tags, context_num)
     exp_path = join(folder, this_title.replace(' ', '_'))
+    
+    if not exists(exp_path):
+        os.makedirs(exp_path)
     
     return exp_path
 

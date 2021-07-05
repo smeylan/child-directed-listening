@@ -25,6 +25,8 @@ root_dir = './' # Location of repository
 data_dir = './data/new_splits' # Location of data for model fitting
 eval_dir = './eval/new_splits' # Location of data for evaluations (in yyy)
 model_dir = './models/new_splits' # Location of model weights, etc.
+exp_dir = './scores/' # Where to put the sampling results (beta searching, models across time)
+
 meylan_model_dir = './models/' # Possibly temporary -- location of root for Dr. Meylan's old models
 
 cmu_path = './phon/cmu_in_childes.csv' # The location of the cmu dictionary
@@ -39,7 +41,7 @@ grid_search = False # Whether to grid search the beta parameters or use random s
 # above: Note, this is still unused/untested.
 
 # Which models to use in the analyses.
-model_args = [('all_debug', 'all_debug')]
+model_args = [('all_debug', 'all_debug'), ('all', 'all'), ('age', 'young'), ('age', 'old')]
 
 model_titles = {
         'all_debug/all_debug/with_tags/0_context' : 'CHILDES BERT, same utt only -- debug',

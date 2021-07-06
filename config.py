@@ -40,10 +40,6 @@ num_values = 10
 grid_search = False # Whether to grid search the beta parameters or use random search.
 # above: Note, this is still unused/untested.
 
-# Which models to use in the analyses.
+# Which models to use in the analyses -- primarily for running the sampling-based functions.
 model_args = [('all_debug', 'all_debug'), ('all', 'all'), ('age', 'young'), ('age', 'old')]
 
-model_titles = {
-        'all_debug/all_debug/with_tags/0_context' : 'CHILDES BERT, same utt only -- debug',
-        'all_debug/all_debug/with_tags/20_context' : 'CHILDES BERT, +-20 utts context -- debug'
-    }

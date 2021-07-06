@@ -22,7 +22,7 @@ def get_beta_search_values():
     return beta_samples
 
 
-def load_beta_folder(split, dataset, is_tags, context_num):
+def load_beta_folder(split, dataset, is_tags, context_num, model_type):
     
     folder = split_gen.get_split_folder(split, dataset, config.exp_dir)
     this_title = load_models.query_model_title(split, dataset, is_tags, context_num)
@@ -35,7 +35,7 @@ def load_beta_folder(split, dataset, is_tags, context_num):
 
 def load_beta_values(split_name, dataset_name, tags, context_width):
     
-    exp_model_path = load_beta_folder(split_name, dataset_name, tags, context_width)
+    exp_model_path = load_beta_folder(split_name, dataset_name, tags, context_width, model_type)
     results = load_csvs.load_csv_with_lists(join(exp_model_path, 'beta_search_results.csv'))
     # Below: temp line for checking the code interpretation.
     raw_results = load_csvs.load_csv_with_lists(join(exp_model_path, 'beta_search_raw_results.csv'))

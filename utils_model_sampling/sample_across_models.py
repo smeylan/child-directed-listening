@@ -29,9 +29,9 @@ def sample_across_models(utterance_ids, model, eval_data_dict, beta_values):
     initial_vocab, cmu_in_initial_vocab = load_models.get_initial_vocab_info()
 
     print('Running model '+model['title']+'...')
-    
-    selected_success_utts = success_utts.loc[success_utts.utterance_id.isin(utterance_ids)]
-    selected_yyy_utts = yyy_utts.loc[yyy_utts.utterance_id.isin(utterance_ids)] 
+
+    selected_success_utts = load_splits.get_utts_from_ids(success_utts, utterance_ids)
+    selected_yyy_utts = load_splits.get_utts_from_ids(yyy_utts, utterance_ids)
 
     # get the priors
     if model['type'] == 'BERT':

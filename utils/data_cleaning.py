@@ -10,6 +10,14 @@ import numpy as np
 
 import config
 
+def get_target_child_year(df):
+    """
+    Expects utts_with_ages from Providence notebook.
+    """
+    df['year'] = .5*np.floor(df['target_child_age'] / (365. /2) ) 
+    return df
+    
+
 def filter_speaker_tags(this_df):
     """
     Used for loading appropriate data for the run models across time functions.

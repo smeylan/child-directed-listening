@@ -34,7 +34,11 @@ def get_sample_bert_token_ids(task):
     this_sample_successes = load_splits.load_sample_successes(task, split, dataset)
     this_sample_yyy = load_splits.load_sample_yyy(task, split, dataset)
     
-    return pd.concat(this_sample_successes, this_sample_yyy).bert_token_id
+    # You need to index into the utterances themselves in chi_phono -- get this from the sample functions.
+    # What exactly is bert_token_ids and how to correctly create it?
+    # Maybe 
+    
+    return pd.concat([this_sample_successes, this_sample_yyy]).bert_token_id
 
     
     

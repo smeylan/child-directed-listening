@@ -4,12 +4,35 @@ from os.path import join, exists
 import pandas as pd
 import transformers 
 
-from pytorch_pretrained_bert import BertForMaskedLM
-from transformers import BertTokenizer
+from transformers import BertTokenizer, BertForMaskedLM
 
 from utils import transformers_bert_completions, split_gen, load_csvs
 import config
 
+
+def gen_model_title(split, dataset, is_tags, context_num):
+    
+    context_dict = {
+        0 : 'same utt only',
+        20 : '+-20 utts context',
+    }
+
+    split_dict = {
+        'all' : '',
+        'all_debug': 'debug only',
+        'young' : 'younger children',
+        'old' : 'older children', 
+    }
+
+    speaker_tags_dict = {
+        True : 'with tags',
+        False :  'without tags',
+    }
+    
+    model_title = 'CHILDES BERT {speaker_tags_dict[is_tags]}, {split_dict[split]}, {context_dict[context_num]}'
+    return model_title
+    
+    
 
 def get_model_id(split_name, dataset_name, with_tags, context_width):
     
@@ -17,19 +40,23 @@ def get_model_id(split_name, dataset_name, with_tags, context_width):
     model_id = '/'.join([split_name, dataset_name, tag_str, f'{context_width}_context'])
     return model_id
 
+
 def query_model_title(split, dataset, is_tags, context_num):
+    """
+    Need to update this for "shelf" attribute
+    """
     return config.model_titles[get_model_id(split, dataset, is_tags, context_num)]
-    
+
     
 def get_model_dict():
     
     # The format for the name is:
     # split name/dataset name/tags/{context width}_context
+    # for childes data.
     
+    # If it's a pretrained BERT model with no finetuning, it has /shelf added to its model id
     # If it's a unigram model, it's just: split name/dataset name/unigram_{unigram type}
     
-    # Note all_old and meylan refer to the same split -- meylan means that Dr. Meylan trained the model and it's loaded from those weights.
-    # all_old means that I trained it from Dr. Meylan's data
     
     cmu_2syl_inchildes = get_cmu_dict_info()
     
@@ -63,19 +90,45 @@ def get_model_dict():
             split, dataset, tags = arg_set
             model_id = get_model_id(split, dataset, tags, context_width)
             all_model_dict[model_id] = {
-                'title' : config.model_titles[model_id],
+                'title' : gen_model_title(split, dataset, tags, context_width),
                 'kwargs' : get_model_from_split(split, dataset,
                                                 with_tags = tags),
                 'type' : 'BERT',
             }
             all_model_dict[model_id]['kwargs'].update({'context_width_in_utts' : context_width})
-            
+    
+    # Load the normal BERT model
+    
+    prev_bert_dict = {
+        'all/all/no_tags/0_context/shelf' : {
+            'title': 'Adult BERT, same utt only',
+            'kwargs': {'modelLM': adult_bertMaskedLM,
+                        'tokenizer': adult_tokenizer,
+                        'softmax_mask': adult_softmax_mask,
+                        'context_width_in_utts': 0,
+                       'use_speaker_labels':False
+                       },
+             'type': 'BERT'
+         },
+        'all/all/no_tags/20_context/shelf' : {
+            'title': 'Adult BERT, +-20 utts context',
+            'kwargs': {'modelLM': adult_bertMaskedLM,
+                        'tokenizer': adult_tokenizer,
+                        'softmax_mask': adult_softmax_mask,
+                        'context_width_in_utts': 20,
+                       'use_speaker_labels':False
+                       },
+             'type': 'BERT'
+        }
+    }
+    
+    
     # Load the unigram-based models
     
     unigram_dict = {
         'all/all/data_unigram' : {
             'title': 'CHILDES Unigram',
-            'kwargs': {'child_counts_path': f'{config.data_dir}/all/all/chi_vocab_train .csv',
+            'kwargs': {'child_counts_path': f'{config.data_dir}/all/all/chi_vocab_train.csv',
                         'tokenizer': adult_tokenizer,
                         'softmax_mask': adult_softmax_mask,
                         'vocab': initial_vocab
@@ -94,12 +147,12 @@ def get_model_dict():
                         'vocab': initial_vocab
                        },
              'type': 'unigram'
-        },
-        
+        },   
     }
     
     all_model_dict.update(unigram_dict)
-    
+    all_model_dict.update(prev_bert_dict)
+        
     return all_model_dict
 
 

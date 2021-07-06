@@ -11,6 +11,11 @@ import pandas as pd
 import pickle
 
 import config
+
+def get_utts_from_ids(utts, utt_ids):
+    
+    return utts.loc[utts.utterance_id.isin(utt_ids)]
+
     
 def get_n(task):
    

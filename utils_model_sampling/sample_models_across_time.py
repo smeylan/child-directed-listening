@@ -61,7 +61,7 @@ def assemble_across_time_scores():
     
     return score_store
 
-def successes_across_time_per_model(age, utts, model, all_tokens_phono):
+def successes_across_time_per_model(age, utts, model, all_tokens_phono, beta_value):
     """
     model = a dict of a model like that in the yyy analysis 
     vocab is only invoked for unigram, which correspond to original yyy analysis.
@@ -75,10 +75,10 @@ def successes_across_time_per_model(age, utts, model, all_tokens_phono):
     print('Running model '+model['title']+'...')
     
     selected_success_utts = utts.loc[(utts.set == 'success') 
-            & (utts_with_ages.year == age)]
+            & (utts.year == age)]
     
     selected_yyy_utts = utts.loc[(utts.set == 'failure') 
-            & (utts_with_ages.year == age)]
+            & (utts.year == age)]
     
     
     if model['type'] == 'BERT':

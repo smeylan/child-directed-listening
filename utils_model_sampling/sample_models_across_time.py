@@ -16,7 +16,8 @@ def assemble_across_time_scores():
     Note that different splits have different samples of data.
     """
     
-    model_args = [('debug_all', 'debug_all')]
+    this_load_args = [('debug_all', 'debug_all')]
+    #this_load_args = load_models.gen_all_model_args()
     
     # For now, analyze whichever ages are available in the sample.
     # Need to be careful when doing visualizations in yyy later.
@@ -25,7 +26,7 @@ def assemble_across_time_scores():
     
     age2models = defaultdict(list)
     
-    for split, dataset in model_args:
+    for split, dataset, _, _, _ in this_load_args:
         # Not just successes! What else to load?
         this_sample_pool = load_sample_successes('models_across_time', split, dataset)
         this_ages = np.unique(this_sample_pool.age)
@@ -38,28 +39,18 @@ def assemble_across_time_scores():
     # Age -> model -> scores nesting
     
     score_store = []
-    
+   
     for age in all_ages:
-        for model_args in config.model_args_set:
-            
-            if model_args not in age2models[age]: pass
-            
-            for use_tags in [True, False]:
-                for context in config.context_list:
+        for split, dataset, tags, context, model_type in this_load_args:
+            this_beta_folder = load_beta_folder(split, dataset, tags, context, model_type)
 
-                    this_split, this_dataset_name = model_args
+            # Need to retrieve the ages from the sample -- how?
 
-                    this_sample = load_splits.load_sample_successes('models_across_time', this_split, this_dataset_name)
+            this_data_path = join(this_beta_folder, 'run_models_across_time_{age}.csv')
+            data_df = load_csvs.load_csv_with_lists(this_data_path)
+            score_store.append(data_df)
 
-                    this_beta_folder = load_beta_folder(this_split, this_dataset_name, use_tags, context)
-
-                    # Need to retrieve the ages from the sample -- how?
-
-                    this_data_path = join(this_beta_folder, 'run_models_across_time_{age}.csv')
-                    data_df = load_csvs.load_csv_with_lists(this_data_path)
-                    score_store.append(data_df)
-    
-    return score_store
+        return score_store
 
 def successes_across_time_per_model(age, utts, model, all_tokens_phono, beta_value):
     """

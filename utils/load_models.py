@@ -10,8 +10,45 @@ from utils import transformers_bert_completions, split_gen, load_csvs
 import config
 
 
-def gen_model_title(split, dataset, is_tags, context_num):
+def gen_all_model_args():
     
+    """
+    Generate all of the model arguments used in the analysis.
+    Order: (split, dataset, tags, context, model_type)
+    """
+    
+    load_args = []
+    
+    for model_args in config.model_args_set:
+
+        if model_args not in age2models[age]: pass
+
+        for use_tags in [True, False]:
+            for context in config.context_list:
+
+                load_args.append((this_split, this_dataset_name, use_tags, context, 'childes'))
+
+    baseline_args = ('all', 'all', False)
+    
+    # Two adult baselines
+    for context in config.context_list:
+        load_args.append(baseline_args + (context , 'adult'))
+        
+    # Two unigram baselines
+    for unigram_name in ['flat_unigram', 'data_unigram']:
+        load_args.append(baseline_args + (None, unigram_name))
+        
+    return load_args
+    
+    
+def gen_model_title(split, dataset, is_tags, context_num, model_type):
+    
+    assert model_type in {'childes', 'adult'}, "Invalid model_type given. Function is intended for use with BERT-type models."
+    
+    model_type_dict = {
+        'childes' : 'CHILDES',
+        'adult' : 'Adult',
+    }
     context_dict = {
         0 : 'same utt only',
         20 : '+-20 utts context',
@@ -29,23 +66,36 @@ def gen_model_title(split, dataset, is_tags, context_num):
         False :  'without tags',
     }
     
-    model_title = 'CHILDES BERT {speaker_tags_dict[is_tags]}, {split_dict[split]}, {context_dict[context_num]}'
+    model_title = f'{model_type_dict[model_type]} BERT {speaker_tags_dict[is_tags]}, {split_dict[split]}, {context_dict[context_num]}'
+    
     return model_title
     
     
 
-def get_model_id(split_name, dataset_name, with_tags, context_width):
+def get_tag_context_str(tags, context):
     
-    tag_str = 'with_tags' if with_tags else 'no_tags'
-    model_id = '/'.join([split_name, dataset_name, tag_str, f'{context_width}_context'])
+    assert not ((tags is None) ^ (context is None)), "Both with_tags and context_width should be none, or neither."
+    
+    tag_rep = 'na' if tags is None else ('with_tags' if tags else 'no_tags')
+    context_piece = 'na' if context is None else context
+    
+    context_rep = f'{context_piece}_context'
+    return tag_rep, context_rep
+    
+
+def get_model_id(split_name, dataset_name, with_tags, context_width, model_type):
+    
+    tag_str, context_str = get_tag_context_str(with_tags, context_width)
+    model_id = '/'.join([split_name, dataset_name, tag_str, context_str, model_type])
+    
     return model_id
 
 
-def query_model_title(split, dataset, is_tags, context_num):
+def query_model_title(split, dataset, is_tags, context_num, model_type):
     """
     Need to update this for "shelf" attribute
     """
-    return config.model_titles[get_model_id(split, dataset, is_tags, context_num)]
+    return gen_model_title(split, dataset, is_tags, context_num, model_type)
 
     
 def get_model_dict():
@@ -88,9 +138,9 @@ def get_model_dict():
     for arg_set in args:
         for context_width in config.context_list:
             split, dataset, tags = arg_set
-            model_id = get_model_id(split, dataset, tags, context_width)
+            model_id = get_model_id(split, dataset, tags, context_width, 'childes')
             all_model_dict[model_id] = {
-                'title' : gen_model_title(split, dataset, tags, context_width),
+                'title' : gen_model_title(split, dataset, tags, context_width, 'childes'),
                 'kwargs' : get_model_from_split(split, dataset,
                                                 with_tags = tags),
                 'type' : 'BERT',
@@ -99,34 +149,24 @@ def get_model_dict():
     
     # Load the normal BERT model
     
-    prev_bert_dict = {
-        'all/all/no_tags/0_context/shelf' : {
-            'title': 'Adult BERT, same utt only',
+    prev_bert_dict = {}
+    for context in config.context_list:
+        prev_bert_dict[f'all/all/no_tags/{context}_context/adult'] = {
+            'title': gen_model_title('all', 'all', False, context, 'adult'), 
             'kwargs': {'modelLM': adult_bertMaskedLM,
                         'tokenizer': adult_tokenizer,
                         'softmax_mask': adult_softmax_mask,
-                        'context_width_in_utts': 0,
+                        'context_width_in_utts': context,
                        'use_speaker_labels':False
                        },
              'type': 'BERT'
-         },
-        'all/all/no_tags/20_context/shelf' : {
-            'title': 'Adult BERT, +-20 utts context',
-            'kwargs': {'modelLM': adult_bertMaskedLM,
-                        'tokenizer': adult_tokenizer,
-                        'softmax_mask': adult_softmax_mask,
-                        'context_width_in_utts': 20,
-                       'use_speaker_labels':False
-                       },
-             'type': 'BERT'
-        }
-    }
+         }
     
     
     # Load the unigram-based models
     
     unigram_dict = {
-        'all/all/data_unigram' : {
+        'all/all/na/na_context/data_unigram' : {
             'title': 'CHILDES Unigram',
             'kwargs': {'child_counts_path': f'{config.data_dir}/all/all/chi_vocab_train.csv',
                         'tokenizer': adult_tokenizer,
@@ -135,7 +175,7 @@ def get_model_dict():
                        },
              'type': 'unigram'
         },
-        'all/all/flat_unigram' : {
+        'all/all/na/na_context/flat_unigram' : {
             'title': 'Flat Unigram',
             # Note that this assumes that flat prior = no information at all.
             # That means it doesn't observe any train/val split.

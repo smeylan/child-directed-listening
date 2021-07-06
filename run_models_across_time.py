@@ -24,15 +24,19 @@ def load_sample_model_across_time_args(split_name, dataset_name):
 def call_single_across_time_model_unigram(unigram_name):
     
     assert unigram_name in {'data_unigram', 'flat_unigram'}
-    return call_single_across_time_model(f'all/all/{unigram_name}', 'all', 'all')
+    return call_single_across_time_model(unigram_name, 'all', 'all', None, None) # What is best to compute here?
 
-def call_single_across_time_model_bert(split, dataset, with_tags, context_num):
+def call_single_across_time_model_bert(model_type, split, dataset, with_tags, context_num):
     
     name = load_models.get_model_id(split, dataset, with_tags, context_num)
-    return call_single_across_time_model(name, split, dataset, with_tags, context_num)
+    return call_single_across_time_model(model_type, split, dataset, with_tags, context_num)
     
     
-def call_single_across_time_model(model_name, this_split, this_dataset_name, is_tags = None, context_width = None):
+def call_single_across_time_model(model_class, this_split, this_dataset_name, is_tags, context_width):
+       
+    assert model_class in {'childes', 'adult', 'flat_unigram', 'data_unigram'}, "Invalid model type presented."
+   
+    model_name = load_models.get_model_id(this_split, this_dataset_name, is_tags, context_width, model_class)
     
     all_models = load_models.get_model_dict()
     this_model_dict = all_models[model_name]
@@ -42,7 +46,7 @@ def call_single_across_time_model(model_name, this_split, this_dataset_name, is_
     utts = data_cleaning.get_target_child_year(utts)
     
     # Load the optimal beta
-    optimal_beta = beta_utils.get_optimal_beta_value(this_split, this_dataset_name, this_model_dict) if 'unigram' not in model_name else None
+    optimal_beta = beta_utils.get_optimal_beta_value(this_split, this_dataset_name, this_model_dict, model_class)
     
     ages = np.unique(utts.year)
     
@@ -50,16 +54,18 @@ def call_single_across_time_model(model_name, this_split, this_dataset_name, is_
         
         this_scores = sample_models_across_time.successes_across_time_per_model(age, utts, this_model_dict, tokens, beta_value = optimal_beta)
         
-        if 'unigram' in model_name:
-            score_folder = load_beta_folder(this_split, this_dataset_name, this_model_dict['kwargs']['use_speaker_labels'], this_model_dict['kwargs']['context_width_in_utts'])
+        if 'unigram' not in model_name:
+            this_tags = this_model_dict['kwargs']['use_speaker_labels']
+            this_context_width = this_model_dict['kwargs']['context_width_in_utts']
         else:
-            score_folder = model_name
-            if not exists(model_name): # Will be all/all/{unigram type}
-                os.makedirs(model_name)
+            this_tags = 'na'; this_context_width = 'na' # Not applicable to unigram models.
+            
         
-        this_scores.to_csv(join(score_folder, 'run_models_across_time_{age}.csv')) # Need to assemble via model, then age later.
-     
-
+        score_folder = load_beta_folder(this_split, this_dataset_name, this_tags, this_context_width, model_class)
+        this_scores.to_csv(join(score_folder, 'run_models_across_time_{age}.csv'))# Need to assemble via model, then age later.
+    
+    
+    
 if __name__ == '__main__':
     
     model_args = config.model_args
@@ -72,12 +78,17 @@ if __name__ == '__main__':
         print(f'calling single across time model on {unigram_name}')
         call_single_across_time_model_unigram(unigram_name)
 
+        
+    # Run the adult BERT models
+    for context_width in config.context_list:
+        call_single_across_time_model_bert('adult', 'all', 'all', False, context_width)
     
-    # Run the BERT models
+    
+    # Run the CHILDES models
     for split, dataset_name in [('all_debug', 'all_debug')]: # model_args:
         for use_tags in [True, False]:
             for context_num in config.context_list: # How to also call the unigram?
                 print(f"calling single across time model {split}, {dataset_name}")
-                call_single_across_time_model_bert(split, dataset_name, use_tags, context_num)
-    
+                call_single_across_time_model_bert('childes', split, dataset_name, use_tags, context_num)
+                
     

@@ -85,6 +85,8 @@ if __name__ == '__main__':
     # This is where the evaluation data is found.    
     # Consider using argparse + parallel jobs instead.
     
+    # Need to load all of the model arguments.
+    
     which_args = [('all', 'all'), ('age', 'old'), ('age', 'young')]
     
     this_model_args = {

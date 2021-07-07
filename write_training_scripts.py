@@ -1,4 +1,5 @@
 # Used to deploy training and automatically request consistent text data.
+# Marking this as version working before script generation refactor.
 
 import os
 from os.path import join, exists

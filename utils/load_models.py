@@ -10,6 +10,31 @@ from utils import transformers_bert_completions, split_gen, load_csvs
 import config
 
 
+def gen_bert_model_args():
+
+    load_bert_args = []
+    
+    for model_args in config.childes_model_args:
+        
+        this_split, this_dataset_name = model_args 
+        
+        for use_tags in [True, False]:
+            
+            for context in config.context_list:
+
+                load_bert_args.append((this_split, this_dataset_name, use_tags, context, 'childes'))
+
+    baseline_args = ('all', 'all', False)
+    
+    # Two adult baselines
+    for context in config.context_list:
+        load_bert_args.append(baseline_args + (context , 'adult'))
+        
+        
+    return load_bert_args
+
+
+    
 def gen_all_model_args():
     
     """
@@ -17,22 +42,7 @@ def gen_all_model_args():
     Order: (split, dataset, tags, context, model_type)
     """
     
-    load_args = []
-    
-    for model_args in config.model_args_set:
-
-        if model_args not in age2models[age]: pass
-
-        for use_tags in [True, False]:
-            for context in config.context_list:
-
-                load_args.append((this_split, this_dataset_name, use_tags, context, 'childes'))
-
-    baseline_args = ('all', 'all', False)
-    
-    # Two adult baselines
-    for context in config.context_list:
-        load_args.append(baseline_args + (context , 'adult'))
+    load_args = gen_bert_model_args()
         
     # Two unigram baselines
     for unigram_name in ['flat_unigram', 'data_unigram']:

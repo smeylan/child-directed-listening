@@ -11,6 +11,8 @@ import matplotlib.pyplot as plt
  
 import numpy as np
 
+import argparse
+
 def optimize_beta(split_name, dataset_name, model_dict):
     
     """
@@ -81,29 +83,25 @@ def plot_beta_optimization(split, dataset, betas, beta_surprisals):
     
 if __name__ == '__main__':
     
-    regenerate = config.regenerate
-    # This is where the evaluation data is found.    
-    # Consider using argparse + parallel jobs instead.
+    parent_parser = parsers.SampleParser()
+    sub_parser = parent_parser.initialize(argparse.ArgumentParser())
+    raw_args = sub_parser.parse_args()
     
-    # Need to load all of the model arguments.
+    parent_parser.check_args(raw_args)
     
-    which_args = [('all', 'all'), ('age', 'old'), ('age', 'young')]
-    
-    this_model_args = {
-        'split' : 'all_debug',
-        'dataset' : 'all_debug', 
-        'use_tags' : True,
-        'context_width' : 0,
-    }
-    
-    this_use_tags = this_model_args['use_tags']
-    tags_str = f"{'with' if this_use_tags else 'no'}_tags"
-    context_str = f"{this_model_args['context_width']}_context" 
-    
+    this_model_args = vars(raw_args)
+        
     # This is currently only designed for querying BERT models -- generalize this later.
-    query_model_str = f"{this_model_args['split']}/{this_model_args['dataset']}/{tags_str}/{context_str}"
-    this_model_dict = load_models.get_model_dict()[query_model_str] # This is probably going to be slow, optimize later
     
+    query_model_str = load_models.get_model_id(
+        split_name = this_model_args['split'],
+        dataset_name = this_model_args['dataset'],
+        with_tags = this_model_args['with_tags'],
+        context_width = this_model_args['context_width'],
+        model_type = this_model_args['model_type']
+    )
+   
+    this_model_dict = load_models.get_model_dict()[query_model_str] # This is probably going to be slow, optimize later
     raw_results, beta_results = optimize_beta(this_model_args['split'], this_model_args['dataset'], this_model_dict)
     
     print(f'Computations complete for: {query_model_str}')

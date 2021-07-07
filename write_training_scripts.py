@@ -3,6 +3,7 @@
 import os
 from os.path import join, exists
 
+from utils import scripts
 
 def scripts_get_split_folder(split_type, dataset_name, gen_folder = True, base_dir = 'data/new_splits'):
     """
@@ -40,7 +41,7 @@ def get_training_shell_script(split_name, dataset_name, with_tags, om2_user = 'w
         os.makedirs(this_model_dir)
         
     # This needs to be copied from Chompsky to OM2 properly.
-    # Should have vocab.csv on all of CHILDES in the data folder, and the new_splits in the folder.
+    # Should have the new_splits in the folder.
     # Need to clean out the outdated data in the "data" folder later.
     
     # For the command text
@@ -48,7 +49,7 @@ def get_training_shell_script(split_name, dataset_name, with_tags, om2_user = 'w
     # and https://github.mit.edu/MGHPCC/OpenMind/issues/3392
     # including the bash line at the top
 
-    commands = []
+    commands = scripts.gen_command_header(time_alloc_hrs = 7)
     commands.append("#!/bin/bash\n")
     
     # Citation text for every script

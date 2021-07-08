@@ -45,5 +45,5 @@ grid_search = False # Whether to grid search the beta parameters or use random s
 # above: Note, this is still unused/untested.
 
 # Which models to use in the analyses -- primarily for running the sampling-based functions.
-childes_model_args = [('all_debug', 'all_debug'), ('all', 'all'), ('age', 'young'), ('age', 'old')]
+childes_model_args = [('all', 'all'), ('age', 'young'), ('age', 'old')]
 

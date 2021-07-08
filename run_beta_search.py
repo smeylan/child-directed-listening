@@ -1,7 +1,7 @@
 
 import os
 from os.path import join, exists
-from utils import load_splits, load_models, split_gen
+from utils import load_splits, load_models, split_gen, parsers
 from utils_model_sampling import beta_utils, sample_across_models
 
 import config
@@ -64,18 +64,18 @@ def optimize_beta(split_name, dataset_name, model_dict):
     
     print("Writing beta results to", {beta_results_path})
     
-    plot_beta_optimization(split_name, dataset_name, beta_sample, this_beta_results_surp['posterior_surprisal'])
+    plot_beta_optimization(this_exp_path, beta_sample, this_beta_results_surp['posterior_surprisal'])
     
     return this_raw_beta_results, this_beta_results_surp
     
-def plot_beta_optimization(split, dataset, betas, beta_surprisals):
+def plot_beta_optimization(fig_path_dir, betas, beta_surprisals):
     
     plt.title(f'Beta optimization for Split: {split}, Dataset: {dataset}')
     plt.xlabel('Beta value')
     plt.ylabel('Posterior surprisal')
     plt.plot(betas, beta_surprisals)
     
-    fig_path = join(config.eval_dir, 'beta_optimization.png')
+    fig_path = join(fig_path_dir, 'beta_optimization.png')
     plt.savefig(fname = fig_path)
     
     print(f'Writing optimization plot to: {fig_path}')
@@ -83,20 +83,22 @@ def plot_beta_optimization(split, dataset, betas, beta_surprisals):
     
 if __name__ == '__main__':
     
-    parent_parser = parsers.SampleParser()
-    sub_parser = parent_parser.initialize(argparse.ArgumentParser())
-    raw_args = sub_parser.parse_args()
+    parser = parsers.split_parser()
     
-    parent_parser.check_args(raw_args)
+    # 7/7/21: https://stackoverflow.com/questions/17118999/python-argparse-unrecognized-arguments    
+    raw_args = parser.parse_known_args()[0]
+    # Not sure why known args is necessary here.
+    
+    # parsers.check_args(raw_args)
     
     this_model_args = vars(raw_args)
-        
+    
     # This is currently only designed for querying BERT models -- generalize this later.
     
     query_model_str = load_models.get_model_id(
         split_name = this_model_args['split'],
         dataset_name = this_model_args['dataset'],
-        with_tags = this_model_args['with_tags'],
+        with_tags =  this_model_args['use_tags'],
         context_width = this_model_args['context_width'],
         model_type = this_model_args['model_type']
     )

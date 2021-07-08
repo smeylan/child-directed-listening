@@ -10,7 +10,7 @@ from utils import transformers_bert_completions, split_gen, load_csvs
 import config
 
 
-def gen_bert_model_args():
+def gen_finetune_model_args():
 
     load_bert_args = []
     
@@ -19,21 +19,23 @@ def gen_bert_model_args():
         this_split, this_dataset_name = model_args 
         
         for use_tags in [True, False]:
-            
+                
             for context in config.context_list:
 
                 load_bert_args.append((this_split, this_dataset_name, use_tags, context, 'childes'))
 
-    baseline_args = ('all', 'all', False)
+    return load_bert_args 
+
+
+def gen_adult_model_args():
     
     # Two adult baselines
+    load_args = []
+    baseline_args = ('all', 'all', False)
     for context in config.context_list:
-        load_bert_args.append(baseline_args + (context , 'adult'))
-        
-        
-    return load_bert_args
-
-
+        load_args.append(baseline_args + (context , 'adult'))
+    
+    return load_args
     
 def gen_all_model_args():
     
@@ -42,11 +44,11 @@ def gen_all_model_args():
     Order: (split, dataset, tags, context, model_type)
     """
     
-    load_args = gen_bert_model_args()
+    load_args = gen_adult_model_args() + gen_finetune_model_args()
         
     # Two unigram baselines
     for unigram_name in ['flat_unigram', 'data_unigram']:
-        load_args.append(baseline_args + (None, unigram_name))
+        load_args.append(('all', 'all', False) + (0, unigram_name))
         
     return load_args
     
@@ -66,7 +68,6 @@ def gen_model_title(split, dataset, is_tags, context_num, model_type):
 
     split_dict = {
         'all' : '',
-        'all_debug': 'debug only',
         'young' : 'younger children',
         'old' : 'older children', 
     }
@@ -141,26 +142,25 @@ def get_model_dict():
     
     # Load the BERT-based models
     
-    args = [('all_debug', 'all_debug', True)]  # Need to change this to be a dynamic query later.
+    args = gen_finetune_model_args()
     
     all_model_dict = {}
     
     for arg_set in args:
-        for context_width in config.context_list:
-            split, dataset, tags = arg_set
-            model_id = get_model_id(split, dataset, tags, context_width, 'childes')
-            all_model_dict[model_id] = {
-                'title' : gen_model_title(split, dataset, tags, context_width, 'childes'),
-                'kwargs' : get_model_from_split(split, dataset,
-                                                with_tags = tags),
-                'type' : 'BERT',
-            }
-            all_model_dict[model_id]['kwargs'].update({'context_width_in_utts' : context_width})
-    
+        split, dataset, tags, context_width, _ = arg_set
+        model_id = get_model_id(split, dataset, tags, context_width, 'childes')
+        all_model_dict[model_id] = {
+            'title' : gen_model_title(split, dataset, tags, context_width, 'childes'),
+            'kwargs' : get_model_from_split(split, dataset,
+                                            with_tags = tags),
+            'type' : 'BERT',
+        }
+        all_model_dict[model_id]['kwargs'].update({'context_width_in_utts' : context_width})
+
     # Load the normal BERT model
     
     prev_bert_dict = {}
-    for context in config.context_list:
+    for context in config.context_list: # You should refactor this later to use your BERT args
         prev_bert_dict[f'all/all/no_tags/{context}_context/adult'] = {
             'title': gen_model_title('all', 'all', False, context, 'adult'), 
             'kwargs': {'modelLM': adult_bertMaskedLM,
@@ -176,7 +176,7 @@ def get_model_dict():
     # Load the unigram-based models
     
     unigram_dict = {
-        'all/all/na/na_context/data_unigram' : {
+        'all/all/no_tags/0_context/data_unigram' : {
             'title': 'CHILDES Unigram',
             'kwargs': {'child_counts_path': f'{config.data_dir}/all/all/chi_vocab_train.csv',
                         'tokenizer': adult_tokenizer,
@@ -185,7 +185,7 @@ def get_model_dict():
                        },
              'type': 'unigram'
         },
-        'all/all/na/na_context/flat_unigram' : {
+        'all/all/no_tags/0_context/flat_unigram' : {
             'title': 'Flat Unigram',
             # Note that this assumes that flat prior = no information at all.
             # That means it doesn't observe any train/val split.
@@ -230,7 +230,7 @@ def get_model_from_split(split, dataset, with_tags):
     """
     
     tag_folder = 'with_tags' if with_tags else 'no_tags'
-    this_path = join(split_gen.get_split_folder('all_debug', 'all_debug', config.model_dir), tag_folder)
+    this_path = join(split_gen.get_split_folder(split, dataset, config.model_dir), tag_folder)
     
     return get_model_from_path(this_path, with_tags)
     

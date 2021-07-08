@@ -32,38 +32,35 @@ def get_sample_bert_token_ids(task):
     You should check this function for correctness at the end.
     """
     
-    split = 'all'; dataset = 'all'
-    
     eval_data = load_splits.load_eval_data_all('all', 'all')
     tokens = eval_data['phono']
-    
+
     this_sample_successes = load_splits.load_sample_successes(task, split, dataset)
     this_sample_yyy = load_splits.load_sample_yyy(task, split, dataset)
-    
-    select_sample_id = pd.concat([this_sample_successes, this_sample_yyy]).utterance_id
-    
-    select_phono = tokens.loc[tokens.id == select_sample_id]
-    # This (select_phono) is equivalent to utt_df in the relevant code.
-    
-    failure_mask_positions = select_phono.loc[select_phono.token == 'yyy','token'].bert_token_ids
-    
-    # What does the double indexing do?
-    success_mask_positions = (select_phono['partition'] == 'success').bert_token_ids
-    
-    # Avoid the original argwhere code because the indices will shift with the indexing.
-    
-    # Below line is good for conceptual guidance, but the actual "MASK" setting doesn't happen except inside 
-    # the get stats for success code. So need to construct otherwise.
-        
-    # You need to index into the utterances themselves in chi_phono -- get this from the sample functions.
-    # What exactly is bert_token_ids and how to correctly create it?
-    # It's the following:
-    # 'bert_token_id' : utt_df.loc[utt_df.token == '[MASK]'].bert_token_id}))
-    # where utt-df is 
-    # and all_tokens is phono. 
-    
-    return 
 
+    print('Fix this to be after filter')
+    select_sample_id = pd.concat([this_sample_successes, this_sample_yyy])
+    
+    # Below are changes to the original code!
+    # 7/7/21: Reference for isin usage
+    # https://github.com/smeylan/child-directed-listening/blob/master/transfomers_bert_completions.py
+    # Line 87
+    select_phono = tokens.loc[overall_id.id.isin(select_sample_id.utterance_id)]
+    
+    failure_mask_bert_ids = select_phono.loc[select_phono.token == 'yyy','bert_token_id']
+    # I think this indexes the locations with yyy, then gets the attribute
+    print('double check the use of loc and bert token id -- see comment above. in the code. probably on a small test case')
+
+    success_mask_bert_ids = select_phono[select_phono['partition'] == 'success'].bert_token_id
+
+    print('Correct logic generally -- double check the failure/success handling see the comment in the code.')
+    # For a failure -- you are finding the yyy position.
+    # For the successes, every single word in the utterance
+    
+    # Current general logic is correct per meeting
+    all_bert_ids = pd.concat([failure_mask_bert_ids, success_mask_bert_ids])
+    
+    return all_bert_ids
     
     
     

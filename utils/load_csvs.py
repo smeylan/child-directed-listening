@@ -29,3 +29,4 @@ def load_csv_with_lists(csv_path):
             new_df[col] = converted_col_all
     
     return new_df
+

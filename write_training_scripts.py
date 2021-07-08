@@ -6,7 +6,7 @@ from os.path import join, exists
 
 from utils import scripts
 
-def scripts_get_split_folder(split_type, dataset_name, gen_folder = True, base_dir = 'data/new_splits'):
+def scripts_get_split_folder(split_type, dataset_name, gen_folder = True, base_dir = config.data_dir):
     """
     The same function as in split_gen. This is copied here to prevent having two versions of the same split_gen file.
     """
@@ -18,9 +18,9 @@ def scripts_get_split_folder(split_type, dataset_name, gen_folder = True, base_d
     
     return path
 
-def models_get_split_folder(split_type, dataset_type, with_tags, base_dir = 'data/new_splits'):
+def models_get_split_folder(split_type, dataset_type, with_tags, base_dir = config.data_dir):
     
-    tags_str = '_with_tags' if with_tags else '_no_tags' # For naming the model folder
+    tags_str = 'with_tags' if with_tags else 'no_tags' # For naming the model folder
     split_dir = scripts_get_split_folder(split_type, dataset_type, gen_folder = False, base_dir = '')
     return join(base_dir, join('models', join(split_dir, tags_str)))
 
@@ -78,7 +78,7 @@ def get_training_shell_script(split_name, dataset_name, with_tags, om2_user = 'w
 
 def write_training_shell_script(split, dataset, is_tags, om2_user = 'wongn'): 
     
-    this_tags_str = '_with_tags' if is_tags else '_no_tags' # For naming the model folder
+    this_tags_str = 'with_tags' if is_tags else 'no_tags'
     
     base_dir = f'/om2/user/{om2_user}/childes_run'
     #base_dir = f'./om2/user/{om2_user}/childes_run' # The version with . is to test script on chompsky
@@ -88,7 +88,7 @@ def write_training_shell_script(split, dataset, is_tags, om2_user = 'wongn'):
     if not exists(script_dir):
         os.makedirs(script_dir)
     
-    script_name = f'run_model_{split}_{dataset}{this_tags_str}.sh'
+    script_name = f'run_model_{split}_{dataset}_{this_tags_str}.sh'
     
     with open(join(script_dir, script_name), 'w') as f:
         f.writelines(get_training_shell_script(split, dataset, is_tags, om2_user = om2_user))

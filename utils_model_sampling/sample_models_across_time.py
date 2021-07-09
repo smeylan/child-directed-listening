@@ -52,7 +52,7 @@ def assemble_across_time_scores():
 
         return score_store
 
-def successes_across_time_per_model(age, utts, model, all_tokens_phono, beta_value):
+def successes_and_failures_across_time_per_model(age, utts, model, all_tokens_phono, beta_value):
     """
     model = a dict of a model like that in the yyy analysis 
     vocab is only invoked for unigram, which correspond to original yyy analysis.

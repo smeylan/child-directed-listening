@@ -97,7 +97,7 @@ if __name__ == '__main__':
         split_name = this_model_args['split'],
         dataset_name = this_model_args['dataset'],
         with_tags =  this_model_args['use_tags'],
-        context_width = this_model_args['context_width_in_utts'],
+        context_width = this_model_args['context_width'],
         model_type = this_model_args['model_type']
     )
    

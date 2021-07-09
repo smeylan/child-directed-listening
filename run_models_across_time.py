@@ -50,9 +50,10 @@ def call_single_across_time_model(model_class, this_split, this_dataset_name, is
     
     ages = np.unique(utts.year)
     
-    for age in ages:
+    for age in ages[:1]: # For development purposes only
+    #for age in ages:
         
-        this_scores = sample_models_across_time.successes_across_time_per_model(age, utts, this_model_dict, tokens, beta_value = optimal_beta)
+        this_scores = sample_models_across_time.successes_and_failures_across_time_per_model(age, utts, this_model_dict, tokens, beta_value = optimal_beta)
         
         if 'unigram' not in model_name:
             this_tags = this_model_dict['kwargs']['use_speaker_labels']

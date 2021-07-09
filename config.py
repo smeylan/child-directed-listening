@@ -10,7 +10,7 @@ SEED = 0
 regenerate = False # Whether to regenerate data or long-running computations
 
 n_beta = 5 # For debugging
-n_across_time = 2 # For debugging
+n_across_time = 1 # For debugging
 
 verbose = False # True for debugging.
 val_ratio = 0.2 # For the CHILDES split.

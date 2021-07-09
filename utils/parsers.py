@@ -5,7 +5,6 @@ import argparse
 
 # 7/6/21: https://docs.python.org/3/library/argparse.html
 
-# You may want to import this object -- will be used across beta and run across time?
 
 def split_parser():
     
@@ -14,7 +13,11 @@ def split_parser():
     parser.add_argument('split', type = str, help = 'Which split to use. childes: {all, age}. All others use "all" split.')
     parser.add_argument('dataset', type = str, help = 'Which sub-split to use. childes/all, any other models: {all}. childes/age: {old, young}')
     parser.add_argument('context_width', type = int, default = -1, help = "Context width to use.")
-    parser.add_argument('use_tags', type = bool, default = False, help = "Whether to include speaker tags. This should only be used as True with the CHILDES models")
+     
+    # 7/9/21: https://stackoverflow.com/questions/15008758/parsing-boolean-values-with-argparse
+    # If you specify False without the type switch below it will still evaluate to True.
+     
+    parser.add_argument('use_tags', default = False, type=lambda x: (str(x).lower() == 'true'), help = "Whether to include speaker tags. This should only be used as True with the CHILDES models")
     parser.add_argument('model_type', type = str, help = "What model type to use. {'childes' = CHILDES finetuned, 'adult' = BERT off-the-shelf, 'data_unigram' = unigram with CHILDES counts, 'flat_unigram' = completely flat prior}")
 
     return parser 

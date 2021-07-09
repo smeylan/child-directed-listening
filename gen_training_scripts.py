@@ -5,40 +5,25 @@ import os
 from os.path import join, exists
 
 from utils import scripts
+import config
 
-def scripts_get_split_folder(split_type, dataset_name, gen_folder = True, base_dir = config.data_dir):
-    """
-    The same function as in split_gen. This is copied here to prevent having two versions of the same split_gen file.
-    """
-   
-    path = join(base_dir, join(split_type, dataset_name))
-    
-    if gen_folder and (not exists(path)):
-        os.makedirs(path)
-    
-    return path
 
-def models_get_split_folder(split_type, dataset_type, with_tags, base_dir = config.data_dir):
+def models_get_split_folder(split_type, dataset_type, with_tags, base_dir = config.om_root_dir):
     
     tags_str = 'with_tags' if with_tags else 'no_tags' # For naming the model folder
-    split_dir = scripts_get_split_folder(split_type, dataset_type, gen_folder = False, base_dir = '')
-    return join(base_dir, join('models', join(split_dir, tags_str)))
+    return join(base_dir, join('models', join(join(split_type, dataset_type), tags_str)))
 
 def get_training_shell_script(split_name, dataset_name, with_tags, om2_user = 'wongn'):
     """
     Make sure you copy the latest, proper data folder to OM2.
     """
     
-    tags_data_str  = '' if with_tags else '_no_tags' # For loading the proper data
-    base_dir = f'/om2/user/{om2_user}/childes_run'
-    #base_dir = f'./om2/user/{om2_user}/childes_run' # The version with . is to test script on chompsky
+    tags_data_str  = '' if with_tags else 'no_tags' # For loading the proper data
+    this_model_dir = models_get_split_folder(split_name, dataset_name, with_tags)
     
-    this_split_dir = scripts_get_split_folder(split_name, dataset_name, '')
-    this_model_dir = models_get_split_folder(split_name, dataset_name, with_tags, '')
+    this_data_dir = join(config.om_root_dir, join('data/new_splits', join(split_name, dataset_name)))
     
-    this_data_dir = join(base_dir, join('data/new_splits', this_split_dir))
-    
-    if not exists(this_model_dir):
+    if not exists(this_model_dir) and config.root_dir == config.om_root_dir: # You are on OM
         os.makedirs(this_model_dir)
         
     # This needs to be copied from Chompsky to OM2 properly.
@@ -70,8 +55,8 @@ def get_training_shell_script(split_name, dataset_name, with_tags, om2_user = 'w
             --do_train \
             --do_eval \
             --output_dir {this_model_dir}\
-            --train_file {this_data_dir}/train{tags_data_str}.txt \
-            --validation_file {this_data_dir}/val{tags_data_str}.txt \
+            --train_file {this_data_dir}/train_{tags_data_str}.txt \
+            --validation_file {this_data_dir}/val_{tags_data_str}.txt \
             --overwrite_output_dir")
     
     return commands
@@ -79,11 +64,8 @@ def get_training_shell_script(split_name, dataset_name, with_tags, om2_user = 'w
 def write_training_shell_script(split, dataset, is_tags, om2_user = 'wongn'): 
     
     this_tags_str = 'with_tags' if is_tags else 'no_tags'
-    
-    base_dir = f'/om2/user/{om2_user}/childes_run'
-    #base_dir = f'./om2/user/{om2_user}/childes_run' # The version with . is to test script on chompsky
-    
-    script_dir = join(base_dir, 'scripts')
+       
+    script_dir = join(config.root_dir, 'scripts_train')
     
     if not exists(script_dir):
         os.makedirs(script_dir)

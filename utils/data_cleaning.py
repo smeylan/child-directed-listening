@@ -10,7 +10,7 @@ import numpy as np
 
 import config
 
-def get_target_child_year(df):
+def augment_target_child_year(df):
     """
     Expects utts_with_ages from Providence notebook.
     """

@@ -1,8 +1,8 @@
 
-# Code to replace run_models_across_time.
-# This is for GPU/tmuxable scripts.
 
+import copy
 from utils import load_models, transformers_bert_completions, load_csvs, unigram
+from utils_model_sampling import beta_utils
 
 from collections import defaultdict
 
@@ -42,9 +42,7 @@ def assemble_across_time_scores():
    
     for age in all_ages:
         for split, dataset, tags, context, model_type in this_load_args:
-            this_beta_folder = load_beta_folder(split, dataset, tags, context, model_type)
-
-            # Need to retrieve the ages from the sample -- how?
+            this_beta_folder = beta_utils.load_beta_folder(split, dataset, tags, context, model_type)
 
             this_data_path = join(this_beta_folder, 'run_models_across_time_{age}.csv')
             data_df = load_csvs.load_csv_with_lists(this_data_path)
@@ -87,11 +85,11 @@ def successes_and_failures_across_time_per_model(age, utts, model, all_tokens_ph
 
     if model['type'] == 'BERT':
         posteriors_for_age_interval = transformers_bert_completions.get_posteriors(priors_for_age_interval, 
-            edit_distances_for_age_interval, initial_vocab, beta_value = optimal_beta)
+            edit_distances_for_age_interval, initial_vocab, beta_value = beta_value)
     elif model['type'] == 'unigram':
         # special unigram hack
         this_bert_token_ids = unigram.get_sample_bert_token_ids('models_across_time')
-        posteriors_for_age_interval = transformers_bert_completions.get_posteriors(priors_for_age_interval, edit_distances_for_age_interval, initial_vocab, this_bert_token_ids, beta_value = optimal_beta)
+        posteriors_for_age_interval = transformers_bert_completions.get_posteriors(priors_for_age_interval, edit_distances_for_age_interval, initial_vocab, this_bert_token_ids, beta_value = beta_value)
 
 
     posteriors_for_age_interval['scores']['model'] = model['title']

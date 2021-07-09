@@ -35,8 +35,6 @@ def get_sample_path(data_type, task_name, split_name, dataset_name):
     
     return this_data_path
     
-
-# You didn't pass in the success utts? -- you need to load accordingly.
 def sample_successes_yyy(pool, task, split, dataset, utts_pool):
     """
     task_name = designates the cached value to use for optimizations.

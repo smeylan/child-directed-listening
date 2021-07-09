@@ -55,11 +55,11 @@ def gen_all_model_args():
     
 def gen_model_title(split, dataset, is_tags, context_num, model_type):
     
-    assert model_type in {'childes', 'adult'}, "Invalid model_type given. Function is intended for use with BERT-type models."
-    
     model_type_dict = {
-        'childes' : 'CHILDES',
-        'adult' : 'Adult',
+        'childes' : 'CHILDES BERT',
+        'adult' : 'Adult BERT',
+        'flat_unigram' : 'Flat prior',
+        'data_unigram' : 'CHILDES unigram',
     }
     context_dict = {
         0 : 'same utt only',
@@ -78,7 +78,7 @@ def gen_model_title(split, dataset, is_tags, context_num, model_type):
         False :  'without tags',
     }
     
-    model_title = f'{model_type_dict[model_type]} BERT {speaker_tags_dict[is_tags]}, {dataset_dict[dataset]}, {context_dict[context_num]}'
+    model_title = f'{model_type_dict[model_type]} {speaker_tags_dict[is_tags]}, {dataset_dict[dataset]}, {context_dict[context_num]}'
     
     return model_title
     
@@ -104,9 +104,6 @@ def get_model_id(split_name, dataset_name, with_tags, context_width, model_type)
 
 
 def query_model_title(split, dataset, is_tags, context_num, model_type):
-    """
-    Need to update this for "shelf" attribute
-    """
     return gen_model_title(split, dataset, is_tags, context_num, model_type)
 
     
@@ -185,7 +182,11 @@ def get_model_dict():
             'kwargs': {'child_counts_path': f'{config.data_dir}/all/all/chi_vocab_train.csv',
                         'tokenizer': adult_tokenizer,
                         'softmax_mask': adult_softmax_mask,
-                        'vocab': initial_vocab
+                        'vocab': initial_vocab,
+                       
+                        # Added these default args 7/9/21 for compatibility with rest of the code
+                        'context_width_in_utts': 0,
+                        'use_speaker_labels': False,
                        },
              'type': 'unigram'
         },
@@ -198,7 +199,11 @@ def get_model_dict():
             'kwargs': {'child_counts_path': None,
                         'tokenizer': adult_tokenizer,
                         'softmax_mask': adult_softmax_mask,
-                        'vocab': initial_vocab
+                        'vocab': initial_vocab,
+                       
+                        # Added these default args 7/9/21 for compatibility with rest of the code
+                        'context_width_in_utts': 0,
+                        'use_speaker_labels': False,
                        },
              'type': 'unigram'
         },   

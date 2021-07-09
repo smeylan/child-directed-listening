@@ -450,7 +450,7 @@ def compare_successes_failures(all_tokens, selected_success_utts, selected_yyy_u
 
     return(rdict)
 
-def compare_successes_failures_unigram_model(all_tokens, selected_success_utts, selected_yyy_utts, tokenizer, softmax_mask,  child_counts_path, vocab):
+def compare_successes_failures_unigram_model(all_tokens, selected_success_utts, selected_yyy_utts, tokenizer, softmax_mask,  child_counts_path, vocab, context_width_in_utts, use_speaker_labels):
     '''
         Get prior probaiblities, completions, and scores from a unigram model (limiting to the vocab) or flat prior for a list of utterance ids for communicative successes and a list of utterance ids for communicative failures 
 
@@ -462,6 +462,8 @@ def compare_successes_failures_unigram_model(all_tokens, selected_success_utts, 
         softmax_mask: a vector of indices of vocabulary items over which to compute the softmax
         child_counts_path: file to read with 'word' and 'count' in the column titles to use for unigram counts. If set to None, return a uniform prior
         vocab: a string representation of the vocab
+        
+        context_width_in_utts, use_speaker_labels : Ignored, used for compatibility with expected model dictionary elements in BERT models.
 
         Returns: dictionary with two keys:            
             priors: n * m matrix of prior probabilities, where n is the number of communicative failures + communicative successes, and m is the size of the vocab identified by the softmax map. Failures are stacked on top of successes and are identified by a bert_token_id

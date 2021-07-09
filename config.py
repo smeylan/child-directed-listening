@@ -9,22 +9,19 @@ from os.path import join
 SEED = 0 
 regenerate = False # Whether to regenerate data or long-running computations
 
-n_beta = 5 # For debugging
-n_across_time = 1 # For debugging
+n_beta = 5000 # For debugging
+n_across_time = 1000 # For debugging
 
 verbose = False # True for debugging.
 val_ratio = 0.2 # For the CHILDES split.
 child_val_num = 200
 
-#n_beta = 5000 # Number of samples for beta fitting
-#n_across_time = 1000 # Number of samples across time
-
-# Note that if this is specified to "None", it really defaults to:
-# beta fitting on 5000 samples
-# and running models across time on 1000 samples.
-
 root_dir = '/home/nwong/chompsky/childes/child_listening_continuation/child-directed-listening' # Location of repository
 # root_dir = '/om2/user/wongn/childes_run/child-directed-listening' # Location of repository
+
+om_root_dir = '/om2/user/wongn/childes_run/child-directed-listening'
+
+# For automatic script writing.
 
 data_dir = join(root_dir, 'data/new_splits') # Location of data for model fitting
 eval_dir = join(root_dir, 'eval/new_splits') # Location of data for evaluations (in yyy)

@@ -21,9 +21,9 @@ def load_chi_token_freq_all_split():
     return this_chi_vocab
     
 
-def get_sample_bert_token_ids(task):
+def get_sample_bert_token_ids(task, split = 'all', dataset = 'all'):
     """
-    This is really only intended for use with all/all split.
+    This is only intended for use with all/all split.
     Retrieves the equivalent of score_store[-1].bert_token_id
         used in the "set" check for limiting unigram distributions.
     Assumes that the order of the bert token ids doesn't matter (read the code to check that this value is used as a set)
@@ -45,7 +45,7 @@ def get_sample_bert_token_ids(task):
     # 7/7/21: Reference for isin usage
     # https://github.com/smeylan/child-directed-listening/blob/master/transfomers_bert_completions.py
     # Line 87
-    select_phono = tokens.loc[overall_id.id.isin(select_sample_id.utterance_id)]
+    select_phono = tokens.loc[tokens.id.isin(select_sample_id.utterance_id)]
     
     failure_mask_bert_ids = select_phono.loc[select_phono.token == 'yyy','bert_token_id']
     # I think this indexes the locations with yyy, then gets the attribute

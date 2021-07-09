@@ -41,7 +41,8 @@ def sample_successes_yyy(pool, task, split, dataset, utts_pool):
         The cache should be different for beta optimization and run_models_across_time.
     """
     
-    n = get_n(task)
+    num_samples = utts_pool.shape[0]
+    n = min(num_samples, get_n(task))
     this_data_path = get_sample_path(pool, task, split, dataset)
     
     # Need to sample the successes again and save them.

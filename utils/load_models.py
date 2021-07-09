@@ -213,15 +213,15 @@ def get_model_dict():
         
         # 7/9/21: So childes doesn't need to re-add the tokens, and it works fine with the tokens, manually checked via prints
         if 'childes' not in model_id:
-            print('Adding the speaker tokens to this model dict')
+            #print('Adding the speaker tokens to this model dict')
             model_dict['kwargs']['tokenizer'].add_tokens(['[chi]','[cgv]'])
         
-        print('********* CHECKING THE TOKENIZATION *****')
-        this_tokenizer = model_dict['kwargs']['tokenizer']
+        #print('********* CHECKING THE TOKENIZATION *****')
+        #this_tokenizer = model_dict['kwargs']['tokenizer']
         
-        print(f'For model id {model_id}')
-        print(this_tokenizer.convert_ids_to_tokens(this_tokenizer.encode("[CHI] i'm not going to do anything.")))
-        print(this_tokenizer.convert_ids_to_tokens(this_tokenizer.encode('[CGV] back on the table if you wanna finish it.')))
+        #print(f'For model id {model_id}')
+        #print(this_tokenizer.convert_ids_to_tokens(this_tokenizer.encode("[CHI] i'm not going to do anything.")))
+        #print(this_tokenizer.convert_ids_to_tokens(this_tokenizer.encode('[CGV] back on the table if you wanna finish it.')))
     
     all_model_dict.update(unigram_dict)
     all_model_dict.update(prev_bert_dict)

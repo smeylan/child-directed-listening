@@ -1,6 +1,9 @@
 import pandas as pd
 
-def load_csv_with_lists(csv_path):
+def load_csv_with_lists(csv_path, na_filter = True):
+    # na_filter is default True in csvs
+    # 7/9/21: https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html
+    
     """
     Converts csv column values that have list values to a list,
         if loaded from csv.
@@ -15,7 +18,7 @@ def load_csv_with_lists(csv_path):
     
     convertable = lambda this_val : isinstance(this_val, str) and is_list_str(this_val)
     
-    raw_df = pd.read_csv(csv_path)
+    raw_df = pd.read_csv(csv_path, na_filter = na_filter)
     new_df = raw_df.copy().reset_index(drop=True)
     
     for col in raw_df:

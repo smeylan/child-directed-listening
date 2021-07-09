@@ -22,10 +22,10 @@ def get_beta_search_values():
     return beta_samples
 
 
-def load_beta_folder(split, dataset, is_tags, context_num):
+def load_beta_folder(split, dataset, is_tags, context_num, model_type):
     
     folder = split_gen.get_split_folder(split, dataset, config.exp_dir)
-    this_title = load_models.query_model_title(split, dataset, is_tags, context_num)
+    this_title = load_models.query_model_title(split, dataset, is_tags, context_num, model_type)
     exp_path = join(folder, this_title.replace(' ', '_'))
     
     if not exists(exp_path):
@@ -33,20 +33,20 @@ def load_beta_folder(split, dataset, is_tags, context_num):
     
     return exp_path
 
-def load_beta_values(split_name, dataset_name, tags, context_width):
+def load_beta_values(split_name, dataset_name, tags, context_width, model_type):
     
-    exp_model_path = load_beta_folder(split_name, dataset_name, tags, context_width)
+    exp_model_path = load_beta_folder(split_name, dataset_name, tags, context_width, model_type)
     results = load_csvs.load_csv_with_lists(join(exp_model_path, 'beta_search_results.csv'))
     # Below: temp line for checking the code interpretation.
     raw_results = load_csvs.load_csv_with_lists(join(exp_model_path, 'beta_search_raw_results.csv'))
-    
+
     return results, raw_results
 
-def get_optimal_beta_value(split, dataset, model_dict):
+def get_optimal_beta_value(split, dataset, model_dict, model_type):
     
     # What to do here? Divide up loading the model name?
     
-    this_beta_results, this_raw_beta_results = load_beta_values(split, dataset, model_dict['use_speaker_labels'], model_dict['context_width'])
+    this_beta_results, this_raw_beta_results = load_beta_values(split, dataset, model_dict['kwargs']['use_speaker_labels'], model_dict['kwargs']['context_width_in_utts'], model_type)
     
     
     # Need to argmax for beta_value, given the posterior surprisal

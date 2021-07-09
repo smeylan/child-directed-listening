@@ -39,7 +39,6 @@ def bert_completions(text, model, tokenizer, softmax_mask):
   if type(text) is str:
     text = '[CLS] ' + text + ' [SEP]'
     tokenized_text = tokenizer.tokenize(text)
-    print(tokenized_text)
     indexed_tokens = tokenizer.convert_tokens_to_ids(tokenized_text)
     masked_index = tokenized_text.index('[MASK]')  
     num_masks = len(np.argwhere(np.array(tokenized_text) == '[MASK]'))    
@@ -67,13 +66,23 @@ def bert_completions(text, model, tokenizer, softmax_mask):
 
   # Predict all tokens
   with torch.no_grad():
-      predictions = model(tokens_tensor, segments_tensors)
+      predictions = model(tokens_tensor, segments_tensors)['logits']
    
   # 7/1/21: https://stackoverflow.com/questions/48152674/how-to-check-if-pytorch-is-using-the-gpu
   if torch.cuda.is_available():
       predictions = predictions.detach().cpu()
+  
+  # 7/9/21: I think tuple indexing is no longer supported.
+  # From development session:
+  # text of interest torch.Size([1, 7]) -> tokens_tensor.shape
+  # logits shape torch.Size([1, 7, 30524]) -> predictions.shape
 
-  probs = softmax(predictions[0, masked_index].data.numpy()[softmax_mask])  
+  # 7/9/21 assume predictions is the logit
+   
+  probs = softmax(predictions[0][masked_index].data.numpy()[softmax_mask])  
+  #probs = softmax(predictions[0, masked_index].data.numpy()[softmax_mask])   # Original line
+   
+  # the size is the size of the vocabulary -> the softmax array itself.
   words = np.array(tokenizer.convert_ids_to_tokens(range(predictions.size()[2])))[softmax_mask]
   
   word_predictions  = pd.DataFrame({'prob': probs, 'word':words})

@@ -2,7 +2,7 @@
 import copy
 import pandas as pd
 
-from utils import load_models, transformers_bert_completions, unigram
+from utils import load_models, transformers_bert_completions, unigram, load_splits
 
 def sample_across_models(utterance_ids, model, eval_data_dict, beta_values):
     '''

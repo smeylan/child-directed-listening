@@ -66,10 +66,11 @@ def gen_model_title(split, dataset, is_tags, context_num, model_type):
         20 : '+-20 utts context',
     }
 
-    split_dict = {
+    dataset_dict = {
         'all' : '',
         'young' : 'younger children',
         'old' : 'older children', 
+        'all_debug' : 'all_debug',
     }
 
     speaker_tags_dict = {
@@ -77,7 +78,7 @@ def gen_model_title(split, dataset, is_tags, context_num, model_type):
         False :  'without tags',
     }
     
-    model_title = f'{model_type_dict[model_type]} BERT {speaker_tags_dict[is_tags]}, {split_dict[split]}, {context_dict[context_num]}'
+    model_title = f'{model_type_dict[model_type]} BERT {speaker_tags_dict[is_tags]}, {dataset_dict[dataset]}, {context_dict[context_num]}'
     
     return model_title
     
@@ -144,6 +145,9 @@ def get_model_dict():
     
     args = gen_finetune_model_args()
     
+    # Development code only.
+    # args = [('all_debug', 'all_debug', True, 0, 'childes'), ('age', 'old', True, 0, 'childes')]
+    
     all_model_dict = {}
     
     for arg_set in args:
@@ -199,6 +203,20 @@ def get_model_dict():
              'type': 'unigram'
         },   
     }
+    
+    for model_id, model_dict in all_model_dict.items():
+        
+        # 7/9/21: So childes doesn't need to re-add the tokens, and it works fine with the tokens, manually checked via prints
+        if 'childes' not in model_id:
+            print('Adding the speaker tokens to this model dict')
+            model_dict['kwargs']['tokenizer'].add_tokens(['[chi]','[cgv]'])
+        
+        print('********* CHECKING THE TOKENIZATION *****')
+        this_tokenizer = model_dict['kwargs']['tokenizer']
+        
+        print(f'For model id {model_id}')
+        print(this_tokenizer.convert_ids_to_tokens(this_tokenizer.encode("[CHI] i'm not going to do anything.")))
+        print(this_tokenizer.convert_ids_to_tokens(this_tokenizer.encode('[CGV] back on the table if you wanna finish it.')))
     
     all_model_dict.update(unigram_dict)
     all_model_dict.update(prev_bert_dict)

@@ -13,7 +13,7 @@ import numpy as np
 
 import argparse
 
-def optimize_beta(split_name, dataset_name, model_dict):
+def optimize_beta(split_name, dataset_name, model_dict, model_type):
     
     """
     For now, specify the model separately from the split_name/dataset_name.
@@ -31,7 +31,7 @@ def optimize_beta(split_name, dataset_name, model_dict):
     
     initial_vocab, cmu_in_initial_vocab = load_models.get_initial_vocab_info()
     
-    this_exp_path = beta_utils.load_beta_folder(split_name, dataset_name, model_dict['kwargs']['use_speaker_labels'], model_dict['kwargs']['context_width_in_utts'])
+    this_exp_path = beta_utils.load_beta_folder(split_name, dataset_name, model_dict['kwargs']['use_speaker_labels'], model_dict['kwargs']['context_width_in_utts'], model_type)
     
     if not exists(this_exp_path):
         os.makedirs(this_exp_path)
@@ -64,11 +64,11 @@ def optimize_beta(split_name, dataset_name, model_dict):
     
     print("Writing beta results to", {beta_results_path})
     
-    plot_beta_optimization(this_exp_path, beta_sample, this_beta_results_surp['posterior_surprisal'])
+    plot_beta_optimization(this_exp_path, beta_sample, this_beta_results_surp['posterior_surprisal'], split_name, dataset_name)
     
     return this_raw_beta_results, this_beta_results_surp
     
-def plot_beta_optimization(fig_path_dir, betas, beta_surprisals):
+def plot_beta_optimization(fig_path_dir, betas, beta_surprisals, split, dataset):
     
     plt.title(f'Beta optimization for Split: {split}, Dataset: {dataset}')
     plt.xlabel('Beta value')
@@ -93,18 +93,16 @@ if __name__ == '__main__':
     
     this_model_args = vars(raw_args)
     
-    # This is currently only designed for querying BERT models -- generalize this later.
-    
     query_model_str = load_models.get_model_id(
         split_name = this_model_args['split'],
         dataset_name = this_model_args['dataset'],
         with_tags =  this_model_args['use_tags'],
-        context_width = this_model_args['context_width'],
+        context_width = this_model_args['context_width_in_utts'],
         model_type = this_model_args['model_type']
     )
    
     this_model_dict = load_models.get_model_dict()[query_model_str] # This is probably going to be slow, optimize later
-    raw_results, beta_results = optimize_beta(this_model_args['split'], this_model_args['dataset'], this_model_dict)
+    raw_results, beta_results = optimize_beta(this_model_args['split'], this_model_args['dataset'], this_model_dict, this_model_args['model_type'])
     
     print(f'Computations complete for: {query_model_str}')
     

@@ -24,11 +24,11 @@ def load_sample_model_across_time_args(split_name, dataset_name):
 def call_single_across_time_model_unigram(unigram_name):
     
     assert unigram_name in {'data_unigram', 'flat_unigram'}
-    return call_single_across_time_model(unigram_name, 'all', 'all', None, None) # What is best to compute here?
+    return call_single_across_time_model(unigram_name, 'all', 'all', False, 0)
 
 def call_single_across_time_model_bert(model_type, split, dataset, with_tags, context_num):
     
-    name = load_models.get_model_id(split, dataset, with_tags, context_num)
+    name = load_models.get_model_id(split, dataset, with_tags, context_num, model_type)
     return call_single_across_time_model(model_type, split, dataset, with_tags, context_num)
     
     
@@ -58,7 +58,7 @@ def call_single_across_time_model(model_class, this_split, this_dataset_name, is
             this_tags = this_model_dict['kwargs']['use_speaker_labels']
             this_context_width = this_model_dict['kwargs']['context_width_in_utts']
         else:
-            this_tags = 'na'; this_context_width = 'na' # Not applicable to unigram models.
+            this_tags = False; this_context_width = 0
             
         
         score_folder = load_beta_folder(this_split, this_dataset_name, this_tags, this_context_width, model_class)
@@ -68,27 +68,35 @@ def call_single_across_time_model(model_class, this_split, this_dataset_name, is
     
 if __name__ == '__main__':
     
-    model_args = config.model_args
+    #model_args = config.model_args
     
     # For now, run all models sequentially -- can refactor to argparse/parallel calls if needed, or if the model calls are too slow.
+    # Need to parallelize this + run this all separately.
+    # Test this for running on all_debug?
+    
+    # Need to test this on?
     
     # Run the unigrams
-    for unigram_name in ['flat_unigram', 'data_unigram']:
-        # Only compute on all/all
-        print(f'calling single across time model on {unigram_name}')
-        call_single_across_time_model_unigram(unigram_name)
+    #for unigram_name in ['flat_unigram', 'data_unigram']:
+    #    # Only compute on all/all
+    #    print(f'calling single across time model on {unigram_name}')
+    #    call_single_across_time_model_unigram(unigram_name)
 
         
     # Run the adult BERT models
-    for context_width in config.context_list:
-        call_single_across_time_model_bert('adult', 'all', 'all', False, context_width)
+    #for context_width in config.context_list:
+    #    call_single_across_time_model_bert('adult', 'all', 'all', False, context_width)
     
     
     # Run the CHILDES models
-    for split, dataset_name in [('all_debug', 'all_debug')]: # model_args:
-        for use_tags in [True, False]:
-            for context_num in config.context_list: # How to also call the unigram?
-                print(f"calling single across time model {split}, {dataset_name}")
-                call_single_across_time_model_bert('childes', split, dataset_name, use_tags, context_num)
+    
+#     for split, dataset_name in [('all_debug', 'all_debug')]: # model_args:
+#         for use_tags in [True, False]:
+#             for context_num in config.context_list: # How to also call the unigram?
+#                 print(f"calling single across time model {split}, {dataset_name}")
+#                 call_single_across_time_model_bert('childes', split, dataset_name, use_tags, context_num)
+
+    call_single_across_time_model_bert('childes', 'age', 'old', True, 0)
                 
+    # How to generate the bash scripts for this?
     

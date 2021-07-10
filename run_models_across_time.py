@@ -46,9 +46,8 @@ def call_single_across_time_model(model_class, this_split, this_dataset_name, is
     utts = data_cleaning.augment_target_child_year(utts) # It expects things from the Providence notebook?
     
     ages = np.unique(utts.year)
-    
-    for age in ages[:1]: # For development purposes only -- to get it to run.
-    #for age in ages:
+   
+    for age in ages:
         
         this_scores = sample_models_across_time.successes_and_failures_across_time_per_model(age, utts, this_model_dict, tokens, beta_value = optimal_beta)
         
@@ -56,7 +55,7 @@ def call_single_across_time_model(model_class, this_split, this_dataset_name, is
         this_context_width = this_model_dict['kwargs']['context_width_in_utts']
         
         score_folder = beta_utils.load_beta_folder(this_split, this_dataset_name, this_tags, this_context_width, model_class)
-        this_scores.to_csv(join(score_folder, 'run_models_across_time_{age}.csv'))# Need to assemble via model, then age later.
+        this_scores.to_csv(join(score_folder, f'run_models_across_time_{age}.csv'))# Need to assemble via model, then age later.
     
     return this_scores
     

@@ -9,8 +9,8 @@ from os.path import join
 SEED = 0 
 regenerate = False # Whether to regenerate data or long-running computations
 
-n_beta = 5000 # For debugging
-n_across_time = 1000 # For debugging
+n_beta = 5 # 5000 # For debugging
+n_across_time = 2 # 1000 # For debugging
 
 verbose = False # True for debugging.
 val_ratio = 0.2 # For the CHILDES split.

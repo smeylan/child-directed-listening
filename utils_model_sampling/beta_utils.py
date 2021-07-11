@@ -17,7 +17,7 @@ def get_beta_search_values():
         # Random hyperparam search
         beta_samples = np.random.uniform(low, high, num_values)
     else: # Grid search
-        test_beta_vals = np.arange(low, high, (high - low) / num_values)
+        beta_samples = np.arange(low, high, (high - low) / num_values)
     
     return beta_samples
 

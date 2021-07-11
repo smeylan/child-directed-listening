@@ -38,8 +38,7 @@ age_split = 36 # Split young <= {age_split} months.
 beta_low = 2.5
 beta_high = 3.5
 num_values = 10
-grid_search = False # Whether to grid search the beta parameters or use random search.
-# above: Note, this is still unused/untested.
+grid_search = True # Whether to grid search the beta parameters or use random search.
 
 # Which models to use in the analyses -- primarily for running the sampling-based functions.
 childes_model_args = [('all', 'all'), ('age', 'young'), ('age', 'old')]

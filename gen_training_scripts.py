@@ -18,7 +18,7 @@ def get_training_shell_script(split_name, dataset_name, with_tags, om2_user = 'w
     Make sure you copy the latest, proper data folder to OM2.
     """
     
-    tags_data_str  = '' if with_tags else 'no_tags' # For loading the proper data
+    tags_data_str  = '' if with_tags else '_no_tags' # For loading the proper data
     this_model_dir = models_get_split_folder(split_name, dataset_name, with_tags)
     
     this_data_dir = join(config.om_root_dir, join('data/new_splits', join(split_name, dataset_name)))
@@ -55,8 +55,8 @@ def get_training_shell_script(split_name, dataset_name, with_tags, om2_user = 'w
             --do_train \
             --do_eval \
             --output_dir {this_model_dir}\
-            --train_file {this_data_dir}/train_{tags_data_str}.txt \
-            --validation_file {this_data_dir}/val_{tags_data_str}.txt \
+            --train_file {this_data_dir}/train{tags_data_str}.txt \
+            --validation_file {this_data_dir}/val{tags_data_str}.txt \
             --overwrite_output_dir")
     
     return commands

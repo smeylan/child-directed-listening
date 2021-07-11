@@ -16,8 +16,7 @@ def assemble_across_time_scores():
     Note that different splits have different samples of data.
     """
     
-    this_load_args = [('debug_all', 'debug_all')]
-    #this_load_args = load_models.gen_all_model_args()
+    this_load_args = load_models.gen_all_model_args()
     
     # For now, analyze whichever ages are available in the sample.
     # Need to be careful when doing visualizations in yyy later.
@@ -28,7 +27,7 @@ def assemble_across_time_scores():
     
     for split, dataset, _, _, _ in this_load_args:
         # Not just successes! What else to load?
-        this_sample_pool = load_sample_successes('models_across_time', split, dataset)
+        this_sample_pool = load_split.load_sample_successes('models_across_time', split, dataset)
         this_ages = np.unique(this_sample_pool.age)
         age2models[age].append((split, dataset)) # Not sure if age is a float or int, be careful
     
@@ -48,7 +47,7 @@ def assemble_across_time_scores():
             data_df = load_csvs.load_csv_with_lists(this_data_path)
             score_store.append(data_df)
 
-        return score_store
+    return score_store
 
 def successes_and_failures_across_time_per_model(age, utts, model, all_tokens_phono, beta_value):
     """
@@ -61,7 +60,7 @@ def successes_and_failures_across_time_per_model(age, utts, model, all_tokens_ph
     initial_vocab, cmu_in_initial_vocab = load_models.get_initial_vocab_info()
     
     
-    print('Running model '+model['title']+'...')
+    print('Running model '+model['title']+f'... at age {age}')
     
     selected_success_utts = utts.loc[(utts.set == 'success') 
             & (utts.year == age)]
@@ -69,6 +68,10 @@ def successes_and_failures_across_time_per_model(age, utts, model, all_tokens_ph
     selected_yyy_utts = utts.loc[(utts.set == 'failure') 
             & (utts.year == age)]
     
+    # Note that if the age doesn't yield both successes and failures,
+    # then one of the dataframes can be empty
+    # causing runtime error -> program doesn't run to completion.
+    # This is very unlikely for large samples, but potentially causes runtime errors in the middle of running.
     
     if model['type'] == 'BERT':
         priors_for_age_interval = transformers_bert_completions.compare_successes_failures(

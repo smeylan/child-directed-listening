@@ -215,6 +215,9 @@ def get_model_dict():
         if 'childes' not in model_id:
             #print('Adding the speaker tokens to this model dict')
             model_dict['kwargs']['tokenizer'].add_tokens(['[chi]','[cgv]'])
+            
+        # Always add tokens to the new models.
+        model_dict['kwargs']['tokenizer'].add_tokens(['yyy','xxx']) #must maintain xxx and yyy for alignment,
         
         #print('********* CHECKING THE TOKENIZATION *****')
         #this_tokenizer = model_dict['kwargs']['tokenizer']
@@ -239,6 +242,7 @@ def get_initial_vocab_info():
     
     initial_tokenizer.add_tokens(['yyy','xxx']) #must maintain xxx and yyy for alignment,
     # otherwise, BERT tokenizer will try to separate these into x #x and #x and y #y #y
+    
     inital_vocab_mask, initial_vocab = transformers_bert_completions.get_softmax_mask(initial_tokenizer,
         cmu_2syl_inchildes.word)
     

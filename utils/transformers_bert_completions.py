@@ -66,6 +66,15 @@ def bert_completions(text, model, tokenizer, softmax_mask):
 
   # Predict all tokens
   with torch.no_grad():
+        
+      print('Going to predict for tokens tensor', tokens_tensor.shape)
+      print('\tAnd for segs', segments_tensors.shape)
+        
+      print('Text is', tokenizer.decode(tokens_tensor[0]))
+    
+      print(tokens_tensor)
+      print(segments_tensors)
+        
       predictions = model(tokens_tensor, segments_tensors)['logits']
    
   # 7/1/21: https://stackoverflow.com/questions/48152674/how-to-check-if-pytorch-is-using-the-gpu

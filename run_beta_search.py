@@ -73,7 +73,7 @@ def plot_beta_optimization(fig_path_dir, betas, beta_surprisals, split, dataset)
     plt.title(f'Beta optimization for Split: {split}, Dataset: {dataset}')
     plt.xlabel('Beta value')
     plt.ylabel('Posterior surprisal')
-    plt.plot(betas, beta_surprisals)
+    plt.scatter(betas, beta_surprisals)
     
     fig_path = join(fig_path_dir, 'beta_optimization.png')
     plt.savefig(fname = fig_path)

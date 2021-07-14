@@ -36,19 +36,12 @@ def get_training_shell_script(split_name, dataset_name, with_tags, om2_user = 'w
     # including the bash line at the top
 
     commands = scripts.gen_command_header(time_alloc_hrs = 7)
-    commands.append("#!/bin/bash\n")
-    
-    # Citation text for every script
-    commands.append("\n# For the command text\n# 6/24/21: https://github.mit.edu/MGHPCC/OpenMind/wiki/How-to-use-Singularity-container%3F\n# and https://github.mit.edu/MGHPCC/OpenMind/issues/3392\n# including the bash line at the top\n")
-    
-    commands.append("\n#SBATCH -N 1\n")                         
-    commands.append("#SBATCH -p cpl\n")
-    commands.append("#SBATCH --gres=gpu:1\n")
-    commands.append("#SBATCH -t 7:00:00\n")
-    commands.append("#SBATCH --mem=9G\n")
-    commands.append("#SBATCH --constraint=high-capacity\n")
-     
-    commands.append("\nmodule load openmind/singularity/3.2.0\n")
+
+    # 7/13/21: https://stackoverflow.com/questions/19960332/use-slurm-job-id
+    # Got the variable guidance for what variable name to use for job id
+    commands.append("mkdir ~/.cache/$SLURM_JOB_ID\n")
+    # end usage of variable
+
     commands.append(f"singularity exec --nv -B /om,/om2/user/{om2_user} /om2/user/{om2_user}/vagrant/trans-pytorch-gpu \
     python3 run_mlm.py \
             --model_name_or_path bert-base-uncased \
@@ -57,8 +50,14 @@ def get_training_shell_script(split_name, dataset_name, with_tags, om2_user = 'w
             --output_dir {this_model_dir}\
             --train_file {this_data_dir}/train{tags_data_str}.txt \
             --validation_file {this_data_dir}/val{tags_data_str}.txt \
+            --cache_dir ~/.cache/$SLURM_JOB_ID \
             --overwrite_output_dir")
-    
+    # 7/13/21: https://stackoverflow.com/questions/19960332/use-slurm-job-id
+    # Above in cache_dir line, for the variable name of the job id.
+    # end taken command code 6/24/21
+
+    commands.append("\n# end taken command code 6/24/21")
+
     return commands
 
 def write_training_shell_script(split, dataset, is_tags, om2_user = 'wongn'): 

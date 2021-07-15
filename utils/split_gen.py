@@ -126,7 +126,12 @@ def assign_and_find_phase_data(phase, split_on, phase_idxs, data_pool):
     phase_data = find_phase_data(phase, data_pool)
     
     return phase_data, data_pool
-    
+
+def find_in_phase_idxs(data_pool, phase_idxs, split_on):
+    """
+    Added, for use in child -- but didn't refactor age/all code.
+    """
+    return data_pool.loc[data_pool[split_on].isin(phase_idxs)]
 
 def write_data_partitions_text(all_data, split_folder, phase, phase_idxs, split_on):
     """

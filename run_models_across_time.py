@@ -83,8 +83,7 @@ if __name__ == '__main__':
         model_type = this_model_args['model_type']
     )
    
-    # (model_class, this_split, this_dataset_name, is_tags, context_width):
-    this_model_dict = load_models.get_model_dict()[query_model_str] # This is probably going to be slow, optimize later
+    this_model_dict = this_model_dict = load_models.get_specific_model_dict(query_model_str)
     
     scores = call_single_across_time_model(this_model_args['model_type'], this_model_args['split'], this_model_args['dataset'], this_model_args['use_tags'], this_model_args['context_width'])
     

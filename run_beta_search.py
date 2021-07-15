@@ -103,7 +103,7 @@ if __name__ == '__main__':
     
     print(this_model_args)
    
-    this_model_dict = load_models.get_model_dict()[query_model_str] # This is probably going to be slow, optimize later
+    this_model_dict = load_models.get_specific_model_dict(query_model_str)
     raw_results, beta_results = optimize_beta(this_model_args['split'], this_model_args['dataset'], this_model_dict, this_model_args['model_type'])
 
     print(f'Computations complete for: {query_model_str}')

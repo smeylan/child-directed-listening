@@ -49,7 +49,9 @@ def sample_across_models(utterance_ids, model, eval_data_dict, beta_values):
 
     score_store_single_model = []
     
-    for beta_value in beta_values:
+    for idx, beta_value in enumerate(beta_values):
+        
+        print(f'Processing beta value {idx + 1} of {config.num_values}')
 
         # get the posteriors        
         if model['type'] == 'BERT':

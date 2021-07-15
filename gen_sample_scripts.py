@@ -20,7 +20,7 @@ if __name__ == '__main__':
     if not exists(sh_script_loc):
         os.makedirs(sh_script_loc)
 
-    commands = scripts.gen_command_header(mem_alloc_gb = 12, time_alloc_hrs = 5)
+    commands = scripts.gen_command_header(mem_alloc_gb = 15, time_alloc_hrs = 5)
 
     for arg_set in model_args:
 

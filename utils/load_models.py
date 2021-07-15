@@ -232,6 +232,15 @@ def get_model_dict():
     return all_model_dict
 
 
+def get_specific_model_dict(model_id):
+    """
+    Explicitly request that Python throw away this memory.
+    """
+    this_model_dict = load_models.get_model_dict()[model_id] # This is probably going to be slow, optimize later
+    return this_model_dict
+    
+    
+    
 def get_initial_vocab_info():
     
     # tokenize with the most extensive tokenizer, which is the one used for model #2

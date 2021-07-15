@@ -4,6 +4,8 @@ import pandas as pd
 
 from utils import load_models, transformers_bert_completions, unigram, load_splits
 
+import config
+
 def sample_across_models(utterance_ids, model, eval_data_dict, beta_values):
     '''
         Top-level method to sample all models for a set of communicative successes and failures. Allows for adjusting the beta value

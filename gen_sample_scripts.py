@@ -1,4 +1,9 @@
-# Generate the scripts for a beta search and run models across time afterwards
+# Generate the scripts for a beta search.
+
+# What is submit.sh here?
+# May be worth writing a submit.sh to automatically submit all of your scripts in a given folder.
+
+# Unless GPU running is very, very fast -- somewhat doubtful?
 
 import config
 import argparse
@@ -15,38 +20,27 @@ if __name__ == '__main__':
     task_files = ['run_beta_search.py', 'run_models_across_time.py']
     
     
-    sh_script_loc = join(config.root_dir, f'scripts_sampling_based') # Note you don't want to submit training with beta search all together at the same time by accident.
-    
-    if not exists(sh_script_loc):
-        os.makedirs(sh_script_loc)
+    for task_name, task_file in zip(task_names, task_files):
+        
+        sh_script_loc = join(config.root_dir, f'scripts_{task_name}') # Note you don't want to submit training with beta search all together at the same time by accident.
 
-    commands = scripts.gen_command_header(mem_alloc_gb = 22, time_alloc_hrs = 5)
-    # 13 GB approx is required to store a potential CSV (estimated?)
-    # Therefore, need probably around 22 GB (regular memory request)
+        if not exists(sh_script_loc):
+            os.makedirs(sh_script_loc)
 
-    for arg_set in model_args:
+        commands = scripts.gen_command_header(mem_alloc_gb = 22, time_alloc_hrs = 5)
+        # 13 GB approx is required to store a potential CSV (estimated?)
+        # Therefore, need probably around 22 GB (regular memory request)
 
-        split, dataset, use_tags, context_width, model_type = arg_set
+        for arg_set in model_args:
 
-        model_id = load_models.get_model_id(
-            split, dataset, use_tags, context_width, model_type
-        ).replace('/', '>')
+            split, dataset, use_tags, context_width, model_type = arg_set
 
-        # Need to submit all of the scripts st. one is run after the other?
+            model_id = load_models.get_model_id(
+                split, dataset, use_tags, context_width, model_type
+            ).replace('/', '>')
+            command = f"python3 {task_file} --split {split} --dataset {dataset} --context_width {context_width} --use_tags {use_tags} --model_type {model_type}" # This may have to be "python3" on openmind? 
 
-        new_commands = [
-            f"python3 {task_file} --split {split} --dataset {dataset} --context_width {context_width} --use_tags {use_tags} --model_type {model_type}" # This may have to be "python3" on openmind?
-            for task_name, task_file in zip(task_names, task_files)
-        ]
+            command = scripts.gen_singularity_header() + command
 
-        command = scripts.gen_singularity_header() + ' ' + ' '.join(new_commands)
-        command += '\n#end taken code'
-
-        with open(join(sh_script_loc, f'run_beta_time_{model_id}.sh'), 'w') as f:
-            f.writelines(commands + [command])
-    
-    
-    
-    
-
-    
+            with open(join(sh_script_loc, f'{task_name}_{model_id}.sh'), 'w') as f:
+                f.writelines(commands + [command])

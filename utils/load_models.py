@@ -6,9 +6,12 @@ import transformers
 
 from transformers import BertTokenizer, BertForMaskedLM
 
-from utils import transformers_bert_completions, split_gen, load_csvs
+from utils import transformers_bert_completions, split_gen, load_csvs, load_splits
+from utils_child import child_models
+
 import config
 
+import json
 
 def gen_finetune_model_args():
 
@@ -51,7 +54,7 @@ def gen_all_model_args():
         load_args.append(('all', 'all', False) + (0, unigram_name))
         
     return load_args
-    
+     
     
 def gen_model_title(split, dataset, is_tags, context_num, model_type):
     
@@ -72,6 +75,8 @@ def gen_model_title(split, dataset, is_tags, context_num, model_type):
         'old' : 'older children', 
         'all_debug' : 'all_debug',
     }
+    
+    dataset_dict.update({ k : k for k in child_models.get_child_names()})
 
     speaker_tags_dict = {
         True : 'with tags',
@@ -105,9 +110,12 @@ def get_model_id(split_name, dataset_name, with_tags, context_width, model_type)
 
 def query_model_title(split, dataset, is_tags, context_num, model_type):
     return gen_model_title(split, dataset, is_tags, context_num, model_type)
-
+    
     
 def get_model_dict():
+    """
+    Only for age/all splits
+    """
     
     # The format for the name is:
     # split name/dataset name/tags/{context width}_context
@@ -260,14 +268,25 @@ def get_initial_vocab_info():
     return initial_vocab, cmu_in_initial_vocab
 
 
-def get_model_from_split(split, dataset, with_tags):
+def get_model_path(split, dataset, with_tags):
+    
     """
-    For getting models trained on OM2.
+    7/15/21: New function, just breaking up an old function.
     """
     
     tag_folder = 'with_tags' if with_tags else 'no_tags'
     this_path = join(split_gen.get_split_folder(split, dataset, config.model_dir), tag_folder)
     
+    return this_path
+
+def get_model_from_split(split, dataset, with_tags):
+    
+    """
+    For getting models trained on OM2.
+    7/15/21: Split out get model path orthogonally from this
+    """
+    
+    this_path = get_model_path(split, dataset, with_tags)
     return get_model_from_path(this_path, with_tags)
     
     

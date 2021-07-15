@@ -12,6 +12,31 @@ from utils import parsers, load_models, scripts
 import os
 from os.path import join, exists
 
+
+
+def gen_commands(task_file, split, dataset, use_tags, context_width, model_type):
+    
+    commands = scripts.gen_command_header(mem_alloc_gb = 22, time_alloc_hrs = 5)
+    # 13 GB approx is required to store a potential CSV (estimated?)
+    # Therefore, need probably around 22 GB (regular memory request)
+
+    model_id = load_models.get_model_id(
+        split, dataset, use_tags, context_width, model_type
+    ).replace('/', '>')
+    command = f"python3 {task_file} --split {split} --dataset {dataset} --context_width {context_width} --use_tags {use_tags} --model_type {model_type}" # This may have to be "python3" on openmind? 
+
+    command = scripts.gen_singularity_header() + command
+
+    return model_id, commands + [command]
+
+
+def write_commands(sh_script_loc, task_name, model_id, commands):
+    
+    with open(join(sh_script_loc, f'{task_name}_{model_id}.sh'), 'w') as f:
+        f.writelines(commands)
+    return sh_script_loc
+            
+            
 if __name__ == '__main__':
     
     model_args = load_models.gen_all_model_args()
@@ -22,25 +47,15 @@ if __name__ == '__main__':
     
     for task_name, task_file in zip(task_names, task_files):
         
-        sh_script_loc = join(config.root_dir, f'scripts_{task_name}') # Note you don't want to submit training with beta search all together at the same time by accident.
+        sh_script_loc = join(config.root_dir, f'scripts_{task_name}')
 
         if not exists(sh_script_loc):
             os.makedirs(sh_script_loc)
 
-        commands = scripts.gen_command_header(mem_alloc_gb = 22, time_alloc_hrs = 5)
-        # 13 GB approx is required to store a potential CSV (estimated?)
-        # Therefore, need probably around 22 GB (regular memory request)
-
         for arg_set in model_args:
-
-            split, dataset, use_tags, context_width, model_type = arg_set
-
-            model_id = load_models.get_model_id(
-                split, dataset, use_tags, context_width, model_type
-            ).replace('/', '>')
-            command = f"python3 {task_file} --split {split} --dataset {dataset} --context_width {context_width} --use_tags {use_tags} --model_type {model_type}" # This may have to be "python3" on openmind? 
-
-            command = scripts.gen_singularity_header() + command
-
-            with open(join(sh_script_loc, f'{task_name}_{model_id}.sh'), 'w') as f:
-                f.writelines(commands + [command])
+            
+            model_id, commands = gen_beta_commands(task_file, *arg_set)
+            write_commands(sh_script_loc, task_name, model_id, commands)
+            
+            
+            

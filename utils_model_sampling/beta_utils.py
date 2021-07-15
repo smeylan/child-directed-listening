@@ -44,10 +44,20 @@ def load_beta_values(split_name, dataset_name, tags, context_width, model_type):
 
     return results, raw_results
 
+
 def get_optimal_beta_value(split, dataset, model_dict, model_type):
     
-    this_beta_results, this_raw_beta_results = load_beta_values(split, dataset, model_dict['kwargs']['use_speaker_labels'], model_dict['kwargs']['context_width_in_utts'], model_type)
+    """
+    7/15/21 Split this into two layers of functions, otherwise the same.
+    Call this for non-child splits.
+    """
     
+    return get_optimal_beta_value(split, dataset, model_dict['kwargs']['use_speaker_labels'], model_dict['kwargs']['context_width_in_utts'], model_type)
+    
+    
+def get_optimal_beta_value(split, dataset, tags, context, model_type):
+    
+    this_beta_results, this_raw_beta_results = load_beta_values(split, dataset, tags, context, model_type)
     
     # Need to argmax for beta_value, given the posterior surprisal
     list_beta_results = list(this_beta_results['beta_value'])

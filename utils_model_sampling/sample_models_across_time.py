@@ -1,14 +1,47 @@
 
+import os
+from os.path import join, exists
 
 import copy
-from utils import load_models, transformers_bert_completions, load_csvs, unigram
+from utils import load_models, transformers_bert_completions, load_csvs, unigram, load_splits
 from utils_model_sampling import beta_utils
 
 from collections import defaultdict
+import numpy as np
 
+import glob
+
+
+def assemble_scores_no_order():
+    """
+    Assumes order of the the model vs age loop doesn't matter.
+    """
+    
+    this_load_args = load_models.gen_all_model_args()
+    
+    score_store = []
+    
+    for split, dataset, tags, context, model_type in this_load_args:
+        
+        print(split, dataset, tags, context, model_type)
+        
+        this_beta_folder = beta_utils.load_beta_folder(split, dataset, tags, context, model_type)
+
+        age_paths = glob.glob(join(this_beta_folder, 'run_models_across_time_*.csv'))
+                              
+        for this_data_path in age_paths:
+            data_df = load_csvs.load_csv_with_lists(this_data_path)
+            score_store.append(data_df)
+                      
+    return score_store
+    
+    
 def assemble_across_time_scores():
     
     """
+    
+    Follows the convention of the original code -- need to work on this more.
+     
     Assemble the "score store" across models that was present in the original function
         and is used for visualizations.
     Outer loop is by age.
@@ -27,8 +60,9 @@ def assemble_across_time_scores():
     
     for split, dataset, _, _, _ in this_load_args:
         # Not just successes! What else to load?
-        this_sample_pool = load_split.load_sample_successes('models_across_time', split, dataset)
-        this_ages = np.unique(this_sample_pool.age)
+        this_sample_pool = load_splits.load_sample_successes('models_across_time', split, dataset)
+        
+        this_ages = np.unique(this_sample_pool.target_child_age)
         age2models[age].append((split, dataset)) # Not sure if age is a float or int, be careful
     
     all_ages = sorted(list(age2models.keys()))

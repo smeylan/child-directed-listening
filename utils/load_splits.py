@@ -88,23 +88,38 @@ def load_split_text_path(split, dataset):
     return {name : join(split_gen.get_split_folder(split, dataset, config.data_dir), f'{name}.txt')
            for name in names}
     
+    
+    
 def load_eval_data_all(split_name, dataset_name):
     
     """
-    Loading cached data relevant to the model scoring functions in yyy analysis.
-    """
+    7/15/21: Split out the loading logic to accomodate child loading -- should be orthogonal in the 
+    non-child code.
     
-    phono_filename = 'pvd_utt_glosses_phono_cleaned_inflated.pkl'
-    success_utts_filename = 'success_utts.csv'
-    yyy_utts_filename = 'yyy_utts.csv'
+    Loading cached data relevant to the model scoring functions in yyy analysis.
+    Note that for children, this loads the entire split, not the eval split.
+    
+    (Loads Providence data)
+    """
+    return load_eval_data(split_name, dataset_name, '')
+
+
+
+def load_eval_data(split_name, dataset_name, modifier):
+    """
+    modifier is used to 
+    """
+    phono_filename = f'{modifier}pvd_utt_glosses_phono_cleaned_inflated.pkl'
+    success_utts_filename = f'{modifier}success_utts.csv'
+    yyy_utts_filename = f'{modifier}yyy_utts.csv'
 
     data_filenames = [phono_filename, success_utts_filename, yyy_utts_filename]
     this_folder_path = split_gen.get_split_folder(split_name, dataset_name, config.eval_dir)
     
     data_name = {
-       'pvd_utt_glosses_phono_cleaned_inflated.pkl' : 'phono',
-       'success_utts.csv' : 'success_utts',
-       'yyy_utts.csv' : 'yyy_utts',
+       f'{modifier}pvd_utt_glosses_phono_cleaned_inflated.pkl' : 'phono',
+       f'{modifier}success_utts.csv' : 'success_utts',
+       f'{modifier}yyy_utts.csv' : 'yyy_utts',
     }
     
     data_dict = {}
@@ -114,7 +129,12 @@ def load_eval_data_all(split_name, dataset_name):
         data_dict[data_name[f]] = load_csvs.load_csv_with_lists(this_path) if f.endswith('.csv') else pd.read_pickle(this_path)
     
     return data_dict
+
+
+
+def load_child_eval_data(name):
     
+    return load_eval_data('child', name, 'eval_')
     
     
     

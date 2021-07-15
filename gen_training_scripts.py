@@ -60,16 +60,22 @@ def get_training_shell_script(split_name, dataset_name, with_tags, om2_user = 'w
 
     return commands
 
-def write_training_shell_script(split, dataset, is_tags, om2_user = 'wongn'): 
+
+def get_script_name(split, dataset, is_tags):
     
     this_tags_str = 'with_tags' if is_tags else 'no_tags'
+    return f'run_model_{split}_{dataset}_{this_tags_str}.sh'
+    
+def write_training_shell_script(split, dataset, is_tags, om2_user = 'wongn'): 
+    
+    
        
     script_dir = join(config.root_dir, 'scripts_train')
     
     if not exists(script_dir):
         os.makedirs(script_dir)
     
-    script_name = f'run_model_{split}_{dataset}_{this_tags_str}.sh'
+    script_name = get_script_name(split, dataset, is_tags)
     
     with open(join(script_dir, script_name), 'w') as f:
         f.writelines(get_training_shell_script(split, dataset, is_tags, om2_user = om2_user))

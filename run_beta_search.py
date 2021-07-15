@@ -40,10 +40,14 @@ def optimize_beta(split_name, dataset_name, model_dict, model_type):
     # Internally uses GPU if available.
     # speaker tags handled internally in the transformers bert completions file.
     
-    # Only works for now on BERT models. Need to figure out the unigram stuff afterwards.
-    
-    success_utts_sample = load_splits.load_sample_successes('beta', split_name, dataset_name)
-    yyy_utts_sample = load_splits.load_sample_yyy('beta', split_name, dataset_name)
+    # 7/15/21: Orthogonally changing this to branch on child split -- was not present in original rep. code
+    if split_name != 'child':
+        success_utts_sample = load_splits.load_sample_successes('beta', split_name, dataset_name)
+        yyy_utts_sample = load_splits.load_sample_yyy('beta', split_name, dataset_name)
+    else:
+        # Optimize on the entirety of the child set.
+        success_utts_sample = data_dict['success_utts']
+        yyy_utts_sample = data_dict['yyy_utts']
     
     total_sample = pd.concat([success_utts_sample, yyy_utts_sample]).utterance_id
     # Extraction of attribute is necessary to have non-empty extraction of sample

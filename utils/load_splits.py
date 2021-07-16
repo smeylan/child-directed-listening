@@ -28,7 +28,7 @@ def get_sample_path(data_type, task_name, split_name, dataset_name, age = None):
     
     n = get_n(task_name)
     
-    assert ( (age is None) and (task_name == 'beta') ) or ( (age is not None) and (task_name == 'models_across_time') )
+    assert ( (age is None) and (task_name == 'beta' or split_name == 'all') ) or ( (age is not None) and (task_name == 'models_across_time') )
     age_str = f'_{float(age)}' if age is not None else ''
     
     assert data_type in ['success', 'yyy'], "Invalid data type requested of sample path: choose one of {success, yyy}."

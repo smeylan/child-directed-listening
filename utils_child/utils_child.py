@@ -24,6 +24,8 @@ def find_best_model():
     
     
     
+    
+    
 def score_cross_prior(data_child, prior_child):
     
     """
@@ -62,10 +64,6 @@ def score_cross_prior(data_child, prior_child):
     priors = compare_successes_failures(eval_data['phono'], eval_data['success_utts'].id, eval_data['yyy_utts'].id, **model['kwargs'])
     
     # This will need to be 
-    
-    
-    
-    
     
     
     # Load the success and yyy for a given child.

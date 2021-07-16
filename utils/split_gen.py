@@ -133,6 +133,16 @@ def find_in_phase_idxs(data_pool, phase_idxs, split_on):
     """
     return data_pool.loc[data_pool[split_on].isin(phase_idxs)]
 
+
+def filter_text(text_path):
+    
+    remove_tags = lambda this_str : this_str.replace('[CHI] ', ''). replace('[CGV] ', '')
+    with open(text_path, 'r') as f:
+        all_str = list(map(remove_tags, f.readlines()))
+        
+    return all_str
+
+    
 def write_data_partitions_text(all_data, split_folder, phase, phase_idxs, split_on):
     """
     See determine_split_idxs comments on what to use for split_on argument per split type.
@@ -145,6 +155,16 @@ def write_data_partitions_text(all_data, split_folder, phase, phase_idxs, split_
     phase_data[['gloss_with_punct']].to_csv(this_file_path, index=False, header=False)
      
     print(f'File written to {this_file_path}')
+    
+    # Write the tagless version as well.
+    filtered_text = filter_text(this_file_path)
+    
+    # Separate the filename and modify it.
+    filtered_path = join('/'.join(this_file_path.split('/')[:-1]), f'{phase}_no_tags.txt')
+    with open(filtered_path, 'w') as f:
+        f.writelines(filtered_text)
+        
+    print(f'File written to {filtered_path}')
     
     return all_data_with_assignments, phase_data
     

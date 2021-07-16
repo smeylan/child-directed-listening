@@ -44,8 +44,5 @@ def get_child_model_dict(split, dataset, with_tags):
     base_model_path, is_tags = get_best_child_base_model_path()
     base_model_dict = get_model_from_path(base_model_path, is_tags)
     
-    # Need to copy the appropriate model to all folders in preparation for finetuning.
-    
     return base_model_dict
-    
-    pass
+   

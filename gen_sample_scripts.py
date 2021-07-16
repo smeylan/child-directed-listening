@@ -15,7 +15,7 @@ from os.path import join, exists
 
 def gen_commands(task_file, mem_amount, split, dataset, use_tags, context_width, model_type):
     
-    commands = scripts.gen_command_header(mem_alloc_gb = mem_amount, time_alloc_hrs = 5)
+    commands = scripts.gen_command_header(mem_alloc_gb = mem_amount, time_alloc_hrs = 2)
     # 13 GB approx is required to store a potential CSV (estimated?)
     # Hit some out-of-memory at 22 GB. Therefore, try 35 GB?
 

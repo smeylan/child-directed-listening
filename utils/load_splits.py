@@ -59,6 +59,21 @@ def get_all_ages_sample_paths(split_name, dataset_name):
     
     return age2path
 
+
+def get_which_sample_paths(split_name, dataset_name, search_for):
+    
+    has_data = lambda this_str : search_for in this_str
+    this_paths = get_all_ages_sample_paths(split_name, dataset_name)
+    return sorted(list(filter(has_data, this_paths)))
+    
+    
+def get_success_sample_paths(split_name, dataset_name):
+    return get_which_sample_paths(split_name, dataset_name, 'success')
+
+def get_yyy_sample_paths(split_name, dataset_name):
+    return get_which_sample_paths(split_name, dataset_name, 'yyy')
+
+
 def get_all_ages_in_samples(split_name, dataset_name):
     """
     Gets all of the ages available in the sample for a given split.

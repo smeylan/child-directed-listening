@@ -39,10 +39,8 @@ def load_beta_values(split_name, dataset_name, tags, context_width, model_type):
     
     exp_model_path = load_beta_folder(split_name, dataset_name, tags, context_width, model_type)
     results = load_csvs.load_csv_with_lists(join(exp_model_path, 'beta_search_results.csv'))
-    # Below: temp line for checking the code interpretation.
-    raw_results = load_csvs.load_csv_with_lists(join(exp_model_path, 'beta_search_raw_results.csv'))
 
-    return results, raw_results
+    return results
 
 
 def get_optimal_beta_value_with_dict(split, dataset, model_dict, model_type):
@@ -57,14 +55,14 @@ def get_optimal_beta_value_with_dict(split, dataset, model_dict, model_type):
     
 def get_optimal_beta_value(split, dataset, tags, context, model_type):
     
-    this_beta_results, this_raw_beta_results = load_beta_values(split, dataset, tags, context, model_type)
+    this_beta_results  = load_beta_values(split, dataset, tags, context, model_type)
     
     # Need to argmax for beta_value, given the posterior surprisal
     list_beta_results = list(this_beta_results['beta_value'])
     list_surp = list(this_beta_results['posterior_surprisal'])
     
-    argmax_beta = np.argmax(list_surp)
-    best_beta = list_beta_results[argmax_beta]
+    argmin_beta = np.argmin(list_surp)
+    best_beta = list_beta_results[argmin_beta]
     
     print(f'All beta: {this_beta_results}')
     print(f'Chose beta: {best_beta}')

@@ -35,8 +35,20 @@ def get_sample_bert_token_ids(task, split = 'all', dataset = 'all'):
     eval_data = load_splits.load_eval_data_all('all', 'all')
     tokens = eval_data['phono']
 
-    this_sample_successes = load_splits.load_sample_successes(task, split, dataset)
-    this_sample_yyy = load_splits.load_sample_yyy(task, split, dataset)
+    # Need to extract all of the utterance ids in the entirety of the ages...
+    # This will probably be very slow.
+    
+    all_success_paths = load_splits.get_success_sample_paths('all', 'all')
+    all_yyy_paths = load_splits.get_yyy_sample_paths('all', 'all')
+    
+    print('success')
+    print(all_success_paths)
+    print('yyy')
+    print(all_yyy_paths)
+    
+    # Use read_csv because you're just looking for utterance_ids
+    this_sample_successes = pd.concat([pd.read_csv(path)[['utterance_id']] for path in all_success_paths])
+    this_sample_yyy = pd.concat([pd.read_csv(path)[['utterance_id']] for path in all_yyy_paths])
 
     print('Fix this to be after filter')
     select_sample_id = pd.concat([this_sample_successes, this_sample_yyy])

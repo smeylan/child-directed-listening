@@ -16,6 +16,8 @@ def load_sample_model_across_time_args(split_name, dataset_name):
     
     ages = load_splits.get_all_ages_in_samples(split_name, dataset_name)
     
+    print('Considering ages', ages, 'for split', split_name, dataset_name)
+    
     sample_dict = {}
     
     for age in ages:

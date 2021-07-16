@@ -61,9 +61,9 @@ def optimize_beta(split_name, dataset_name, model_dict, model_type):
 ).reset_index()
     
     # Log the beta results
-    beta_results_path = join(this_exp_path, 'beta_search_results.csv')
+    beta_results_path = join(this_exp_path, f'beta_search_results_{config.n_beta}.csv')
     
-    this_raw_beta_results.to_csv(join(this_exp_path, 'beta_search_raw_results.csv')) # May not need to save this.
+    this_raw_beta_results.to_csv(join(this_exp_path, f'beta_search_raw_results_{config.n_beta}.csv')) # May not need to save this.
     this_beta_results_surp.to_csv(beta_results_path)
     
     print("Writing beta results to", {beta_results_path})
@@ -79,7 +79,7 @@ def plot_beta_optimization(fig_path_dir, betas, beta_surprisals, split, dataset)
     plt.ylabel('Posterior surprisal')
     plt.scatter(betas, beta_surprisals)
     
-    fig_path = join(fig_path_dir, 'beta_optimization.png')
+    fig_path = join(fig_path_dir, f'beta_optimization_{config.n_beta}.png')
     plt.savefig(fname = fig_path)
     
     print(f'Writing optimization plot to: {fig_path}')
@@ -91,6 +91,7 @@ if __name__ == '__main__':
     
     # 7/7/21: https://stackoverflow.com/questions/17118999/python-argparse-unrecognized-arguments    
     raw_args = parser.parse_known_args()[0]
+    # end cite
     # Not sure why known args is necessary here.
     
     # parsers.check_args(raw_args)

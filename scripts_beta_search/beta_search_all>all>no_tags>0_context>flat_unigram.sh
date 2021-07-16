@@ -9,7 +9,7 @@
 #SBATCH -p cpl
 #SBATCH --gres=gpu:1
 #SBATCH -t 5:00:00
-#SBATCH --mem=22G
+#SBATCH --mem=35G
 #SBATCH --constraint=high-capacity
 
 module load openmind/singularity/3.2.0

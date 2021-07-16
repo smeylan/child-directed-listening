@@ -2,7 +2,7 @@
 import os
 from os.path import join, exists
 
-from utils import load_models, load_splits, data_cleaning, parsers
+from utils import load_models, load_splits, data_cleaning, parsers, load_csvs
 from utils_model_sampling import beta_utils, sample_models_across_time
 
 import numpy as np
@@ -14,19 +14,27 @@ def load_sample_model_across_time_args(split_name, dataset_name):
     
     print('For child datasets, need to estimate beta based on all data available -- change this in the code.')
     
-    sample_successes_id = load_splits.load_sample_successes('models_across_time', split_name, dataset_name)
-    sample_yyy_id = load_splits.load_sample_yyy('models_across_time', split_name, dataset_name)
+    ages = load_splits.get_all_ages_in_samples(split_name, dataset_name)
     
-    eval_data_dict = load_splits.load_eval_data_all(split_name, dataset_name) 
-    sel_sample_ids = pd.concat([sample_successes_id, sample_yyy_id])
+    sample_dict = {}
     
-    this_utts_with_ages_all = pd.concat([eval_data_dict['success_utts'], eval_data_dict['yyy_utts']])
-    
-    this_utts_with_ages_sample = this_utts_with_ages_all[this_utts_with_ages_all.utterance_id.isin(sel_sample_ids.utterance_id)]
-    
-    this_tokens_phono = eval_data_dict['phono']
+    for age in ages:
         
-    return this_utts_with_ages_sample, this_tokens_phono
+        sample_successes_id = load_splits.load_sample_successes('models_across_time', split_name, dataset_name, age = age)
+        sample_yyy_id = load_splits.load_sample_yyy('models_across_time', split_name, dataset_name, age = age)
+
+        eval_data_dict = load_splits.load_eval_data_all(split_name, dataset_name) 
+        sel_sample_ids = pd.concat([sample_successes_id, sample_yyy_id])
+
+        this_utts_with_ages_all = pd.concat([eval_data_dict['success_utts'], eval_data_dict['yyy_utts']])
+
+        this_utts_with_ages_sample = this_utts_with_ages_all[this_utts_with_ages_all.utterance_id.isin(sel_sample_ids.utterance_id)]
+        
+        this_tokens_phono = eval_data_dict['phono']
+        
+        sample_dict[age] = {'id' : this_utts_with_ages_sample, 'phono' : this_tokens_phono }
+        
+    return sample_dict
     
     
 def call_single_across_time_model(model_class, this_split, this_dataset_name, is_tags, context_width):
@@ -38,19 +46,20 @@ def call_single_across_time_model(model_class, this_split, this_dataset_name, is
     all_models = load_models.get_model_dict()
     this_model_dict = all_models[model_name]
     
-    utts, tokens = load_sample_model_across_time_args(this_split, this_dataset_name)
+    this_sample_dict = load_sample_model_across_time_args(this_split, this_dataset_name)
          
     # Load the optimal beta
-    optimal_beta = beta_utils.get_optimal_beta_value(this_split, this_dataset_name, this_model_dict, model_class)
+    optimal_beta = beta_utils.get_optimal_beta_value_with_dict(this_split, this_dataset_name, this_model_dict, model_class)
     
-    utts = data_cleaning.augment_target_child_year(utts) # It expects things from the Providence notebook?
-    
-    ages = np.unique(utts.year)
+    ages = sorted(list(this_sample_dict.keys()))
    
     for idx, age in enumerate(ages):
-        #for age in ages[:1]: # -> changing this to have more than one age will break the system -- why?
         
-        percentage_done = idx / float(ages.shape[0]) * 100
+        utts, tokens = this_sample_dict[age]['id'], this_sample_dict[age]['phono']
+        
+        utts = data_cleaning.augment_target_child_year(utts)
+        
+        percentage_done = idx / float(len(ages)) * 100
         if int(percentage_done) % 5 == 0: print(f'{percentage_done}%') 
             
         this_scores = sample_models_across_time.successes_and_failures_across_time_per_model(age, utts, this_model_dict, tokens, beta_value = optimal_beta)
@@ -59,7 +68,7 @@ def call_single_across_time_model(model_class, this_split, this_dataset_name, is
         this_context_width = this_model_dict['kwargs']['context_width_in_utts']
         
         score_folder = beta_utils.load_beta_folder(this_split, this_dataset_name, this_tags, this_context_width, model_class)
-        this_scores.to_csv(join(score_folder, f'run_models_across_time_{age}.csv'))# Need to assemble via model, then age later.
+        this_scores.to_csv(join(score_folder, f'run_models_across_time_{age}.csv'))
     
     return this_scores
     

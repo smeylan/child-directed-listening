@@ -22,15 +22,20 @@ def assemble_scores_no_order():
     score_store = []
     
     for split, dataset, tags, context, model_type in this_load_args:
-        
-        print(split, dataset, tags, context, model_type)
+       
+        print('Loading', split, dataset, tags, context, model_type)
         
         this_beta_folder = beta_utils.load_beta_folder(split, dataset, tags, context, model_type)
 
         age_paths = glob.glob(join(this_beta_folder, 'run_models_across_time_*.csv'))
                               
         for this_data_path in age_paths:
+            
             data_df = load_csvs.load_csv_with_lists(this_data_path)
+            
+            # print(f'\t{this_data_path}')
+            # print(f'\tthis shape {data_df.shape[0]}')
+            
             score_store.append(data_df)
                       
     return score_store
@@ -47,6 +52,8 @@ def assemble_across_time_scores():
     Outer loop is by age.
     Inner loop is by model, for that pool.
     Note that different splits have different samples of data.
+    
+    Doesn't work yet -- abandoning because it's probably unneeded
     """
     
     this_load_args = load_models.gen_all_model_args()

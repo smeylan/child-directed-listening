@@ -45,7 +45,7 @@ def load_beta_values(split_name, dataset_name, tags, context_width, model_type):
     return results, raw_results
 
 
-def get_optimal_beta_value(split, dataset, model_dict, model_type):
+def get_optimal_beta_value_with_dict(split, dataset, model_dict, model_type):
     
     """
     7/15/21 Split this into two layers of functions, otherwise the same.

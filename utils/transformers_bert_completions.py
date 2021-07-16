@@ -64,6 +64,7 @@ def bert_completions(text, model, tokenizer, softmax_mask):
         segments_tensors = segments_tensors.cuda()
         model = model.cuda()
 
+  print('predicting for', tokens_tensor)
   # Predict all tokens
   with torch.no_grad():
       predictions = model(tokens_tensor, segments_tensors)['logits']
@@ -127,8 +128,13 @@ def get_completions_for_mask(utt_df, true_word, bertMaskedLM, tokenizer, softmax
         scores: a datagrame with n rows, containing surprisal (wrt true_word) and entropy 
     '''
     
+    
     gloss_with_mask =  tokenizer.convert_tokens_to_ids(['[CLS]']
         ) + utt_df.token_id.tolist() + tokenizer.convert_tokens_to_ids(['[SEP]'])    
+    
+    print('still debug, this is utt id for the all tokens phono', utt_df.id)
+    print("here's the gloss", gloss_with_mask)
+    
     priors, completions = bert_completions(gloss_with_mask, bertMaskedLM, tokenizer, softmax_mask)
         
     if true_word in completions['word'].tolist():

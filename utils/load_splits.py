@@ -63,7 +63,7 @@ def get_all_ages_sample_paths(split_name, dataset_name):
 def get_which_sample_paths(split_name, dataset_name, search_for):
     
     has_data = lambda this_str : search_for in this_str
-    this_paths = get_all_ages_sample_paths(split_name, dataset_name)
+    this_paths = get_all_ages_sample_paths(split_name, dataset_name).values()
     return sorted(list(filter(has_data, this_paths)))
     
     

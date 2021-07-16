@@ -19,4 +19,4 @@ if __name__ == '__main__':
     # What to do here? Just view the output until it errors out.
     # If you can get utterance id
     
-    return this_scores
+    

@@ -39,13 +39,13 @@ def get_sample_path(data_type, task_name, split_name, dataset_name, age = None):
     return this_data_path
 
 
-def get_all_ages_sample_paths(split_name, dataset_name):
+def get_ages_sample_paths(split_name, dataset_name, which_type):
     
     """
     Gets all of the sample paths for a given split.
     """
     this_data_folder = split_gen.get_split_folder(split_name, dataset_name, config.eval_dir)
-    template = join(this_data_folder, f'*_utts_models_across_time_{config.n_across_time}_*.csv')
+    template = join(this_data_folder, f'{which_type}_utts_models_across_time_{config.n_across_time}_*.csv')
     all_age_sample_paths = glob.glob(template)
     
     age2path = {}
@@ -58,20 +58,13 @@ def get_all_ages_sample_paths(split_name, dataset_name):
         age2path[age] = path
     
     return age2path
-
-
-def get_which_sample_paths(split_name, dataset_name, search_for):
-    
-    has_data = lambda this_str : search_for in this_str
-    this_paths = get_all_ages_sample_paths(split_name, dataset_name).values()
-    return sorted(list(filter(has_data, this_paths)))
     
     
 def get_success_sample_paths(split_name, dataset_name):
-    return get_which_sample_paths(split_name, dataset_name, 'success')
+    return sorted(list(get_ages_sample_paths(split_name, dataset_name, 'success').values()))
 
 def get_yyy_sample_paths(split_name, dataset_name):
-    return get_which_sample_paths(split_name, dataset_name, 'yyy')
+    return sorted(list(get_ages_sample_paths(split_name, dataset_name, 'yyy').values()))
 
 
 def get_all_ages_in_samples(split_name, dataset_name):

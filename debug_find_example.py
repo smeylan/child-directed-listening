@@ -3,6 +3,8 @@
 from utils import load_splits, load_models
 from utils_model_sampling import sample_models_across_time 
 
+import pandas as pd
+
 if __name__ == '__main__':
 
     this_id = load_models.get_model_id('all', 'all', True, 20, 'childes')

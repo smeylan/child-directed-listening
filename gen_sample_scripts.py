@@ -17,7 +17,6 @@ def gen_commands(task_file, mem_amount, split, dataset, use_tags, context_width,
     
     commands = scripts.gen_command_header(mem_alloc_gb = mem_amount, time_alloc_hrs = 2)
     # 13 GB approx is required to store a potential CSV (estimated?)
-    # Hit some out-of-memory at 22 GB. Therefore, try 35 GB?
 
     model_id = load_models.get_model_id(
         split, dataset, use_tags, context_width, model_type
@@ -42,7 +41,7 @@ if __name__ == '__main__':
     
     task_names = ['beta_search', 'models_across_time']
     task_files = ['run_beta_search.py', 'run_models_across_time.py']
-    mem_amounts = [35, 35]
+    mem_amounts = [22, 35]
     
     for task_name, task_file, mem_amount in zip(task_names, task_files, mem_amounts):
         

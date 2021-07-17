@@ -18,7 +18,7 @@ def get_best_child_base_model_path(which_metric = 'perplexity'):
     with_tags_path = load_models.get_model_path('all', 'all', False)
     no_tags_path = load_models.get_model_path('all', 'all', True)
     
-    which_result = {} 
+    which_results = {} 
     for tags_str, tags_path in zip(['with', 'no'], [with_tags_path, no_tags_path]):
         with open(join(tags_path, 'all_results.json'), 'r') as f:
             which_results[tags_str] = json.load(f)[which_metric]
@@ -37,12 +37,22 @@ def get_child_names():
     return set(all_phono.target_child_name)
     
     
-def get_child_model_dict(split, dataset, with_tags):
+def get_child_model_dict(name):
     
+    # Need to load the model?
     
-    # But you actually need to path to the model
-    base_model_path, is_tags = get_best_child_base_model_path()
-    base_model_dict = get_model_from_path(base_model_path, is_tags)
+    model_args = ('child', name, is_tags, config.child_context_width, 'childes')
     
-    return base_model_dict
+    _, is_tags = get_best_child_base_model_path()
+    model_id = load_model.get_model_id(*model_args)
+    
+    model_path = load_models.get_model_path('child', name, is_tags)
+    
+    model_dict = {
+        'title' : load_models.gen_model_title(*model_args),
+        'kwargs' : get_model_from_path(model_path, is_tags),
+        'type' : 'BERT', 
+    }
    
+    return model_dict
+    

@@ -114,7 +114,7 @@ def query_model_title(split, dataset, is_tags, context_num, model_type):
     
 def get_model_dict():
     """
-    Only for age/all splits
+    Only for age/all splits. Child loading is in utils_child/child_models.py
     """
     
     # The format for the name is:

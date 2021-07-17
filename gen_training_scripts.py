@@ -35,13 +35,13 @@ def get_training_shell_script(split_name, dataset_name, with_tags, om2_user = 'w
     # and https://github.mit.edu/MGHPCC/OpenMind/issues/3392
     # including the bash line at the top
 
-    commands = scripts.gen_command_header(time_alloc_hrs = 7)
+    commands = scripts.gen_command_header(mem_alloc_gb = 9, time_alloc_hrs = 7)
 
     # 7/13/21: https://stackoverflow.com/questions/19960332/use-slurm-job-id
     # Got the variable guidance for what variable name to use for job id
     commands.append("mkdir ~/.cache/$SLURM_JOB_ID\n")
     # end usage of variable
-
+    commands.append("# 7/13/21: https://stackoverflow.com/questions/19960332/use-slurm-job-id for variable name of job ID\n")
     commands.append(f"singularity exec --nv -B /om,/om2/user/{om2_user} /om2/user/{om2_user}/vagrant/trans-pytorch-gpu \
     python3 run_mlm.py \
             --model_name_or_path bert-base-uncased \
@@ -52,11 +52,11 @@ def get_training_shell_script(split_name, dataset_name, with_tags, om2_user = 'w
             --validation_file {this_data_dir}/val{tags_data_str}.txt \
             --cache_dir ~/.cache/$SLURM_JOB_ID \
             --overwrite_output_dir")
-    # 7/13/21: https://stackoverflow.com/questions/19960332/use-slurm-job-id
-    # Above in cache_dir line, for the variable name of the job id.
+    
+    # end 7/13/21
     # end taken command code 6/24/21
 
-    commands.append("\n# end taken command code 6/24/21")
+    commands.append("\n# end taken command code 6/24/21 and slurm id reference 7/13/21")
 
     return commands
 
@@ -68,8 +68,6 @@ def get_script_name(split, dataset, is_tags):
     
 def write_training_shell_script(split, dataset, is_tags, om2_user = 'wongn'): 
     
-    
-       
     script_dir = join(config.root_dir, 'scripts_train')
     
     if not exists(script_dir):

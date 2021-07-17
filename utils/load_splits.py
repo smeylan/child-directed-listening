@@ -72,9 +72,12 @@ def get_all_ages_in_samples(split_name, dataset_name):
     Gets all of the ages available in the sample for a given split.
     """
     
-    age_dict = get_all_ages_sample_paths(split_name, dataset_name)
+    success_ages = get_ages_sample_paths(split_name, dataset_name, 'success').keys()
+    yyy_ages = get_ages_sample_paths(split_name, dataset_name, 'yyy').keys()
     
-    return sorted(list(age_dict.keys()))
+    ages = set(success_ages) | set(yyy_ages)
+    
+    return sorted(list(ages))
    
     
 def sample_successes_yyy(pool, task, split, dataset, utts_pool, age):

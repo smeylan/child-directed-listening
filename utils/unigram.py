@@ -40,11 +40,7 @@ def get_sample_bert_token_ids(task, split = 'all', dataset = 'all'):
     
     all_success_paths = load_splits.get_success_sample_paths('all', 'all')
     all_yyy_paths = load_splits.get_yyy_sample_paths('all', 'all')
-    
-    print('success')
-    print(all_success_paths)
-    print('yyy')
-    print(all_yyy_paths)
+   
     
     # Use read_csv because you're just looking for utterance_ids
     this_sample_successes = pd.concat([pd.read_csv(path)[['utterance_id']] for path in all_success_paths])

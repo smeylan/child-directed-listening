@@ -10,6 +10,14 @@ import numpy as np
 
 import config
 
+
+def cut_context_to_512():
+    
+    # Truncates from the left and right of 
+    
+    pass
+
+
 def augment_target_child_year(df):
     """
     Expects utts_with_ages from Providence notebook.

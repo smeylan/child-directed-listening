@@ -7,7 +7,7 @@ import time
 from string import punctuation
 import Levenshtein
 
-from utils import unigram, load_csvs
+from utils import unigram, load_csvs, data_cleaning
 
 def softmax(x, axis=None):
     '''
@@ -49,6 +49,9 @@ def bert_completions(text, model, tokenizer, softmax_mask):
 
   if num_masks > 1:
       raise ValueError('Too many masks found, check data prepration')
+  if num_masks == 0:
+      raise ValueError('No mask found, check if truncation removed the target utterance token.')
+    
 
   # Create the segments tensors.
   segments_ids = [0] * len(indexed_tokens)
@@ -132,9 +135,6 @@ def get_completions_for_mask(utt_df, true_word, bertMaskedLM, tokenizer, softmax
     gloss_with_mask =  tokenizer.convert_tokens_to_ids(['[CLS]']
         ) + utt_df.token_id.tolist() + tokenizer.convert_tokens_to_ids(['[SEP]'])    
     
-    print('still debug, this is utt id for the all tokens phono', utt_df.id)
-    print("here's the gloss", gloss_with_mask)
-    
     priors, completions = bert_completions(gloss_with_mask, bertMaskedLM, tokenizer, softmax_mask)
         
     if true_word in completions['word'].tolist():
@@ -214,15 +214,7 @@ def get_stats_for_failure(all_tokens, selected_utt_id, bertMaskedLM, tokenizer, 
             after_by_sent_df = pd.DataFrame()
 
         utt_df = pd.concat([before_by_sent_df, sep_row, utt_df, sep_row, after_by_sent_df])
-
-        # if preserve_errors:
-        #     #convert @ back to yyy for context items
-        #     utt_df.loc[utt_df.token == '@','token'] = 'yyy'
-        #     utt_df.loc[utt_df.token == 'yyy','token_id'] = tokenizer.convert_tokens_to_ids(['yyy'])[0]
-        #     #convert @ back to xxx for context items
-        #     utt_df.loc[utt_df.token == '$','token'] = 'xxx'
-        #     utt_df.loc[utt_df.token == 'xxx','token_id'] = tokenizer.convert_tokens_to_ids(['xxx'])[0]
-
+     
         if np.sum(utt_df.token == '[MASK]') > 1:
             print('Multiple masks in the surrounding context')
             import pdb
@@ -230,7 +222,14 @@ def get_stats_for_failure(all_tokens, selected_utt_id, bertMaskedLM, tokenizer, 
     
     if not use_speaker_labels:
         # remove the speaker labels
-        utt_df = utt_df.loc[~utt_df.token.isin(['[chi]','[cgv]'])]            
+        utt_df = utt_df.loc[~utt_df.token.isin(['[chi]','[cgv]'])]           
+        
+    # Prevent overly long sequences that will break BERT
+    if utt_df.shape[0] > (512 - 2): # If there's no room to fit CLS and end token into BERT. 
+        print('Cutting example', selected_utt_id)
+        print(f'\t shape: {utt_df.shape[0]}')
+        utt_df = data_cleaning.cut_context_df(utt_df)
+        print(f'\t shape afterwards: {utt_df.shape[0]}')
     
     if utt_df.shape[0] > 0:
         t2 = time.time()        
@@ -319,6 +318,7 @@ def get_stats_for_success(all_tokens, selected_utt_id, bertMaskedLM, tokenizer, 
                 after_by_sent_df = pd.DataFrame()
 
             utt_df_local = pd.concat([before_by_sent_df, sep_row, utt_df_local, sep_row, after_by_sent_df])
+            
 
             # if preserve_errors:
             #     #convert @ back to yyy for context items
@@ -343,6 +343,13 @@ def get_stats_for_success(all_tokens, selected_utt_id, bertMaskedLM, tokenizer, 
         if not use_speaker_labels:
             # remove the speaker labels
             utt_df_local = utt_df_local.loc[~utt_df_local.token.isin(['[chi]','[cgv]'])]
+        
+        # Prevent overly long sequences that will break BERT
+        if utt_df_local.shape[0] > (512 - 2): # If there's no room to fit CLS and end token into BERT. 
+            print('Cutting example', selected_utt_id)
+            print(f'\t shape: {utt_df_local.shape[0]}')
+            utt_df_local = data_cleaning.cut_context_df(utt_df_local)
+            print(f'\t shape afterwards: {utt_df_local.shape[0]}'
 
         this_priors, this_completions, this_stats = get_completions_for_mask(utt_df_local, 
             utt_df.iloc[mask_position].token, bertMaskedLM, tokenizer, softmax_mask) 

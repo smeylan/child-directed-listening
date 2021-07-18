@@ -8,7 +8,6 @@ from utils import load_models, split_gen, load_csvs
 import config
 
 
-
 def get_beta_search_values():
     
     low = config.beta_low
@@ -38,7 +37,7 @@ def load_beta_folder(split, dataset, is_tags, context_num, model_type):
 def load_beta_values(split_name, dataset_name, tags, context_width, model_type):
     
     exp_model_path = load_beta_folder(split_name, dataset_name, tags, context_width, model_type)
-    results = load_csvs.load_csv_with_lists(join(exp_model_path, 'beta_search_results.csv'))
+    results = load_csvs.load_csv_with_lists(join(exp_model_path, f'beta_search_results_{config.n_beta}.csv'))
 
     return results
 

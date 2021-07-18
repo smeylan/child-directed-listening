@@ -7,7 +7,19 @@ from utils_child import child_models
 
 import config
 
+import os
+from os.path import join, exists
 
+def get_cross_path(data_child_name, prior_child_name, beta):
+    
+    this_folder = join(config.exp_dir, 'child_cross')
+    
+    if not exists(this_path):
+        os.makedirs(this_folder)
+    
+    this_path = join(this_folder, f'data_{data_child_name}_prior_{prior_child_name}_beta_{beta}.csv')
+    return this_path
+    
 def score_cross_prior(data_child, prior_child):
     
     """
@@ -18,7 +30,10 @@ def score_cross_prior(data_child, prior_child):
     initial_vocab, cmu_in_initial_vocab = load_models.get_initial_vocab_info()
     _, is_tags = child_models.get_best_child_base_model_path()
     
-    optim_beta = beta_utils.get_optimal_beta_value('child', prior_child, is_tags, 0, 'childes')
+    print('Re-enable optimal beta for child once these values become available!')
+    
+    # optim_beta = beta_utils.get_optimal_beta_value('child', prior_child, is_tags, 0, 'childes')
+    optim_beta = 3.2
     
     # Load the evaluation successes and yyy for a given child.
     eval_data = load_splits.load_child_eval_data(data_child)
@@ -47,5 +62,5 @@ def score_cross_prior(data_child, prior_child):
         
     scores = copy.deepcopy(posteriors['scores'])
     
-    return scores
+    return scores, optim_beta
     

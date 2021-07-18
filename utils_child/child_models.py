@@ -35,7 +35,7 @@ def get_child_names():
     
     all_phono = load_splits.load_eval_data_all('all', 'all')['phono']
     return set(all_phono.target_child_name)
-    
+   
     
 def get_child_model_dict(name):
     
@@ -48,9 +48,12 @@ def get_child_model_dict(name):
     
     model_path = load_models.get_model_path('child', name, is_tags)
     
+    print('Make this load from actual paths once models are available! Important. Right now just using a substitute model')
+    
     model_dict = {
         'title' : load_models.gen_model_title(*model_args),
-        'kwargs' : get_model_from_path(model_path, is_tags),
+        # 'kwargs' : get_model_from_path(model_path, is_tags), # You will need to load this?
+        'kwargs' : load_models.get_meylan_original_model(True),
         'type' : 'BERT', 
     }
    

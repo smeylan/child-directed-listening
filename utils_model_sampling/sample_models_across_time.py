@@ -23,13 +23,13 @@ def assemble_scores_no_order():
     
     for split, dataset, tags, context, model_type in this_load_args:
        
-        print('Loading', split, dataset, tags, context, model_type)
-        
         this_beta_folder = beta_utils.load_beta_folder(split, dataset, tags, context, model_type)
 
         age_paths = glob.glob(join(this_beta_folder, 'run_models_across_time_*.csv'))
-                              
+         
         for this_data_path in age_paths:
+            
+            print(this_data_path)
             
             data_df = load_csvs.load_csv_with_lists(this_data_path)
             

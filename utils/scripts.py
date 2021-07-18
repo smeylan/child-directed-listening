@@ -14,6 +14,12 @@ def gen_singularity_header(om2_user = 'wongn'):
 
 def gen_command_header(mem_alloc_gb, time_alloc_hrs):
     
+    if isinstance(time_alloc_hrs, int):
+        time_alloc_hrs_str = f'{time_alloc_hrs}:00:00'
+    if isinstance(time_alloc_hrs, tuple):
+        hrs, mins, secs = time_alloc_hrs
+        time_alloc_hrs_str = f'{hrs}:{mins}:{secs}'
+                
     commands = []
     commands.append("#!/bin/bash\n")
     
@@ -23,7 +29,7 @@ def gen_command_header(mem_alloc_gb, time_alloc_hrs):
     commands.append("\n#SBATCH -N 1\n")                         
     commands.append("#SBATCH -p cpl\n")
     commands.append("#SBATCH --gres=gpu:1\n")
-    commands.append(f"#SBATCH -t {time_alloc_hrs}:00:00\n")
+    commands.append(f"#SBATCH -t {time_alloc_hrs_str}\n")
     commands.append(f"#SBATCH --mem={mem_alloc_gb}G\n")
     commands.append("#SBATCH --constraint=high-capacity\n")
      

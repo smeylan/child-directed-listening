@@ -249,16 +249,23 @@ def get_specific_model_dict(model_id):
     
     
     
+def get_primary_tokenizer():
+
+    print("Change the tokenizer from model output2 to be dynamic if possible")
+    
+    initial_tokenizer = get_meylan_original_model(with_tags = True)['tokenizer']
+    initial_tokenizer.add_tokens(['yyy','xxx']) #must maintain xxx and yyy for alignment,
+    # otherwise, BERT tokenizer will try to separate these into x #x and #x and y #y #y
+    
+    return initial_tokenizer
+    
+    
 def get_initial_vocab_info():
     
     # tokenize with the most extensive tokenizer, which is the one used for model #2
-    print("Change the tokenizer from model output2 to be dynamic if possible")
     
     cmu_2syl_inchildes = get_cmu_dict_info()
-    initial_tokenizer = get_meylan_original_model(with_tags = True)['tokenizer']
-    
-    initial_tokenizer.add_tokens(['yyy','xxx']) #must maintain xxx and yyy for alignment,
-    # otherwise, BERT tokenizer will try to separate these into x #x and #x and y #y #y
+    initial_tokenizer = get_primary_tokenizer()
     
     inital_vocab_mask, initial_vocab = transformers_bert_completions.get_softmax_mask(initial_tokenizer,
         cmu_2syl_inchildes.word)

@@ -9,7 +9,12 @@ import config
 
 import math
 
+from utils import load_models
+
 def cut_context_df(df, MAX_LEN = 512):
+    
+    # This can be really slow if you load the tokenizer every time
+    tokenizer = load_models.get_primary_tokenizer()
     
     # 7/17/21: For advice on truncation, not code
     # https://stackoverflow.com/questions/58636587/how-to-use-bert-for-long-text-classification

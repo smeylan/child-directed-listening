@@ -1,7 +1,4 @@
 
-# 6/21/21 All code in this file refactored from Dr. Meylan's code
-# Note to self: is the "true ids of the entries" check relevant here?
-
 import os
 from os.path import join, exists
 
@@ -10,6 +7,7 @@ import numpy as np
 
 import config
 
+import math
 
 def cut_context_df(df, MAX_LEN = 512):
     

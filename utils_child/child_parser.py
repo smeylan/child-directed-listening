@@ -3,7 +3,7 @@
 
 import argparse
 
-def split_parser():
+def child_parser():
     
     # 7/6/21: https://docs.python.org/3/library/argparse.html
     # For syntax references

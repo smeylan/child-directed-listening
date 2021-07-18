@@ -39,12 +39,12 @@ def get_child_names():
     
 def get_child_model_dict(name):
     
-    # Need to load the model?
-    
-    model_args = ('child', name, is_tags, config.child_context_width, 'childes')
     
     _, is_tags = get_best_child_base_model_path()
-    model_id = load_model.get_model_id(*model_args)
+    
+    model_args = ('child', name, is_tags, config.child_context_width, 'childes')
+     
+    model_id = load_models.get_model_id(*model_args)
     
     model_path = load_models.get_model_path('child', name, is_tags)
     

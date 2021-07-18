@@ -42,19 +42,19 @@ def score_cross_prior(data_child, prior_child):
     model = child_models.get_child_model_dict(prior_child)
     
     # Use id, not utterance id, because this is Providence second query data.
-    cross_priors = compare_successes_failures(eval_data['phono'], eval_data['success_utts'].id, eval_data['yyy_utts'].id, **model['kwargs'])
+    cross_priors = transformers_bert_completions.compare_successes_failures(eval_data['phono'], eval_data['success_utts'].id, eval_data['yyy_utts'].id, **model['kwargs'])
     
     # Calculate distances -- depending on how implementation is done hopefully can abstract this out.
     
     dists = None
     
     if config.dist_type == 'levdist':
-        dists = edit_distances_for_age_interval = transformers_bert_completions.get_edit_distance_matrix(eval_data['phono'], 
+        dists = transformers_bert_completions.get_edit_distance_matrix(eval_data['phono'], 
             cross_priors, initial_vocab, cmu_in_initial_vocab)    
     else:
         assert False, "Invalid dist specified in config file. Choose from: {levdist}"
     
-    posteriors_for_age_interval = get_posteriors(cross_priors, 
+    posteriors_for_age_interval = transformers_bert_completions.get_posteriors(cross_priors, 
                     dists, initial_vocab, None, optim_beta)
     
     posteriors_for_age_interval['scores']['beta_value'] = optim_beta

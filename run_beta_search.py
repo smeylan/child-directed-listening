@@ -3,6 +3,7 @@ import os
 from os.path import join, exists
 from utils import load_splits, load_models, split_gen, parsers
 from utils_model_sampling import beta_utils, sample_across_models
+from utils_child import child_models
 
 import config
 import pandas as pd
@@ -108,7 +109,18 @@ if __name__ == '__main__':
     
     print(this_model_args)
    
-    this_model_dict = load_models.get_specific_model_dict(query_model_str)
+    if this_model_args['split'] != 'child':
+        this_model_dict = load_models.get_specific_model_dict(query_model_str)
+    else:
+        # Note that model args should already be matched to the parse arguments for child scripts,
+        # because they are auto-generated.
+        # But assert anyway to prevent manual misuse
+        
+        this_model_dict = child_models.get_child_model_dict(this_model_args['dataset'])
+        
+        assert this_model_dict['kwargs']['use_speaker_labels'] == this_model_args['use_tags']
+        assert this_model_dict['kwargs']['context_width_in_utts'] == this_model_args['context_width']
+        
     raw_results, beta_results = optimize_beta(this_model_args['split'], this_model_args['dataset'], this_model_dict, this_model_args['model_type'])
 
     print(f'Computations complete for: {query_model_str}')

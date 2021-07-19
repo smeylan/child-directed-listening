@@ -67,7 +67,6 @@ def bert_completions(text, model, tokenizer, softmax_mask):
         segments_tensors = segments_tensors.cuda()
         model = model.cuda()
 
-  print('predicting for', tokens_tensor)
   # Predict all tokens
   with torch.no_grad():
       predictions = model(tokens_tensor, segments_tensors)['logits']
@@ -178,7 +177,6 @@ def get_stats_for_failure(all_tokens, selected_utt_id, bertMaskedLM, tokenizer, 
         # convert the @ back to a mask for the target word
         utt_df.loc[utt_df.token == 'yyy','token'] = '[MASK]'
         utt_df.loc[utt_df.token == '[MASK]','token_id'] = 103
-
 
     if context_width_in_utts is not None:   
 

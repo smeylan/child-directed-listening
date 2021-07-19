@@ -56,6 +56,9 @@ def get_child_model_dict(name):
         'kwargs' : load_models.get_meylan_original_model(True),
         'type' : 'BERT', 
     }
+    
+    # Hard code to 0 context for now, unsure if it makes sense to compare otherwise
+    model_dict['kwargs'].update({'context_width_in_utts' : 0, 'use_speaker_labels' : is_tags})
    
     return model_dict
     

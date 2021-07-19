@@ -42,7 +42,8 @@ def score_cross_prior(data_child, prior_child):
     model = child_models.get_child_model_dict(prior_child)
     
     # Use id, not utterance id, because this is Providence second query data.
-    cross_priors = transformers_bert_completions.compare_successes_failures(eval_data['phono'], eval_data['success_utts'].id, eval_data['yyy_utts'].id, **model['kwargs'])
+    cross_priors = transformers_bert_completions.compare_successes_failures(eval_data['phono'], eval_data['success_utts'].utterance_id, eval_data['yyy_utts'].utterance_id, **model['kwargs'])
+    
     
     # Calculate distances -- depending on how implementation is done hopefully can abstract this out.
     

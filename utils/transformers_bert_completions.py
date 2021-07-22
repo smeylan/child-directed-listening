@@ -7,7 +7,7 @@ import time
 from string import punctuation
 import Levenshtein
 
-from utils import unigram, load_csvs, data_cleaning
+from utils import unigram, data_cleaning
 
 def softmax(x, axis=None):
     '''
@@ -484,7 +484,7 @@ def compare_successes_failures_unigram_model(all_tokens, selected_success_utts, 
     unigram_model = pd.DataFrame({'word':vocab})
     
     if child_counts_path is not None: 
-        childes_counts = load_csvs.load_csv_with_lists(child_counts_path)    
+        childes_counts = pd.read_csv(child_counts_path)    
         unigram_model = unigram_model.merge(childes_counts, how='left')
         unigram_model = unigram_model.fillna(0) 
         unigram_model['count'] = unigram_model['count'] + .01 #additive smoothing

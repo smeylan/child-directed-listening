@@ -2,7 +2,7 @@
 import os
 from os.path import join, exists
 
-from utils import load_models, load_splits, data_cleaning, parsers, load_csvs
+from utils import load_models, load_splits, data_cleaning, parsers
 from utils_model_sampling import beta_utils, sample_models_across_time
 
 import numpy as np
@@ -69,7 +69,7 @@ def call_single_across_time_model(model_class, this_split, this_dataset_name, is
         this_context_width = this_model_dict['kwargs']['context_width_in_utts']
         
         score_folder = beta_utils.load_beta_folder(this_split, this_dataset_name, this_tags, this_context_width, model_class)
-        this_scores.to_csv(join(score_folder, f'run_models_across_time_{age}.csv'))
+        this_scores.to_pickle(join(score_folder, f'run_models_across_time_{age}.pkl'))
     
     return this_scores
     

@@ -21,7 +21,7 @@ if __name__ == '__main__':
     
     score_path = utils_child.get_cross_path(data_child, prior_child)
     
-    scores.to_csv(score_path)
+    scores.to_pickle(score_path)
     
     print(f'Computations complete for: {data_child}, {prior_child}')
     print(f'Scores saved to: {score_path}')

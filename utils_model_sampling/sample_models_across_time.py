@@ -3,7 +3,7 @@ import os
 from os.path import join, exists
 
 import copy
-from utils import load_models, transformers_bert_completions, load_csvs, unigram, load_splits
+from utils import load_models, transformers_bert_completions, unigram, load_splits
 from utils_model_sampling import beta_utils
 
 from collections import defaultdict
@@ -25,13 +25,13 @@ def assemble_scores_no_order():
        
         this_beta_folder = beta_utils.load_beta_folder(split, dataset, tags, context, model_type)
 
-        age_paths = glob.glob(join(this_beta_folder, 'run_models_across_time_*.csv'))
+        age_paths = glob.glob(join(this_beta_folder, 'run_models_across_time_*.pkl'))
          
         for this_data_path in age_paths:
             
             print(this_data_path)
             
-            data_df = load_csvs.load_csv_with_lists(this_data_path)
+            data_df = pd.read_pickle(this_data_path)
             
             # print(f'\t{this_data_path}')
             # print(f'\tthis shape {data_df.shape[0]}')

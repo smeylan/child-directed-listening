@@ -6,7 +6,7 @@ import numpy as np
 import os
 from os.path import join, exists
 
-from utils import load_splits, split_gen, load_csvs
+from utils import load_splits, split_gen
 
 import config
   
@@ -16,7 +16,7 @@ def load_chi_token_freq_all_split():
     # For now, only load unigrams from the all split.
     
     this_folder = split_gen.get_split_folder('all', 'all', config.data_dir)
-    this_chi_vocab = load_csvs.load_csv_with_lists(join(this_folder, 'chi_vocab_train.csv'))
+    this_chi_vocab = pd.read_csv(join(this_folder, 'chi_vocab_train.csv'))
     
     return this_chi_vocab
     

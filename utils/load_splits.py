@@ -36,7 +36,13 @@ def get_sample_path(data_type, task_name, split_name, dataset_name, eval_phase =
     
     assert data_type in ['success', 'yyy'], "Invalid data type requested of sample path: choose one of {success, yyy}."
     
-    this_data_folder = split_gen.get_split_folder(split_name, dataset_name, config.eval_dir)
+    if task_name == 'beta':
+        this_data_folder = split_gen.get_split_folder(split_name, dataset_name, config.eval_dir)
+    else:
+        this_data_folder = join(config.eval_dir, 'across_time_samples')
+        if not exists(this_data_folder):
+            os.makedirs(this_data_folder)
+            
     this_data_path = join(this_data_folder, f'{data_type}_utts_{task_name}_{n}{age_str}.csv')
     
     return this_data_path
@@ -128,15 +134,30 @@ def sample_yyy(task, split, dataset, age, phono, eval_phase):
     return sample
     
     
-def load_sample_successes(task, split, dataset, age = None):
-    this_path = get_sample_path('success', task, split, dataset, age)
+def load_sample_successes(task, split, dataset, age = None, eval_phase = config.eval_phase):
+    this_path = get_sample_path('success', task, split, dataset, eval_phase, age)
     return pd.read_csv(this_path)
 
-def load_sample_yyy(task, split, dataset, age = None):
+def load_sample_yyy(task, split, dataset, age = None, eval_phase = config.eval_phase):
     
-    this_path = get_sample_path('yyy', task, split, dataset, age)
+    this_path = get_sample_path('yyy', task, split, dataset, eval_phase, age)
     return pd.read_csv(this_path)
 
+
+
+
+def load_phono_successes_yyy_ids():
+    
+    return set(load_phono_successes_yyy().id)
+
+def load_phono_successes_yyy():
+    
+    all_phono = load_phono()
+    return all_phono[all_phono.success_token | all_phono.yyy_token]
+
+def load_phono():
+    
+    return pd.read_pickle(join(config.eval_dir, 'pvd_all_tokens_phono_for_eval.pkl'))
 
 ##################
 ## TEXT LOADING ##
@@ -164,47 +185,6 @@ def load_split_text_path(split, dataset):
     return {name : join(split_gen.get_split_folder(split, dataset, config.data_dir), f'{name}.txt')
            for name in names}
 
-def load_phono_successes_yyy_ids():
-    
-    return set(load_phono_successes_yyy().id)
-
-def load_phono_successes_yyy():
-    
-    all_phono = load_phono()
-    return all_phono[all_phono.success_token | all_phono.yyy_token]
-
-def load_phono():
-    
-    return pd.read_pickle(join(config.eval_dir, 'pvd_all_tokens_phono_for_eval.pkl'))
 
 
-    
-def load_pvd_data(split_name, dataset_name, phase):
-    
-    assert phase in {'val', 'eval'}
-    
-    success_utts_filename = f'{phase}_success_utts.csv'
-    yyy_utts_filename = f'{phase}_yyy_utts.csv'
-
-    data_filenames = [success_utts_filename, yyy_utts_filename]
-    this_folder_path = split_gen.get_split_folder(split_name, dataset_name, config.eval_dir)
-    
-    data_name = {
-       f'{phase}_success_utts.csv' : 'success_utts',
-       f'{phase}_yyy_utts.csv' : 'yyy_utts',
-    }
-    
-    data_dict = {}
-    
-    for f in data_filenames:
-        this_path = join(this_folder_path, f)
-        data_dict[data_name[f]] = pd.read_csv(this_path)
-    
-    # Avoid resaving this many times, use one universal phono that is sliced with the individual relevant ids.
-    data_dict['phono'] = load_phono()
-    
-    return data_dict
-
-    
-    
     

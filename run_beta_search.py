@@ -63,7 +63,6 @@ def optimize_beta(split_name, dataset_name, model_dict, model_type):
     # Log the beta results
     beta_results_path = join(this_exp_path, f'beta_search_results_{config.n_beta}.csv')
     
-    this_raw_beta_results.to_csv(join(this_exp_path, f'beta_search_raw_results_{config.n_beta}.csv')) # May not need to save this.
     this_beta_results_surp.to_csv(beta_results_path)
     
     print("Writing beta results to", {beta_results_path})

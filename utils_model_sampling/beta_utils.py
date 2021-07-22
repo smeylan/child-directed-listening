@@ -4,7 +4,7 @@ from os.path import join, exists
 
 import numpy as np
 
-from utils import load_models, split_gen, load_csvs
+from utils import load_models, split_gen
 import config
 
 
@@ -37,7 +37,7 @@ def load_beta_folder(split, dataset, is_tags, context_num, model_type):
 def load_beta_values(split_name, dataset_name, tags, context_width, model_type):
     
     exp_model_path = load_beta_folder(split_name, dataset_name, tags, context_width, model_type)
-    results = load_csvs.load_csv_with_lists(join(exp_model_path, f'beta_search_results_{config.n_beta}.csv'))
+    results = pd.read_csv(join(exp_model_path, f'beta_search_results_{config.n_beta}.csv'))
 
     return results
 

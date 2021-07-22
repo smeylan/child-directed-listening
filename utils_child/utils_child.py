@@ -17,7 +17,7 @@ def get_cross_path(data_child_name, prior_child_name, beta):
     if not exists(this_path):
         os.makedirs(this_folder)
     
-    this_path = join(this_folder, f'data_{data_child_name}_prior_{prior_child_name}_beta_{beta}.csv')
+    this_path = join(this_folder, f'data_{data_child_name}_prior_{prior_child_name}_beta_{beta}.pkl')
     return this_path
     
 def score_cross_prior(data_child, prior_child):

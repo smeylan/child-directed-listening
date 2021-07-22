@@ -6,7 +6,7 @@ import transformers
 
 from transformers import BertTokenizer, BertForMaskedLM
 
-from utils import transformers_bert_completions, split_gen, load_csvs, load_splits
+from utils import transformers_bert_completions, split_gen, load_splits
 from utils_child import child_models
 
 import config
@@ -323,7 +323,7 @@ def get_meylan_original_model(with_tags):
 
 def get_cmu_dict_info():
     
-    cmu_in_childes = load_csvs.load_csv_with_lists(config.cmu_path)
+    cmu_in_childes = pd.read_pickle(config.cmu_path)
     
     # Added check for loading list objects as list objects, rather than str
     # Based on skimming the code this shouldn't affect the functionality

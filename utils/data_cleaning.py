@@ -9,7 +9,8 @@ import config
 
 import math
 
-from utils import load_models
+from utils import load_models, load_splits
+
 
 def cut_context_df(df, MAX_LEN = 512):
     
@@ -55,7 +56,7 @@ def cut_context_df(df, MAX_LEN = 512):
 
 def augment_target_child_year(df):
     """
-    Expects utts_with_ages from Providence notebook.
+    Expects all_tokens_phono from Providence notebook.
     """
     df['year'] = .5*np.floor(df['target_child_age'] / (365. /2) ) 
     return df
@@ -113,8 +114,10 @@ def drop_errors(utt_data):
 
 
 
-def clean_glosses(data, fill_punct_val):
+def clean_glosses(data):
         
+    fill_punct_val = '.'
+    
     punct_for_type = {
     'question':'?',
     'declarative':'.',
@@ -123,8 +126,6 @@ def clean_glosses(data, fill_punct_val):
     'trail off question':'?',
     'imperative_emphatic':'!' 
     }
-    
-    assert fill_punct_val in ['.', None], "Tried to use a fill punctuation value that wasn't present in either yyy or finetune notebooks. For yyy behavior, use '.'. For finetune behavior, use None."
     
     data.gloss = [fix_gloss(x) for x in data.gloss]
     
@@ -148,7 +149,7 @@ def clean_glosses(data, fill_punct_val):
 
 
    
-def prep_utt_glosses(data, fill_punct_val):
+def prep_utt_glosses(data):
     
     """
     Highest level call for converting and augmenting raw queried data.
@@ -172,7 +173,7 @@ def prep_utt_glosses(data, fill_punct_val):
     
     if config.verbose: print('Cell 233 output', data.shape)
         
-    data = clean_glosses(data, None)
+    data = clean_glosses(data)
    
     if config.verbose: print('Cell 269', data.head(5).gloss_with_punct)
     

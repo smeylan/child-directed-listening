@@ -25,16 +25,7 @@ def load_sample_model_across_time_args(split_name, dataset_name):
         sample_successes_id = load_splits.load_sample_successes('models_across_time', split_name, dataset_name, age = age)
         sample_yyy_id = load_splits.load_sample_yyy('models_across_time', split_name, dataset_name, age = age)
 
-        eval_data_dict = load_splits.load_eval_data_all(split_name, dataset_name) 
-        sel_sample_ids = pd.concat([sample_successes_id, sample_yyy_id])
-
-        this_utts_with_ages_all = pd.concat([eval_data_dict['success_utts'], eval_data_dict['yyy_utts']])
-
-        this_utts_with_ages_sample = this_utts_with_ages_all[this_utts_with_ages_all.utterance_id.isin(sel_sample_ids.utterance_id)]
-        
-        this_tokens_phono = eval_data_dict['phono']
-        
-        sample_dict[age] = {'id' : this_utts_with_ages_sample, 'phono' : this_tokens_phono }
+        sample_dict[age] = {'success_id' : sample_successes_id.utterance_id, 'yyy_id' : sample_yyy_id.utterance_id}
         
     return sample_dict
     
@@ -63,6 +54,10 @@ def call_single_across_time_model(model_class, this_split, this_dataset_name, is
         
         percentage_done = idx / float(len(ages)) * 100
         if int(percentage_done) % 5 == 0: print(f'{percentage_done}%') 
+            
+            
+            sample_models_across_time.successes_and_failures_across_time_per_model(age, utts, model, all_tokens_phono, beta_value
+            
             
         this_scores = sample_models_across_time.successes_and_failures_across_time_per_model(age, utts, this_model_dict, tokens, beta_value = optimal_beta)
         

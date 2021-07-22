@@ -113,7 +113,7 @@ def find_phase_data(phase, pool):
     return this_phase_data
 
 
-def assign_and_find_phase_data(phase, split_on, phase_idxs, data_pool):
+def assign_and_find_phase_data(phase, split_on, phase_idxs, data_pool, phase_label = 'phase'):
     """
     Different from the original function, re-test
     See dtermine_split_idxs comments on what to split on for which models.
@@ -121,7 +121,7 @@ def assign_and_find_phase_data(phase, split_on, phase_idxs, data_pool):
     """
     
     data_pool.loc[data_pool[split_on].isin(phase_idxs),
-             'phase'] = phase
+             phase_label] = phase
     
     phase_data = find_phase_data(phase, data_pool)
     
@@ -205,8 +205,8 @@ def exec_split_gen(raw_data, split_name, dataset_name):
     
     print('Beginning split gen call:', split_name, dataset_name)
     
-    # Note: yyy uses "." as the default punct val. Splits use "None" as the default punct val.
-    cleaned_utt_glosses = data_cleaning.prep_utt_glosses(raw_data, None)
+    # Note: changed everything to use "." punctuation. Was "None" previously.
+    cleaned_utt_glosses = data_cleaning.prep_utt_glosses(raw_data)
     
     train_idxs, val_idxs = determine_split_idxs(cleaned_utt_glosses, 'transcript_id', val_ratio = config.val_ratio)
     
@@ -219,4 +219,17 @@ def exec_split_gen(raw_data, split_name, dataset_name):
     
     return split_glosses_df, chi_tok_freq
     
+    
+def save_eval_data(data, filename, split_name, dataset_name):
+    
+    assert split_name in ['all', 'age', 'child'], "Invalid split name. Must be one of {all, age, child}."
+    
+    # Saving based on a mask of a copy of a? Will this be a problem?
+    
+    save_path = split_gen.get_split_folder(split_name, dataset_name, config.eval_dir)
+    save_location = join(save_path, filename)
+    
+    print(f'Saved all/all evaluation data to {save_location}')
+    
+    return save_location
     

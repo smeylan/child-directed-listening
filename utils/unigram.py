@@ -30,17 +30,20 @@ def get_sample_bert_token_ids(task, split = 'all', dataset = 'all'):
         but attempts to keep the order in its design either way.
         
     You should check this function for correctness at the end.
+    
+    Note: Before 7/22/21 this was potentially an insufficiently limited set, because not all of the tokens were scored.
+    # You need to actually extract the tokens that are scored here.
     """
     
-    eval_data = load_splits.load_eval_data_all('all', 'all')
-    tokens = eval_data['phono']
+    print('Need to fix this unigram work! See the comments!')
+    
+    tokens = load_splits.load_phono() # You should really only load the tokens that receive scores -- what are these tokens?
 
     # Need to extract all of the utterance ids in the entirety of the ages...
     # This will probably be very slow.
     
     all_success_paths = load_splits.get_success_sample_paths('all', 'all')
     all_yyy_paths = load_splits.get_yyy_sample_paths('all', 'all')
-   
     
     # Use read_csv because you're just looking for utterance_ids
     this_sample_successes = pd.concat([pd.read_csv(path)[['utterance_id']] for path in all_success_paths])

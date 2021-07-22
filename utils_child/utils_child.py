@@ -36,7 +36,7 @@ def score_cross_prior(data_child, prior_child):
     optim_beta = 3.2
     
     # Load the evaluation successes and yyy for a given child.
-    eval_data = load_splits.load_child_eval_data(data_child)
+    eval_data = load_splits.load_pvd_data('child', data_child, config.eval_phase)
     
     # Load the prior
     model = child_models.get_child_model_dict(prior_child)

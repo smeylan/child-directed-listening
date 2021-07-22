@@ -1,9 +1,7 @@
 
-
 from utils import transformers_bert_completions, load_splits, load_models
 from utils_model_sampling import sample_across_models, beta_utils
 
-from yyy_analysis import examples_figures
 
 def get_example_model_ids():
     

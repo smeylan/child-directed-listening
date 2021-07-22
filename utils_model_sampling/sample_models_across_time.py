@@ -39,58 +39,10 @@ def assemble_scores_no_order():
             score_store.append(data_df)
                       
     return score_store
-    
-    
-def assemble_across_time_scores():
-    
-    """
-    
-    Follows the convention of the original code -- need to work on this more.
-     
-    Assemble the "score store" across models that was present in the original function
-        and is used for visualizations.
-    Outer loop is by age.
-    Inner loop is by model, for that pool.
-    Note that different splits have different samples of data.
-    
-    Doesn't work yet -- abandoning because it's probably unneeded
-    """
-    
-    this_load_args = load_models.gen_all_model_args()
-    
-    # For now, analyze whichever ages are available in the sample.
-    # Need to be careful when doing visualizations in yyy later.
-    
-    # First, access each pool for their samples
-    
-    age2models = defaultdict(list)
-    
-    for split, dataset, _, _, _ in this_load_args:
-        # Not just successes! What else to load?
-        this_sample_pool = load_splits.load_sample_successes('models_across_time', split, dataset)
-        
-        this_ages = np.unique(this_sample_pool.target_child_age)
-        age2models[age].append((split, dataset)) # Not sure if age is a float or int, be careful
-    
-    all_ages = sorted(list(age2models.keys()))
-    
-    
-    # Then, sort all of the model calls by age
-    # Age -> model -> scores nesting
-    
-    score_store = []
-   
-    for age in all_ages:
-        for split, dataset, tags, context, model_type in this_load_args:
-            this_beta_folder = beta_utils.load_beta_folder(split, dataset, tags, context, model_type)
 
-            this_data_path = join(this_beta_folder, 'run_models_across_time_{age}.csv')
-            data_df = load_csvs.load_csv_with_lists(this_data_path)
-            score_store.append(data_df)
 
-    return score_store
 
-def successes_and_failures_across_time_per_model(age, utts, model, all_tokens_phono, beta_value):
+def successes_and_failures_across_time_per_model(age, success_ids, yyy_ids, model, all_tokens_phono, beta_value):
     """
     model = a dict of a model like that in the yyy analysis 
     vocab is only invoked for unigram, which correspond to original yyy analysis.
@@ -116,13 +68,13 @@ def successes_and_failures_across_time_per_model(age, utts, model, all_tokens_ph
     
     if model['type'] == 'BERT':
         priors_for_age_interval = transformers_bert_completions.compare_successes_failures(
-            all_tokens_phono, selected_success_utts.utterance_id, 
-            selected_yyy_utts.utterance_id, **model['kwargs'])
+            all_tokens_phono, success_ids, 
+            yyy_ids, **model['kwargs'])
 
     elif model['type'] == 'unigram':
         priors_for_age_interval = transformers_bert_completions.compare_successes_failures_unigram_model(
-            all_tokens_phono, selected_success_utts.utterance_id, 
-            selected_yyy_utts.utterance_id, **model['kwargs'])
+            all_tokens_phono, success_ids, 
+            yyy_ids, **model['kwargs'])
 
     edit_distances_for_age_interval = transformers_bert_completions.get_edit_distance_matrix(all_tokens_phono, 
         priors_for_age_interval, initial_vocab, cmu_in_initial_vocab)            

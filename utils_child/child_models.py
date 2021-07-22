@@ -33,7 +33,7 @@ def get_child_names():
     Get all Providence children.
     """
     
-    all_phono = load_splits.load_eval_data_all('all', 'all')['phono']
+    all_phono = load_splits.load_phono()
     return set(all_phono.target_child_name)
    
     

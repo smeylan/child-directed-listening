@@ -25,7 +25,7 @@ def load_sample_model_across_time_args(split_name, dataset_name):
         sample_successes_id = load_splits.load_sample_successes('models_across_time', split_name, dataset_name, age = age)
         sample_yyy_id = load_splits.load_sample_yyy('models_across_time', split_name, dataset_name, age = age)
 
-        eval_data_dict = load_splits.load_eval_data_all(split_name, dataset_name) 
+        eval_data_dict = load_splits.load_pvd_data(split_name, dataset_name, config.eval_phase) 
         sel_sample_ids = pd.concat([sample_successes_id, sample_yyy_id])
 
         this_utts_with_ages_all = pd.concat([eval_data_dict['success_utts'], eval_data_dict['yyy_utts']])

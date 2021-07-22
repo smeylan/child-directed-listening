@@ -4,7 +4,7 @@
 import os
 from os.path import join, exists
  
-from utils import split_gen, load_csvs
+from utils import split_gen
 import glob
 
 import pandas as pd
@@ -24,9 +24,12 @@ def get_n(task):
     n = config.n_beta if task == 'beta' else config.n_across_time
     return n
 
-def get_sample_path(data_type, task_name, split_name, dataset_name, age = None):
+
+def get_sample_path(data_type, task_name, split_name, dataset_name, eval_phase = config.eval_phase, age = None):
     
     n = get_n(task_name)
+    
+    print(age, task_name, split_name)
     
     assert ( (age is None) and (task_name == 'beta' or split_name == 'all') ) or ( (age is not None) and (task_name == 'models_across_time') )
     age_str = f'_{float(age)}' if age is not None else ''
@@ -80,35 +83,59 @@ def get_all_ages_in_samples(split_name, dataset_name):
     return sorted(list(ages))
    
     
-def sample_successes_yyy(pool, task, split, dataset, utts_pool, age):
+def sample_successes_yyy(pool, data_type, age, task, split, dataset, eval_phase):
     """
     task_name = designates the cached value to use for optimizations.
         The cache should be different for beta optimization and run_models_across_time.
     """
     
-    
     if age is not None: # Sample per age
-        utts_pool = utts_pool[utts_pool.year == age]
-        
-    num_samples = utts_pool.shape[0]
+        pool = pool[pool.year == age]
+     
+    num_samples = pool.shape[0]
+    
+    # Actually do the sampling.
+    
     n = min(num_samples, get_n(task))
-    this_data_path = get_sample_path(pool, task, split, dataset, age)
+    
+    this_data_path = get_sample_path(data_type, task, split, dataset, eval_phase, age)
     
     # Need to sample the successes again and save them.
-    print(f"Resampling for: {pool}, {task}, {split}, {dataset}, age: {age}")
-    sample = utts_pool.sample(n, replace=False).utterance_id
-    sample.to_csv(this_data_path)
+    sample = pool.sample(n, replace=False).id
+
+    print(f"Resampling for: {task}, {split}, {dataset}, age: {age}, phase: {eval_phase}")
+    sample.to_csv(this_data_path) 
     
     return sample
 
+def sample_successes(task, split, dataset, age, phono, eval_phase):
+    
+    success_pool = phono[phono.success_token]
+    
+    # Need to load the utts pool generally into the system -- how?
+    sample = sample_successes_yyy(success_pool, 'success', age, task, split, dataset, eval_phase)
+    
+    return sample
+    
+    
+def sample_yyy(task, split, dataset, age, phono, eval_phase):
+    
+    yyy_pool  = phono[phono.yyy_token]
+    
+    # Need to load the utts pool generally into the system -- how?
+    sample = sample_successes_yyy(yyy_pool, 'yyy', age, task, split, dataset, eval_phase)
+    
+    return sample
+    
+    
 def load_sample_successes(task, split, dataset, age = None):
     this_path = get_sample_path('success', task, split, dataset, age)
-    return load_csvs.load_csv_with_lists(this_path)
+    return pd.read_csv(this_path)
 
 def load_sample_yyy(task, split, dataset, age = None):
     
     this_path = get_sample_path('yyy', task, split, dataset, age)
-    return load_csvs.load_csv_with_lists(this_path)
+    return pd.read_csv(this_path)
 
 
 ##################
@@ -136,54 +163,48 @@ def load_split_text_path(split, dataset):
     
     return {name : join(split_gen.get_split_folder(split, dataset, config.data_dir), f'{name}.txt')
            for name in names}
+
+def load_phono_successes_yyy_ids():
     
+    return set(load_phono_successes_yyy().id)
+
+def load_phono_successes_yyy():
     
+    all_phono = load_phono()
+    return all_phono[all_phono.success_token | all_phono.yyy_token]
+
+def load_phono():
     
-def load_eval_data_all(split_name, dataset_name):
-    
-    """
-    7/15/21: Split out the loading logic to accomodate child loading -- should be orthogonal in the 
-    non-child code.
-    
-    Loading cached data relevant to the model scoring functions in yyy analysis.
-    Note that for children, this loads the entire split, not the eval split.
-    
-    (Loads Providence data)
-    """
-    return load_eval_data(split_name, dataset_name, '')
+    return pd.read_pickle(join(config.eval_dir, 'pvd_all_tokens_phono_for_eval.pkl'))
 
 
+    
+def load_pvd_data(split_name, dataset_name, phase):
+    
+    assert phase in {'val', 'eval'}
+    
+    success_utts_filename = f'{phase}_success_utts.csv'
+    yyy_utts_filename = f'{phase}_yyy_utts.csv'
 
-def load_eval_data(split_name, dataset_name, modifier):
-    """
-    modifier is used to 
-    """
-    phono_filename = f'{modifier}pvd_utt_glosses_phono_cleaned_inflated.pkl'
-    success_utts_filename = f'{modifier}success_utts.csv'
-    yyy_utts_filename = f'{modifier}yyy_utts.csv'
-
-    data_filenames = [phono_filename, success_utts_filename, yyy_utts_filename]
+    data_filenames = [success_utts_filename, yyy_utts_filename]
     this_folder_path = split_gen.get_split_folder(split_name, dataset_name, config.eval_dir)
     
     data_name = {
-       f'{modifier}pvd_utt_glosses_phono_cleaned_inflated.pkl' : 'phono',
-       f'{modifier}success_utts.csv' : 'success_utts',
-       f'{modifier}yyy_utts.csv' : 'yyy_utts',
+       f'{phase}_success_utts.csv' : 'success_utts',
+       f'{phase}_yyy_utts.csv' : 'yyy_utts',
     }
     
     data_dict = {}
     
     for f in data_filenames:
         this_path = join(this_folder_path, f)
-        data_dict[data_name[f]] = load_csvs.load_csv_with_lists(this_path) if f.endswith('.csv') else pd.read_pickle(this_path)
+        data_dict[data_name[f]] = pd.read_csv(this_path)
+    
+    # Avoid resaving this many times, use one universal phono that is sliced with the individual relevant ids.
+    data_dict['phono'] = load_phono()
     
     return data_dict
 
-
-
-def load_child_eval_data(name):
-    
-    return load_eval_data('child', name, 'eval_')
     
     
     

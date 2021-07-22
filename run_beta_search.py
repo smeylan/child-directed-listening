@@ -24,9 +24,6 @@ def optimize_beta(split_name, dataset_name, model_dict, model_type):
     """
  
     beta_sample = beta_utils.get_beta_search_values()
-    
-    # Load the success utts/yyy utts information
-    data_dict = load_splits.load_eval_data_all(split_name, dataset_name)
         
     # initial_vocab determines the softmax mask used by BERT, leave it as mask for all evaluations/training
     
@@ -47,15 +44,17 @@ def optimize_beta(split_name, dataset_name, model_dict, model_type):
         yyy_utts_sample = load_splits.load_sample_yyy('beta', split_name, dataset_name)
     else:
         # Optimize on the entirety of the child set.
+        # TODO: implement this
+        
+        print('You need to implement this!')
+        
+        data_dict = load_splits.load_pvd_data(split_name, dataset_name, config.eval_phase)
         success_utts_sample = data_dict['success_utts']
         yyy_utts_sample = data_dict['yyy_utts']
-    
-    total_sample = pd.concat([success_utts_sample, yyy_utts_sample]).utterance_id
-    # Extraction of attribute is necessary to have non-empty extraction of sample
-    
-    this_raw_beta_results = sample_across_models.sample_across_models(total_sample,
+        
+    this_raw_beta_results = sample_across_models.sample_across_models(success_utts_sample,
+                                                                      yyy_utts_sample,
                                                                       model_dict,
-                                                                      data_dict,
                                                                       beta_sample)
     
     this_beta_results_surp = this_raw_beta_results.groupby(['beta_value']).posterior_surprisal.agg(lambda x: np.mean(-1 * np.log(x))

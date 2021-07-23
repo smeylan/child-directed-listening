@@ -143,13 +143,7 @@ def filter_text(text_path):
     return all_str
 
     
-def write_data_partitions_text(all_data, split_folder, phase, phase_idxs, split_on):
-    """
-    See determine_split_idxs comments on what to use for split_on argument per split type.
-    Need to test this function, it has changed.
-    """
-    
-    phase_data, all_data_with_assignments = assign_and_find_phase_data(phase, split_on, phase_idxs, all_data)
+def write_partition(phase, phase_data, split_folder):
     
     this_file_path = join(split_folder, f'{phase}.txt')
     phase_data[['gloss_with_punct']].to_csv(this_file_path, index=False, header=False)
@@ -166,7 +160,18 @@ def write_data_partitions_text(all_data, split_folder, phase, phase_idxs, split_
         
     print(f'File written to {filtered_path}')
     
-    return all_data_with_assignments, phase_data
+    
+def write_data_partitions_text(all_data, split_folder, phase, phase_idxs, split_on):
+    """
+    See determine_split_idxs comments on what to use for split_on argument per split type.
+    Need to test this function, it has changed.
+    """
+    
+    this_phase_data, all_data_with_assignments = assign_and_find_phase_data(phase, split_on, phase_idxs, all_data)
+    
+    write_partition(phase, this_phase_data, split_folder)
+    
+    return all_data_with_assignments, this_phase_data
     
     
 def split_glosses_shuffle(unsorted_cleaned_data, split_type, dataset_type, split_on, base_dir = 'data/new_splits', val_ratio = None, val_num = None):
@@ -213,9 +218,7 @@ def exec_split_gen(raw_data, split_name, dataset_name):
     split_glosses_df, train_df = write_data_partitions_text(cleaned_utt_glosses, this_split_folder, 'train', train_idxs, 'transcript_id')
     split_glosses_df, val_df = write_data_partitions_text(cleaned_utt_glosses, this_split_folder, 'val', val_idxs, 'transcript_id')
     
-    # chi_tok_freq = save_chi_vocab(train_df, split_name, dataset_name)
-    # Need to re-integrate this line later when everything is run at once.
-    # Along with the writing tagless files etc.
+    chi_tok_freq = save_chi_vocab(train_df, split_name, dataset_name)
     
     return split_glosses_df, chi_tok_freq
     

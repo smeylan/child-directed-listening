@@ -31,8 +31,6 @@ def get_sample_path(data_type, task_name, split_name, dataset_name, eval_phase =
     
     n = get_n(task_name)
     
-    print(age, task_name, split_name)
-    
     assert ( (age is None) and (task_name == 'beta' or split_name == 'all') ) or ( (age is not None) and (task_name == 'models_across_time') )
     age_str = f'_{float(age)}' if age is not None else ''
     
@@ -45,7 +43,7 @@ def get_sample_path(data_type, task_name, split_name, dataset_name, eval_phase =
         if not exists(this_data_folder):
             os.makedirs(this_data_folder)
             
-    this_data_path = join(this_data_folder, f'{data_type}_utts_{task_name}_{n}{age_str}.csv')
+    this_data_path = join(this_data_folder, f'{data_type}_utts_{task_name}_{n}{age_str}_{eval_phase}.csv')
     
     return this_data_path
 
@@ -122,6 +120,8 @@ def sample_successes(task, split, dataset, age, phono, eval_phase):
     
     success_pool = phono[phono.success_token]
     
+    print(set(success_pool.phase))
+    
     # Need to load the utts pool generally into the system -- how?
     sample = sample_successes_yyy(success_pool, 'success', age, task, split, dataset, eval_phase)
     
@@ -132,6 +132,8 @@ def sample_yyy(task, split, dataset, age, phono, eval_phase):
     
     yyy_pool = phono[phono.yyy_token]
     
+    print(set(yyy_pool.phase))
+    
     # Need to load the utts pool generally into the system -- how?
     sample = sample_successes_yyy(yyy_pool, 'yyy', age, task, split, dataset, eval_phase)
     
@@ -141,6 +143,8 @@ def sample_yyy(task, split, dataset, age, phono, eval_phase):
 def load_sample_successes(task, split, dataset, age = None, eval_phase = config.eval_phase):
     this_path = get_sample_path('success', task, split, dataset, eval_phase, age)
     return pd.read_csv(this_path)
+
+
 
 def load_sample_yyy(task, split, dataset, age = None, eval_phase = config.eval_phase):
     

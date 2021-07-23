@@ -11,6 +11,8 @@ import pandas as pd
 import pickle
 
 import config
+
+import numpy as np
     
     
 def get_utts_from_ids(utts, utt_ids):
@@ -86,7 +88,7 @@ def sample_pool_ids(this_pool, this_n):
     
     n = min(num_samples, this_n)
     
-    sample_ids = np.random.choice(this_pool, size = this_n, replace=False)
+    sample_ids = np.random.choice(this_pool, size = n, replace=False)
     sample = pd.DataFrame.from_records({'utterance_id' : sample_ids.tolist()})
     return sample
     

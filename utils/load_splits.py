@@ -48,13 +48,15 @@ def get_sample_path(data_type, task_name, split_name, dataset_name, eval_phase =
     return this_data_path
 
 
-def get_ages_sample_paths(split_name, dataset_name, which_type):
+def get_ages_sample_paths(which_type):
     
     """
     Gets all of the sample paths for a given split.
     """
-    this_data_folder = split_gen.get_split_folder(split_name, dataset_name, config.eval_dir)
-    template = join(this_data_folder, f'{which_type}_utts_models_across_time_{config.n_across_time}_*.csv')
+
+    data_folder = join(config.eval_dir, 'across_time_samples')
+    template = join(data_folder, f'{which_type}_utts_models_across_time_{config.n_across_time}_*.csv')
+    
     all_age_sample_paths = glob.glob(template)
     
     age2path = {}
@@ -69,50 +71,50 @@ def get_ages_sample_paths(split_name, dataset_name, which_type):
     return age2path
     
     
-def get_success_sample_paths(split_name, dataset_name):
-    return sorted(list(get_ages_sample_paths(split_name, dataset_name, 'success').values()))
+def get_age_success_sample_paths():
+    return sorted(list(get_ages_sample_paths('success').values()))
 
-def get_yyy_sample_paths(split_name, dataset_name):
-    return sorted(list(get_ages_sample_paths(split_name, dataset_name, 'yyy').values()))
+def get_age_yyy_sample_paths():
+    return sorted(list(get_ages_sample_paths('yyy').values()))
 
-
-def get_all_ages_in_samples(split_name, dataset_name):
-    """
-    Gets all of the ages available in the sample for a given split.
-    """
     
-    success_ages = get_ages_sample_paths(split_name, dataset_name, 'success').keys()
-    yyy_ages = get_ages_sample_paths(split_name, dataset_name, 'yyy').keys()
     
-    ages = set(success_ages) | set(yyy_ages)
+def sample_pool_ids(this_pool, this_n):
     
-    return sorted(list(ages))
-   
+    this_pool = np.unique(this_pool.id) # Enforce unique utterances.
+    num_samples = this_pool.shape[0]
     
-def sample_successes_yyy(pool, data_type, age, task, split, dataset, eval_phase):
+    n = min(num_samples, this_n)
+    
+    sample_ids = np.random.choice(this_pool, size = this_n, replace=False)
+    sample = pd.DataFrame.from_records({'utterance_id' : sample_ids.tolist()})
+    return sample
+    
+    
+def sample_successes_yyy(pool, data_type, age, task, split, dataset, eval_phase, n = None):
     """
     task_name = designates the cached value to use for optimizations.
         The cache should be different for beta optimization and run_models_across_time.
     """
     
+    if n is None:
+        n = get_n(task)
+    
     if age is not None: # Sample per age
         pool = pool[pool.year == age]
      
-    num_samples = pool.shape[0]
+    # Need to sample the successes again and save them.
+    # Use CSV for compatibility 
     
-    # Actually do the sampling.
-    
-    n = min(num_samples, get_n(task))
+    sample = sample_pool_ids(pool, n)
     
     this_data_path = get_sample_path(data_type, task, split, dataset, eval_phase, age)
-    
-    # Need to sample the successes again and save them.
-    sample = pool.sample(n, replace=False).id
 
     print(f"Resampling for: {task}, {split}, {dataset}, age: {age}, phase: {eval_phase}")
     sample.to_csv(this_data_path) 
     
     return sample
+
 
 def sample_successes(task, split, dataset, age, phono, eval_phase):
     
@@ -126,7 +128,7 @@ def sample_successes(task, split, dataset, age, phono, eval_phase):
     
 def sample_yyy(task, split, dataset, age, phono, eval_phase):
     
-    yyy_pool  = phono[phono.yyy_token]
+    yyy_pool = phono[phono.yyy_token]
     
     # Need to load the utts pool generally into the system -- how?
     sample = sample_successes_yyy(yyy_pool, 'yyy', age, task, split, dataset, eval_phase)

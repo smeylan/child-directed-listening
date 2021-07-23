@@ -31,31 +31,28 @@ def get_sample_bert_token_ids(task, split = 'all', dataset = 'all'):
         
     You should check this function for correctness at the end.
     
-    Note: Before 7/22/21 this was potentially an insufficiently limited set, because not all of the tokens were scored.
-    # You need to actually extract the tokens that are scored here.
+    Note: 7/22/21 false alarm, these were limited to mask positions.
     """
     
     print('Need to fix this unigram work! See the comments!')
     
-    tokens = load_splits.load_phono() # You should really only load the tokens that receive scores -- what are these tokens?
+    # The bert_token_ids are the bert_token_ids of every [MASK] in the sample.
+    
+    tokens = load_splits.load_phono()
+    
+    # You need to score it for what?
 
     # Need to extract all of the utterance ids in the entirety of the ages...
     # This will probably be very slow.
     
-    all_success_paths = load_splits.get_success_sample_paths('all', 'all')
-    all_yyy_paths = load_splits.get_yyy_sample_paths('all', 'all')
+    all_success_paths = load_splits.get_age_success_sample_paths('all', 'all')
+    all_yyy_paths = load_splits.get_age_yyy_sample_paths('all', 'all')
     
     # Use read_csv because you're just looking for utterance_ids
     this_sample_successes = pd.concat([pd.read_csv(path)[['utterance_id']] for path in all_success_paths])
     this_sample_yyy = pd.concat([pd.read_csv(path)[['utterance_id']] for path in all_yyy_paths])
 
-    print('Fix this to be after filter')
     select_sample_id = pd.concat([this_sample_successes, this_sample_yyy])
-    
-    # Below are changes to the original code!
-    # 7/7/21: Reference for isin usage
-    # https://github.com/smeylan/child-directed-listening/blob/master/transfomers_bert_completions.py
-    # Line 87
     select_phono = tokens.loc[tokens.id.isin(select_sample_id.utterance_id)]
     
     failure_mask_bert_ids = select_phono.loc[select_phono.token == 'yyy','bert_token_id']

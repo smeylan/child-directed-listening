@@ -12,6 +12,10 @@ import math
 from utils import load_models, load_splits
 
 
+def get_years(df):
+    
+    return sorted(list(set(df['year'].dropna())))
+
 def cut_context_df(df, MAX_LEN = 512):
     
     # This can be really slow if you load the tokenizer every time
@@ -73,35 +77,7 @@ def filter_speaker_tags(this_df):
     
     return filtered_df
 
-def gloss_df_augmentation(tokens_df, utt_ids):
-    """
-    Used for augmenting the utts_with_age dataframe with the joined gloss.
-    Used for writing the train/val txt files for child splits.
-    """
-    glosses = []
-    for i, utt_id in enumerate(utt_ids):
-        if i % 10000 == 0: print(f'Computing gloss df augmentation, {round(i / len(utt_ids) * 100.0, 4)}% complete.')
-        glosses.append(join_gloss_tokens(utt_id, tokens_df))
-    return pd.DataFrame.from_dict({'utterance_id' : utt_ids, 'gloss' : glosses})
-    
-    
-def join_gloss_tokens(utt_id, all_tokens_df):
-    """
-    Joins the tokens given per entry of the query of Providence data in their token order, such that they represent the tokens of utt_id.
-    """
-    
-    entry = all_tokens_df[all_tokens_df.utterance_id == utt_id]
-       
-    # Assume that all_tokens_df will append each token in token_order, and check that this is true.
-    composed_gloss = []; order_gloss = []
-    for g, idx in zip(entry.gloss, entry.token_order):
-        composed_gloss.append(g)
-        order_gloss.append(idx)
-       
-    assert order_gloss == list(range(1, len(entry.gloss) + 1)), "Tokens were not joined in ascending order."
-    
-    return ' '.join(composed_gloss)
-   
+
 def fix_gloss(gloss):
     return(str(gloss).replace('+','').replace('_',''))
  

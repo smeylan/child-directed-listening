@@ -72,8 +72,7 @@ def gen_model_title(split, dataset, is_tags, context_num, model_type):
     dataset_dict = {
         'all' : '',
         'young' : 'younger children',
-        'old' : 'older children', 
-        'all_debug' : 'all_debug',
+        'old' : 'older children'
     }
     
     dataset_dict.update({ k : k for k in child_models.get_child_names()})
@@ -132,26 +131,16 @@ def get_model_dict():
     adult_tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
     adult_softmax_mask, adult_vocab = transformers_bert_completions.get_softmax_mask(adult_tokenizer, cmu_2syl_inchildes.word)
     
-    # From the original code, initial_vocab is declared with tokenizer from model 2
-    # You should change this to be latest code eventually.
-    print('Change the initial tokenizer to be based on latest trained models, eventually.')
-    initial_tokenizer = get_meylan_original_model(with_tags = True)['tokenizer']
-    
+    initial_tokenizer = get_primary_tokenizer()
     
     _, initial_vocab = transformers_bert_completions.get_softmax_mask(initial_tokenizer,
     cmu_2syl_inchildes.word)  
-    
-    # Anything marked all_debug is for development purposes only -- it's me putting together
-    # the right file types to develop the loading code and such.
     
     # Order: split name, dataset name, with tags
     
     # Load the BERT-based models
     
     args = gen_finetune_model_args()
-    
-    # Development code only.
-    # args = [('all_debug', 'all_debug', True, 0, 'childes'), ('age', 'old', True, 0, 'childes')]
     
     all_model_dict = {}
     
@@ -187,7 +176,7 @@ def get_model_dict():
     unigram_dict = {
         'all/all/no_tags/0_context/data_unigram' : {
             'title': 'CHILDES Unigram',
-            'kwargs': {'child_counts_path': f'{config.data_dir}/all/all/chi_vocab_train.csv',
+            'kwargs': {'child_counts_path': f'{config.finetune_dir}/all/all/chi_vocab_train.csv',
                         'tokenizer': adult_tokenizer,
                         'softmax_mask': adult_softmax_mask,
                         'vocab': initial_vocab,
@@ -225,14 +214,7 @@ def get_model_dict():
             model_dict['kwargs']['tokenizer'].add_tokens(['[chi]','[cgv]'])
             
         # Always add tokens to the new models.
-        model_dict['kwargs']['tokenizer'].add_tokens(['yyy','xxx']) #must maintain xxx and yyy for alignment,
-        
-        #print('********* CHECKING THE TOKENIZATION *****')
-        #this_tokenizer = model_dict['kwargs']['tokenizer']
-        
-        #print(f'For model id {model_id}')
-        #print(this_tokenizer.convert_ids_to_tokens(this_tokenizer.encode("[CHI] i'm not going to do anything.")))
-        #print(this_tokenizer.convert_ids_to_tokens(this_tokenizer.encode('[CGV] back on the table if you wanna finish it.')))
+        model_dict['kwargs']['tokenizer'].add_tokens(['yyy','xxx']) #must maintain xxx and yyy for alignment,        
     
     all_model_dict.update(unigram_dict)
     all_model_dict.update(prev_bert_dict)
@@ -251,21 +233,19 @@ def get_specific_model_dict(model_id):
     
 def get_primary_tokenizer():
 
-    print("Change the tokenizer from model output2 to be dynamic if possible")
+    shelf_tok = BertTokenizer.from_pretrained('bert-base-uncased')
+    shelf_tok.add_tokens(['[chi]', '[cgv]', 'yyy', 'xxx'])
+
+    return shelf_tok
     
-    initial_tokenizer = get_meylan_original_model(with_tags = True)['tokenizer']
-    initial_tokenizer.add_tokens(['yyy','xxx']) #must maintain xxx and yyy for alignment,
-    # otherwise, BERT tokenizer will try to separate these into x #x and #x and y #y #y
-    
-    return initial_tokenizer
-    
-    
-def get_initial_vocab_info():
+def get_initial_vocab_info(initial_tokenizer = None):
     
     # tokenize with the most extensive tokenizer, which is the one used for model #2
     
+    if initial_tokenizer is None:
+        initial_tokenizer = get_primary_tokenizer() # default argument
+        
     cmu_2syl_inchildes = get_cmu_dict_info()
-    initial_tokenizer = get_primary_tokenizer()
     
     inital_vocab_mask, initial_vocab = transformers_bert_completions.get_softmax_mask(initial_tokenizer,
         cmu_2syl_inchildes.word)
@@ -311,7 +291,7 @@ def get_model_from_path(model_path, with_tags):
     return {'modelLM' : model, 'tokenizer' : tokenizer, 'softmax_mask' : softmax_mask, 'use_speaker_labels' : with_tags }
  
     
-def get_meylan_original_model(with_tags):
+def old_get_meylan_original_model(with_tags):
     
     # Fine-tuned model 
     # Temporarily local for now

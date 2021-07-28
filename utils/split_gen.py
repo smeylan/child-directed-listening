@@ -1,5 +1,3 @@
-# 6/21/21 All code in this file refactored from Dr. Meylan's code
-# Note to self: is the "true ids of the entries" check relevant here?
 
 import os
 from os.path import join, exists
@@ -12,6 +10,9 @@ from sklearn import model_selection
 
 from utils import data_cleaning
 import config
+
+# 7/23/21: https://www.mikulskibartosz.name/how-to-set-the-global-random_state-in-scikit-learn/
+# Information reference, not for code -- sufficient to seed numpy for sklearn.
 
 SEED = config.SEED
 np.random.seed(SEED)
@@ -58,16 +59,9 @@ def save_chi_vocab(train_data, split_type, dataset_name):
     'token' should be re-cast to list for correct behavior, as seen below.
     """
     
-    this_folder = get_split_folder(split_type, dataset_name, config.data_dir)
+    this_folder = get_split_folder(split_type, dataset_name, config.finetune_dir)
     
     chi_data = train_data.loc[train_data.speaker_code == 'CHI']
-    
-    #raw_tokens = list(chi_data['tokens'])
-    
-    #cast2list = lambda str_list : eval(str_list) # See the function comment for why
-    #eval_tokens = list(map(cast2list, raw_tokens)) if isinstance(raw_tokens[0], str) else raw_tokens
-    
-    #tokens = [y for x in eval_tokens for y in x]
     
     tokens = [y for x in chi_data['tokens'] for y in x]
     
@@ -96,6 +90,7 @@ def determine_split_idxs(unsorted_cleaned_data, split_on, val_ratio = None, val_
     assert (val_ratio is not None) ^ (val_num is not None), 'Exactly one of val_ratio and val_num should be specified.'
     
     data = unsorted_cleaned_data.copy()
+    
     data = data.sort_values(by=[split_on])
     
     split_attr_inventory = np.unique(data[split_on])
@@ -107,13 +102,13 @@ def determine_split_idxs(unsorted_cleaned_data, split_on, val_ratio = None, val_
     
 
     
-def find_phase_data(phase, pool):
+def find_phase_data(phase, phase_label, pool):
 
-    this_phase_data = pool.loc[pool.phase == phase]
+    this_phase_data = pool.loc[pool[phase_label] == phase]
     return this_phase_data
 
 
-def assign_and_find_phase_data(phase, split_on, phase_idxs, data_pool, phase_label = 'phase'):
+def assign_and_find_phase_data(phase, split_on, phase_idxs, data_pool, phase_label):
     """
     Different from the original function, re-test
     See dtermine_split_idxs comments on what to split on for which models.
@@ -123,15 +118,9 @@ def assign_and_find_phase_data(phase, split_on, phase_idxs, data_pool, phase_lab
     data_pool.loc[data_pool[split_on].isin(phase_idxs),
              phase_label] = phase
     
-    phase_data = find_phase_data(phase, data_pool)
+    phase_data = find_phase_data(phase, phase_label, data_pool)
     
     return phase_data, data_pool
-
-def find_in_phase_idxs(data_pool, phase_idxs, split_on):
-    """
-    Added, for use in child -- but didn't refactor age/all code.
-    """
-    return data_pool.loc[data_pool[split_on].isin(phase_idxs)]
 
 
 def filter_text(text_path):
@@ -161,78 +150,44 @@ def write_partition(phase, phase_data, split_folder):
     print(f'File written to {filtered_path}')
     
     
-def write_data_partitions_text(all_data, split_folder, phase, phase_idxs, split_on):
+def write_data_partitions_text(all_data, split_folder, phase, phase_idxs, split_on, phase_label):
     """
     See determine_split_idxs comments on what to use for split_on argument per split type.
     Need to test this function, it has changed.
     """
+   
+    this_phase_data, all_data_with_assignments = assign_and_find_phase_data(phase, split_on, phase_idxs, all_data, phase_label)
     
-    this_phase_data, all_data_with_assignments = assign_and_find_phase_data(phase, split_on, phase_idxs, all_data)
     
-    write_partition(phase, this_phase_data, split_folder)
+    # Need to make all_data have unique utterance ids
+    # Otherwise, you will write repetitively to the source.
+    # This is important for Pvd data
+    
+    data_by_utts = all_data[['id', 'gloss_with_punct']].drop_duplicates()
+    
+    # Make sure that each id is paired with one gloss with punct.
+    # i.e. no single id has two different glosses with punct.
+    
+    assert len(set(all_data['id'])) == data_by_utts.shape[0]
+    
+    write_partition(phase, data_by_utts, split_folder)
     
     return all_data_with_assignments, this_phase_data
-    
-    
-def split_glosses_shuffle(unsorted_cleaned_data, split_type, dataset_type, split_on, base_dir = 'data/new_splits', val_ratio = None, val_num = None):
-    """
-    
-    Randomly split the train and validation data by the number of unique transcript ids.
-    Expects the output of prep_utt_glosses_for_split
-    
-    Note that split_type and dataset_type refer not to train/val, but:
-        split_type = is this young or old? or is it part of the all data dataset?
-        dataset_type = is this part of the age-based splits? or does it have all data?
-        (child uses its own phase splitting logic)
-    """
-    
-    this_split_folder = get_split_folder(split_type, dataset_type, base_dir)
-    train_idxs, val_idxs = determine_split_idxs(unsorted_cleaned_data, split_on, val_ratio = val_ratio, val_num = val_num)
-    
-    data, train_df = write_data_partitions_text(data, this_split_folder, 'train', train_idxs, split_on)
-    data, val_df = write_data_partitions_text(data, this_split_folder, 'val', val_idxs, split_on)
-    
-    return data, train_df, val_df
-      
 
-def exec_split_gen(raw_data, split_name, dataset_name):
-    
-    """
-    This should be executed for all and age splits -- child splits are external.
-    """
-    
-    assert split_name in ['all', 'age'], "Unrecognized split type argument. Should be one of 'all' or 'age'. Don't use child with this function."
 
-    if not exists(config.data_dir):
-        os.makedirs(config.data_dir)
-    
-    this_split_folder = get_split_folder(split_name, dataset_name, config.data_dir)
-    
-    print('Beginning split gen call:', split_name, dataset_name)
-    
-    # Note: changed everything to use "." punctuation. Was "None" previously.
-    cleaned_utt_glosses = data_cleaning.prep_utt_glosses(raw_data)
+def exec_split_gen(cleaned_utt_glosses, this_split_folder, phase, phase_label):
     
     train_idxs, val_idxs = determine_split_idxs(cleaned_utt_glosses, 'transcript_id', val_ratio = config.val_ratio)
+
+    split_glosses_df, train_df = write_data_partitions_text(cleaned_utt_glosses, this_split_folder, 'train', train_idxs, 'transcript_id', phase_label)
     
-    split_glosses_df, train_df = write_data_partitions_text(cleaned_utt_glosses, this_split_folder, 'train', train_idxs, 'transcript_id')
-    split_glosses_df, val_df = write_data_partitions_text(cleaned_utt_glosses, this_split_folder, 'val', val_idxs, 'transcript_id')
+    split_glosses_df, _ = write_data_partitions_text(split_glosses_df, this_split_folder, 'val', val_idxs, 'transcript_id', phase_label)
+
+    glosses_path = join(this_split_folder, 'data_pool_with_phases.pkl')
     
-    chi_tok_freq = save_chi_vocab(train_df, split_name, dataset_name)
+    split_glosses_df.to_pickle(glosses_path)
     
-    return split_glosses_df, chi_tok_freq
-    
-    
-def save_eval_data(data, filename, split_name, dataset_name):
-    
-    assert split_name in ['all', 'age', 'child'], "Invalid split name. Must be one of {all, age, child}."
-    
-    # Saving based on a mask of a copy of a? Will this be a problem?
-    
-    save_path = split_gen.get_split_folder(split_name, dataset_name, config.eval_dir)
-    save_location = join(save_path, filename)
-    
-    print(f'Saved all/all evaluation data to {save_location}')
-    
-    return save_location
-    
+    print(f'Writing split glosses to: {glosses_path}')
+    return split_glosses_df, train_df
+
+

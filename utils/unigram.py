@@ -55,7 +55,8 @@ def get_sample_bert_token_ids(task, split = 'all', dataset = 'all'):
     select_sample_id = pd.concat([this_sample_successes, this_sample_yyy])
     select_phono = tokens.loc[tokens.id.isin(select_sample_id.utterance_id)]
     
-    failure_mask_bert_ids = select_phono.loc[select_phono.token == 'yyy','bert_token_id']
+    # Note that .token is not sufficient to guarantee that the failure is scoreable.
+    failure_mask_bert_ids = select_phono.loc[select_phono.partition == 'yyy','bert_token_id']
     # I think this indexes the locations with yyy, then gets the attribute
     print('double check the use of loc and bert token id -- see comment above. in the code. probably on a small test case')
 

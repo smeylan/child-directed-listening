@@ -21,7 +21,7 @@ def get_training_shell_script(split_name, dataset_name, with_tags, om2_user = 'w
     tags_data_str  = '' if with_tags else '_no_tags' # For loading the proper data
     this_model_dir = models_get_split_folder(split_name, dataset_name, with_tags)
     
-    this_data_dir = join(config.om_root_dir, join('data/new_splits', join(split_name, dataset_name)))
+    this_data_dir = join(config.om_root_dir, join(config.finetune_dir, join(split_name, dataset_name)))
     
     if not exists(this_model_dir) and config.root_dir == config.om_root_dir: # You are on OM
         os.makedirs(this_model_dir)

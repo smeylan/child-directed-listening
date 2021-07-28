@@ -169,13 +169,13 @@ def get_stats_for_failure(all_tokens, selected_utt_id, bertMaskedLM, tokenizer, 
     
     '''    
     t1 = time.time()    
-    utt_df = all_tokens.loc[all_tokens.id == selected_utt_id]
+    utt_df = all_tokens.loc[all_tokens.utterance_id == selected_utt_id]
         
     if utt_df.shape[0] == 0:
         return None
     else:
         # convert the @ back to a mask for the target word
-        utt_df.loc[utt_df.token == 'yyy','token'] = '[MASK]'
+        utt_df.loc[utt_df.partition == 'yyy','token'] = '[MASK]'
         utt_df.loc[utt_df.token == '[MASK]','token_id'] = 103
 
     if context_width_in_utts is not None:   
@@ -259,7 +259,7 @@ def get_stats_for_success(all_tokens, selected_utt_id, bertMaskedLM, tokenizer, 
     
     '''    
     
-    utt_df = all_tokens.loc[all_tokens.id == selected_utt_id]   
+    utt_df = all_tokens.loc[all_tokens.utterance_id == selected_utt_id]   
     
     if utt_df.shape[0] == 0:
         return(None)
@@ -317,27 +317,6 @@ def get_stats_for_success(all_tokens, selected_utt_id, bertMaskedLM, tokenizer, 
 
             utt_df_local = pd.concat([before_by_sent_df, sep_row, utt_df_local, sep_row, after_by_sent_df])
             
-
-            # if preserve_errors:
-            #     #convert @ back to yyy for context items
-            #     utt_df_local.loc[utt_df_local.token == '@','token'] = 'yyy'
-            #     utt_df_local.loc[utt_df_local.token == 'yyy','token_id'] = tokenizer.convert_tokens_to_ids(['yyy'])[0]
-            #     #convert @ back to xxx for context items
-            #     utt_df_local.loc[utt_df_local.token == '$','token'] = 'xxx'
-            #     utt_df_local.loc[utt_df_local.token == 'xxx','token_id'] = tokenizer.convert_tokens_to_ids(['xxx'])[0]
-
-            #     if np.sum(utt_df_local.token == '[MASK]') > 1:
-            #         print('Multiple masks in the surrounding context')
-            #         import pdb
-            #         pdb.set_trace()
-            # else: 
-            #     #convert xxx and yyy in the context to masks
-            #     utt_df_local.loc[utt_df_local.token == '@','token'] = '[MASK]'
-            #     utt_df_local.loc[utt_df_local.token == '[MASK]','token_id'] = tokenizer.convert_tokens_to_ids(['[MASK]'])[0]
-            #     #convert @ back to xxx for context items
-            #     utt_df_local.loc[utt_df_local.token == '$','token'] = '[MASK]'
-            #     utt_df_local.loc[utt_df_local.token == '[MASK]','token_id'] = tokenizer.convert_tokens_to_ids(['[MASK]'])[0]
-
         if not use_speaker_labels:
             # remove the speaker labels
             utt_df_local = utt_df_local.loc[~utt_df_local.token.isin(['[chi]','[cgv]'])]
@@ -496,7 +475,7 @@ def compare_successes_failures_unigram_model(all_tokens, selected_success_utts, 
         unigram_model['prob'] = 1/unigram_model.shape[0]        
 
     # for successes, get the probability of all words        
-    success_utt_contents = all_tokens.loc[all_tokens.id.isin(selected_success_utts)]
+    success_utt_contents = all_tokens.loc[all_tokens.utterance_id.isin(selected_success_utts)]
     success_utt_contents = success_utt_contents.loc[~success_utt_contents.token.isin(['[chi]'])]
 
     success_scores = success_utt_contents[['token','bert_token_id']].merge(unigram_model, left_on='token', right_on='word', how='left')
@@ -507,8 +486,8 @@ def compare_successes_failures_unigram_model(all_tokens, selected_success_utts, 
     success_scores['set'] = 'success'
     
     # need to retrieve the failures in the same way so I can limit by bert_token_id
-    failure_scores = all_tokens.loc[(all_tokens.id.isin(selected_yyy_utts)) &
-      (all_tokens.token == 'yyy') ][['token','bert_token_id']]
+    failure_scores = all_tokens.loc[(all_tokens.utterance_id.isin(selected_yyy_utts)) &
+      (all_tokens.partition == 'yyy') ][['token','bert_token_id']]
 
     failure_scores['entropy'] = constant_entropy
     failure_scores['set'] = 'failure'

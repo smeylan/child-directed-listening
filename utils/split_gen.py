@@ -94,7 +94,9 @@ def determine_split_idxs(unsorted_cleaned_data, split_on, val_ratio = None, val_
     data = data.sort_values(by=[split_on])
     
     split_attr_inventory = np.unique(data[split_on])
-    sample_num = val_num if val_ratio is None else int(val_ratio * len(split_attr_inventory))
+    
+    # Note: always put at least on transcript in val, because other train data will be joined to train
+    sample_num = val_num if val_ratio is None else max(1, int(val_ratio * len(split_attr_inventory)))
     
     train_idx, validation_idx = sklearn.model_selection.train_test_split(split_attr_inventory, test_size = sample_num)
     
@@ -155,20 +157,25 @@ def write_data_partitions_text(all_data, split_folder, phase, phase_idxs, split_
     See determine_split_idxs comments on what to use for split_on argument per split type.
     Need to test this function, it has changed.
     """
-   
+ 
     this_phase_data, all_data_with_assignments = assign_and_find_phase_data(phase, split_on, phase_idxs, all_data, phase_label)
     
+   
+    # This is needed in case you write from all_tokens_phono,
+    # Because you never want to write errors (at the utterance level) into the finetune text file.
+    
+    all_data_clean = data_cleaning.drop_errors(all_data_with_assignments) 
     
     # Need to make all_data have unique utterance ids
     # Otherwise, you will write repetitively to the source.
     # This is important for Pvd data
     
-    data_by_utts = all_data[['id', 'gloss_with_punct']].drop_duplicates()
+    data_by_utts = all_data_clean[['utterance_id', 'gloss_with_punct']].drop_duplicates()
     
     # Make sure that each id is paired with one gloss with punct.
     # i.e. no single id has two different glosses with punct.
     
-    assert len(set(all_data['id'])) == data_by_utts.shape[0]
+    assert len(set(all_data_clean['utterance_id'])) == data_by_utts.shape[0]
     
     write_partition(phase, data_by_utts, split_folder)
     

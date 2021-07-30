@@ -19,8 +19,6 @@ def optimize_beta(split_name, dataset_name, model_dict, model_type):
     """
     For now, specify the model separately from the split_name/dataset_name.
     The reason for this is that there are two versions of the dataset (text-based and huggingface based) so this is to avoid confusion for now.
-    
-    model_dict = the dictionary entry as specified in yyy
     """
  
     beta_sample = beta_utils.get_beta_search_values()
@@ -38,22 +36,19 @@ def optimize_beta(split_name, dataset_name, model_dict, model_type):
     # Internally uses GPU if available.
     # speaker tags handled internally in the transformers bert completions file.
     
-    # 7/15/21: Orthogonally changing this to branch on child split -- was not present in original rep. code
     if split_name != 'child':
-        success_utts_sample = load_splits.load_sample_successes('beta', split_name, dataset_name)
-        yyy_utts_sample = load_splits.load_sample_yyy('beta', split_name, dataset_name)
-    else:
-        # Optimize on the entirety of the child set.
-        # TODO: implement this
         
-        print('You need to implement this!')
+        success_utts_sample = load_splits.load_sample_successes('beta', split_name, dataset_name).utterance_id
+        
+    else:
+        # TODO: Optimize on the right part of the split for child set.
         
         data_dict = load_splits.load_pvd_data(split_name, dataset_name, config.eval_phase)
         success_utts_sample = data_dict['success_utts']
-        yyy_utts_sample = data_dict['yyy_utts']
         
+    # Don't use failures for beta search
     this_raw_beta_results = sample_across_models.sample_across_models(success_utts_sample,
-                                                                      yyy_utts_sample,
+                                                                      [], 
                                                                       model_dict,
                                                                       beta_sample)
     

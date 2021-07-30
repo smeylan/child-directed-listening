@@ -41,7 +41,8 @@ if __name__ == '__main__':
     
     task_names = ['beta_search', 'models_across_time']
     task_files = ['run_beta_search.py', 'run_models_across_time.py']
-    mem_amounts = [36, 35] # Definitely need to fix 35 to make it better.
+     
+    mem_amounts = [50, 50]
     
     for task_name, task_file, mem_amount in zip(task_names, task_files, mem_amounts):
         

@@ -39,7 +39,7 @@ def get_scores_across_models(test_idx):
 
         optimal_beta = beta_utils.get_optimal_beta_value(this_split, this_dataset, this_model_dict, this_model_type)
         this_scoring = sample_across_models.sample_across_models([test_idx], 
-            success_utts, yyy_utts, all_tokens_phono, models, initial_vocab, cmu_in_initial_vocab, beta_values=[optimal_beta])
+            success_utts, yyy_utts, all_tokens_phono, models, initial_vocab, cmu_in_initial_vocab, beta_values=[optimal_beta], examples_mode = True)
 
         scores_across_models.append(this_scoring)
 

@@ -14,11 +14,7 @@ def get_beta_search_values():
     high = config.beta_high
     num_values = config.num_values
     
-    if not config.grid_search:
-        # Random hyperparam search
-        beta_samples = np.random.uniform(low, high, num_values)
-    else: # Grid search
-        beta_samples = np.arange(low, high, (high - low) / num_values)
+    beta_samples = np.arange(low, high, (high - low) / num_values)
     
     return beta_samples
 
@@ -43,11 +39,6 @@ def load_beta_values(split_name, dataset_name, tags, context_width, model_type):
 
 
 def get_optimal_beta_value_with_dict(split, dataset, model_dict, model_type):
-    
-    """
-    7/15/21 Split this into two layers of functions, otherwise the same.
-    Call this for non-child splits.
-    """
     
     return get_optimal_beta_value(split, dataset, model_dict['kwargs']['use_speaker_labels'], model_dict['kwargs']['context_width_in_utts'], model_type)
     

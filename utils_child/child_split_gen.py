@@ -7,7 +7,7 @@ from collections import defaultdict
 import numpy as np
 np.random.seed(config.SEED)
 
-def get_beta_idxs(pool, split_attr, phase):
+def get_beta_idxs(pool, split_attr):
     
     sample = sampling.sample_pool_ids(pool, config.n_beta)
     
@@ -47,8 +47,6 @@ def find_splits_across_ages(raw_pool):
             eval_idxs = np.array([val_eval_idxs[eval_choice]])
             val_idxs = np.array([val_eval_idxs[val_choice]])
             
-            print('eval', eval_idxs.shape)
-            print('val', val_idxs.shape)
             phase_idxs['val'].append(val_idxs)
             
         phase_idxs['eval'].append(eval_idxs)

@@ -11,11 +11,6 @@ np.random.seed(config.SEED)
 import pandas as pd
 
 
-    
-def get_utts_from_ids(utts, utt_ids):
-    return utts.loc[utts.utterance_id.isin(utt_ids)]
-
-
 def get_n(task):
    
     assert task in ['beta', 'models_across_time'], "Invalid task name for sample successes -- use either 'beta' or 'models_across_time'."

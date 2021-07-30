@@ -10,27 +10,26 @@ import numpy as np
 import pandas as pd
 import config
 
-def load_sample_model_across_time_args(split_name, dataset_name):
-    
-    print('For child datasets, need to estimate beta based on all data available -- change this in the code.')
-    
-    ages = load_splits.get_all_ages_in_samples(split_name, dataset_name)
-    
-    print('Considering ages', ages, 'for split', split_name, dataset_name)
-    
-    sample_dict = {}
-    
-    for age in ages:
-        
-        sample_successes_id = load_splits.load_sample_successes('models_across_time', split_name, dataset_name, age = age)
-        sample_yyy_id = load_splits.load_sample_yyy('models_across_time', split_name, dataset_name, age = age)
+from collections import defaultdict
 
-        sample_dict[age] = {'success_id' : sample_successes_id.utterance_id, 'yyy_id' : sample_yyy_id.utterance_id}
+def load_sample_model_across_time_args():
+    
+    sample_dict = defaultdict(dict)
+    
+    success_paths = get_ages_sample_paths('success', config.eval_phase)
+    yyy_paths = get_ages_sample_paths('yyy', config.eval_phase)
+    
+    for name, path_set in zip(['success', 'yyy'], [success_paths, yyy_paths]):
+        for age, path in path_set.items():
+            this_data = pd.read_csv(path)
+            this_data = this_data.iloc[0:min(5, this_data.shape[0])] if config.dev_mode else this_data
+
+            sample_dict[age][f'{name}_id'] = this_data
         
     return sample_dict
     
     
-def call_single_across_time_model(model_class, this_split, this_dataset_name, is_tags, context_width):
+def call_single_across_time_model(sample_dict, all_tokens_phono, model_class, this_split, this_dataset_name, is_tags, context_width):
        
     assert model_class in {'childes', 'adult', 'flat_unigram', 'data_unigram'}, "Invalid model type presented."
    
@@ -38,34 +37,28 @@ def call_single_across_time_model(model_class, this_split, this_dataset_name, is
     
     all_models = load_models.get_model_dict()
     this_model_dict = all_models[model_name]
-    
-    this_sample_dict = load_sample_model_across_time_args(this_split, this_dataset_name)
          
     # Load the optimal beta
     optimal_beta = beta_utils.get_optimal_beta_value_with_dict(this_split, this_dataset_name, this_model_dict, model_class)
     
-    ages = sorted(list(this_sample_dict.keys()))
+    ages = sorted(list(sample_dict.keys()))
    
-    for idx, age in enumerate(ages):
+    for idx, age_str in enumerate(ages):
         
-        utts, tokens = this_sample_dict[age]['id'], this_sample_dict[age]['phono']
-        
-        utts = data_cleaning.augment_target_child_year(utts)
+        age = float(age_str)
         
         percentage_done = idx / float(len(ages)) * 100
-        if int(percentage_done) % 5 == 0: print(f'{percentage_done}%') 
-            
-            
-            sample_models_across_time.successes_and_failures_across_time_per_model(age, utts, model, all_tokens_phono, beta_value
-            
-            
-        this_scores = sample_models_across_time.successes_and_failures_across_time_per_model(age, utts, this_model_dict, tokens, beta_value = optimal_beta)
         
+        if int(percentage_done) % 10 == 0: print(f'{percentage_done}%')
+            
+        this_scores  = sample_models_across_time.successes_and_failures_across_time_per_model(age, sample_dict['success'], sample_dict['yyy'], this_model_dict, all_tokens_phono, optimal_beta)
+            
         this_tags = this_model_dict['kwargs']['use_speaker_labels']
         this_context_width = this_model_dict['kwargs']['context_width_in_utts']
         
         score_folder = beta_utils.load_beta_folder(this_split, this_dataset_name, this_tags, this_context_width, model_class)
-        this_scores.to_pickle(join(score_folder, f'run_models_across_time_{age}.pkl'))
+        
+        this_scores.to_pickle(join(score_folder, f'run_models_across_time_{age_str}.pkl'))
     
     return this_scores
     
@@ -86,12 +79,15 @@ if __name__ == '__main__':
         dataset_name = this_model_args['dataset'],
         with_tags =  this_model_args['use_tags'],
         context_width = this_model_args['context_width'],
-        model_type = this_model_args['model_type']
+        model_type = this_model_args['model_type'],
     )
    
     this_model_dict = this_model_dict = load_models.get_specific_model_dict(query_model_str)
-    
-    scores = call_single_across_time_model(this_model_args['model_type'], this_model_args['split'], this_model_args['dataset'], this_model_args['use_tags'], this_model_args['context_width'])
+                                                                                   
+    all_phono = load_splits.load_phono()
+    this_sample_dict = load_sample_model_across_time_args()
+     
+    scores = call_single_across_time_model(this_sample_dict, all_phono, this_model_args['model_type'], this_model_args['split'], this_model_args['dataset'], this_model_args['use_tags'], this_model_args['context_width'])
     
     print(f'Computations complete for: {query_model_str}')
     

@@ -12,6 +12,16 @@ import math
 from utils import load_models, load_splits
 
 
+def find_transcripts_with_successes_and_yyy(df):
+    
+    success_df_ids = set(df[df.partition == 'success'].transcript_id)
+    yyy_df_ids = set(df[df.partition == 'yyy'].transcript_id)
+    
+    df = df[df.transcript_id.isin(success_df_ids & yyy_df_ids)]
+    
+    return df
+
+
 def get_years(df):
     
     return sorted(list(set(df['year'].dropna())))

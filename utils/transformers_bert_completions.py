@@ -19,7 +19,7 @@ def softmax(x, axis=None):
     '''
     x = x - x.max(axis=axis, keepdims=True)
     y = np.exp(x)
-    return y / y.sum(axis=axis, keepdims=True)
+    return (y / y.sum(axis=axis, keepdims=True)).astype(np.float16)
 
 
 def bert_completions(text, model, tokenizer, softmax_mask):
@@ -145,8 +145,19 @@ def get_completions_for_mask(utt_df, true_word, bertMaskedLM, tokenizer, softmax
         prob = np.nan    
     
     entropy = scipy.stats.entropy(completions.prob, base=2)
-    return(priors, completions , pd.DataFrame({'rank':[rank], 'prob': [prob], 'entropy':[entropy], 'num_tokens_in_context':[utt_df.shape[0]-1],
-    'bert_token_id' : utt_df.loc[utt_df.token == '[MASK]'].bert_token_id}))
+    
+    
+    # 7/29/21: https://stackoverflow.com/questions/21291259/convert-floats-to-ints-in-pandas (casting)
+    # 7/29/21: https://pbpython.com/pandas_dtypes.html (type names)
+    # 7/29/21: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.astype.html (casting with dictionary)
+    # For how to specify and call casts (.astype('float16'))
+    
+    return_df = pd.DataFrame({'rank':[rank], 'prob': [prob], 'entropy':[entropy], 'num_tokens_in_context':[utt_df.shape[0]-1],
+    'bert_token_id' : utt_df.loc[utt_df.token == '[MASK]'].bert_token_id}).astype({'entropy' : 'float16', 'prob': 'float16'})
+    
+    return(priors, completions , return_df)
+
+    # end cites
 
 def get_stats_for_failure(all_tokens, selected_utt_id, bertMaskedLM, tokenizer, softmax_mask, context_width_in_utts, use_speaker_labels):
     
@@ -386,7 +397,7 @@ def compare_successes_failures(all_tokens, selected_success_utts, selected_yyy_u
 
     failure_priors_store = []
     failure_scores_store = []
-    
+       
     for sample_yyy_id in selected_yyy_utts:
 
         rv = get_stats_for_failure(all_tokens, sample_yyy_id, modelLM, tokenizer, softmax_mask, context_width_in_utts, use_speaker_labels) 
@@ -558,7 +569,7 @@ def find_in_vocab(x, initial_vocab):
     except:
         return(np.nan)
 
-def get_posteriors(prior_data, levdists, initial_vocab, bert_token_ids=None, beta_value=None):
+def get_posteriors(prior_data, levdists, initial_vocab, bert_token_ids=None, beta_value=None, examples_mode = False):
     '''
         Get the posterior probability of candidate words by combining the priors with a likelihood dependent on levenshtein distances and a free parameter beta
 
@@ -569,6 +580,7 @@ def get_posteriors(prior_data, levdists, initial_vocab, bert_token_ids=None, bet
         bert_token_ids: set of bert_token_ids to limit the contents of prior_data and levdists. This handles the fact that a few utterances are not retrievalbe through BERT but 
         are retrievable through the unigram model query (it is necessary to exclude such forms) 
         beta_value: free parameter in the likelihood; see the paper. Higher values assign lower probabilities to larger edit distances
+        examples_mode: Whether or not to maintain data related to highest probability words -- used for Examples notebooks, disabled for memory savings.
     '''
 
     if beta_value is None: assert False # Note to self to make it a non-default argument. Temporary before I figure out some stuff
@@ -589,7 +601,7 @@ def get_posteriors(prior_data, levdists, initial_vocab, bert_token_ids=None, bet
     likelihoods = np.exp(-1*beta_value*levdists)
     unnormalized = np.multiply(prior_data['priors'], likelihoods)
     row_sums = np.sum(unnormalized,1)
-    normalized =  unnormalized / row_sums[:, np.newaxis]
+    normalized =  (unnormalized / row_sums[:, np.newaxis]).astype(np.float16)
     
     # add entropies
     posterior_entropies = np.apply_along_axis(scipy.stats.entropy, 1, normalized) 
@@ -646,22 +658,29 @@ def get_posteriors(prior_data, levdists, initial_vocab, bert_token_ids=None, bet
 
 
         # get the highest prior probability words + probs
-        num_highest_to_keep = 10 
-        highest_prior_indices = np.argsort(prior_data['priors'][i, :])[::-1]
-        highest_prior_words = np.array(initial_vocab)[highest_prior_indices][0:num_highest_to_keep]
         
-        prior_data['scores'].loc[prior_data['scores'].sample_index == i,  'highest_prior_words'] = ' ' .join(highest_prior_words)
-        prior_data['scores'].loc[prior_data['scores'].sample_index == i, 
-               'highest_prior_probabilities'] = ' '.join([str(x) for x in prior_data['priors'][i, highest_prior_indices]])
+        if examples_mode:
+            
+            num_highest_to_keep = 10 
+            highest_prior_indices = np.argsort(prior_data['priors'][i, :])[::-1]
+            highest_prior_words = np.array(initial_vocab)[highest_prior_indices][0:num_highest_to_keep]
 
-        # get the highest poseterior probability words + probs                
-        highest_posterior_indices = np.argsort(normalized[i, :])[::-1]
-        highest_posterior_words = np.array(initial_vocab)[highest_posterior_indices][0:num_highest_to_keep]
+            prior_data['scores'].loc[prior_data['scores'].sample_index == i,  'highest_prior_words'] = ' ' .join(highest_prior_words)
+            prior_data['scores'].loc[prior_data['scores'].sample_index == i, 
+                   'highest_prior_probabilities'] = ' '.join([str(x) for x in prior_data['priors'][i, highest_prior_indices]])
 
-        prior_data['scores'].loc[prior_data['scores'].sample_index == i, 
-               'highest_posterior_words'] = ' '.join(highest_posterior_words)
-        prior_data['scores'].loc[prior_data['scores'].sample_index == i, 
-               'highest_posterior_probabilities'] = ' '.join([str(x) for x in normalized[i, highest_posterior_indices]])
+            # get the highest poseterior probability words + probs                
+            highest_posterior_indices = np.argsort(normalized[i, :])[::-1]
+            highest_posterior_words = np.array(initial_vocab)[highest_posterior_indices][0:num_highest_to_keep]
+
+            # Store a lower memory version
+            normalized = normalized.astype(np.float16)
+
+            prior_data['scores'].loc[prior_data['scores'].sample_index == i, 
+                   'highest_posterior_words'] = ' '.join(highest_posterior_words)
+            prior_data['scores'].loc[prior_data['scores'].sample_index == i, 
+                   'highest_posterior_probabilities'] = ' '.join([str(x) for x in normalized[i, highest_posterior_indices]])
+        
 
     return(prior_data)
 

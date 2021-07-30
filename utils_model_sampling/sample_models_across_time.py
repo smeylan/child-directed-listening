@@ -55,12 +55,6 @@ def successes_and_failures_across_time_per_model(age, success_ids, yyy_ids, mode
     
     print('Running model '+model['title']+f'... at age {age}')
     
-    selected_success_utts = utts.loc[(utts.set == 'success') 
-            & (utts.year == age)]
-    
-    selected_yyy_utts = utts.loc[(utts.set == 'failure') 
-            & (utts.year == age)]
-    
     # Note that if the age doesn't yield both successes and failures,
     # then one of the dataframes can be empty
     # causing runtime error -> program doesn't run to completion.
@@ -81,11 +75,11 @@ def successes_and_failures_across_time_per_model(age, success_ids, yyy_ids, mode
 
     if model['type'] == 'BERT':
         posteriors_for_age_interval = transformers_bert_completions.get_posteriors(priors_for_age_interval, 
-            edit_distances_for_age_interval, initial_vocab, beta_value = beta_value)
+            edit_distances_for_age_interval, initial_vocab, beta_value = beta_value, examples_mode = False)
     elif model['type'] == 'unigram':
         # special unigram hack
         this_bert_token_ids = unigram.get_sample_bert_token_ids('models_across_time')
-        posteriors_for_age_interval = transformers_bert_completions.get_posteriors(priors_for_age_interval, edit_distances_for_age_interval, initial_vocab, this_bert_token_ids, beta_value = beta_value)
+        posteriors_for_age_interval = transformers_bert_completions.get_posteriors(priors_for_age_interval, edit_distances_for_age_interval, initial_vocab, this_bert_token_ids, beta_value = beta_value, examples_mode = False)
 
 
     posteriors_for_age_interval['scores']['model'] = model['title']

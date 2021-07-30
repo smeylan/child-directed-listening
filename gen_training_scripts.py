@@ -1,5 +1,4 @@
 # Used to deploy training and automatically request consistent text data.
-# Marking this as version working before script generation refactor.
 
 import os
 from os.path import join, exists
@@ -9,10 +8,12 @@ import config
 
 from datetime import datetime
 
-def models_get_split_folder(split_type, dataset_type, with_tags, base_dir = config.om_root_dir):
+def models_get_split_folder(split_type, dataset_type, with_tags, datetime_str, base_dir = config.om_root_dir):
     
     tags_str = 'with_tags' if with_tags else 'no_tags' # For naming the model folder
-    return join(base_dir, join('models', join(join(split_type, dataset_type), tags_str)))
+    
+    base_dir = join(base_dir, f'models_{datetime_str}')
+    return join(base_dir, join(join(split_type, dataset_type), tags_str))
 
 def get_training_shell_script(split_name, dataset_name, with_tags, om2_user = 'wongn'):
     """
@@ -20,19 +21,15 @@ def get_training_shell_script(split_name, dataset_name, with_tags, om2_user = 'w
     """
     
     tags_data_str  = '' if with_tags else '_no_tags' # For loading the proper data
-    this_model_dir = models_get_split_folder(split_name, dataset_name, with_tags)
-    
     datetime_gen = str(datetime.today()).replace(' ', '_')
+    
+    this_model_dir = models_get_split_folder(split_name, dataset_name, with_tags, datetime_gen)
     
     this_data_dir = join(config.om_root_dir, join(config.finetune_dir, join(split_name, dataset_name)))
     
     if not exists(this_model_dir) and config.root_dir == config.om_root_dir: # You are on OM
         os.makedirs(this_model_dir)
         
-    # This needs to be copied from Chompsky to OM2 properly.
-    # Should have the new_splits in the folder.
-    # Need to clean out the outdated data in the "data" folder later.
-    
     # For the command text
     # 6/24/21: https://github.mit.edu/MGHPCC/OpenMind/wiki/How-to-use-Singularity-container%3F
     # and https://github.mit.edu/MGHPCC/OpenMind/issues/3392

@@ -23,6 +23,8 @@ def get_training_shell_script(split_name, dataset_name, with_tags, om2_user = 'w
     tags_data_str  = '' if with_tags else '_no_tags' # For loading the proper data
     datetime_gen = str(datetime.today()).replace(' ', '_')
     
+    datetime_gen = 'no_versioning' # Temporarily disabling versioning until I can setup simultaneous running/single inference across everything.
+    
     this_model_dir = models_get_split_folder(split_name, dataset_name, with_tags, datetime_gen)
     
     this_data_dir = join(config.om_root_dir, join(config.finetune_dir, join(split_name, dataset_name)))

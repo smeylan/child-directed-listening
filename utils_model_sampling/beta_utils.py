@@ -22,7 +22,7 @@ def get_beta_search_values():
 
 def load_beta_folder(split, dataset, is_tags, context_num, model_type):
     
-    folder = split_gen.get_split_folder(split, dataset, config.exp_dir)
+    folder = split_gen.get_split_folder(split, dataset, config.scores_dir)
     this_title = load_models.query_model_title(split, dataset, is_tags, context_num, model_type)
     exp_path = join(folder, this_title.replace(' ', '_'))
     

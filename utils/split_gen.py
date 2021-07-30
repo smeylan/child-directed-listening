@@ -164,20 +164,20 @@ def write_data_partitions_text(all_data, split_folder, phase, phase_idxs, split_
     # This is needed in case you write from all_tokens_phono,
     # Because you never want to write errors (at the utterance level) into the finetune text file.
     
-    all_data_clean = data_cleaning.drop_errors(all_data_with_assignments) 
+    phase_data_clean = data_cleaning.drop_errors(this_phase_data) 
     
-    # Need to make all_data have unique utterance ids
+    # Need to make this_phase_data have unique utterance ids
     # Otherwise, you will write repetitively to the source.
     # This is important for Pvd data
     
-    data_by_utts = all_data_clean[['utterance_id', 'gloss_with_punct']].drop_duplicates()
+    phase_data_by_utts = phase_data_clean[['utterance_id', 'gloss_with_punct']].drop_duplicates()
     
     # Make sure that each id is paired with one gloss with punct.
     # i.e. no single id has two different glosses with punct.
     
-    assert len(set(all_data_clean['utterance_id'])) == data_by_utts.shape[0]
+    assert len(set(phase_data_clean['utterance_id'])) == phase_data_by_utts.shape[0]
     
-    write_partition(phase, data_by_utts, split_folder)
+    write_partition(phase, phase_data_by_utts, split_folder)
     
     return all_data_with_assignments, this_phase_data
 

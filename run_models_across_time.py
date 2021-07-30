@@ -16,15 +16,15 @@ def load_sample_model_across_time_args():
     
     sample_dict = defaultdict(dict)
     
-    success_paths = get_ages_sample_paths('success', config.eval_phase)
-    yyy_paths = get_ages_sample_paths('yyy', config.eval_phase)
+    success_paths = load_splits.get_ages_sample_paths('success', config.eval_phase)
+    yyy_paths = load_splits.get_ages_sample_paths('yyy', config.eval_phase)
     
     for name, path_set in zip(['success', 'yyy'], [success_paths, yyy_paths]):
         for age, path in path_set.items():
             this_data = pd.read_csv(path)
             this_data = this_data.iloc[0:min(5, this_data.shape[0])] if config.dev_mode else this_data
 
-            sample_dict[age][f'{name}_id'] = this_data
+            sample_dict[age][name] = this_data
         
     return sample_dict
     
@@ -51,7 +51,13 @@ def call_single_across_time_model(sample_dict, all_tokens_phono, model_class, th
         
         if int(percentage_done) % 10 == 0: print(f'{percentage_done}%')
             
-        this_scores  = sample_models_across_time.successes_and_failures_across_time_per_model(age, sample_dict['success'], sample_dict['yyy'], this_model_dict, all_tokens_phono, optimal_beta)
+        this_pool = sample_dict[age_str]
+        this_success_pool = this_pool['success']
+        this_yyy_pool = this_pool['yyy']
+        
+        if (this_success_pool.shape[0] == 0) and (this_yyy_pool.shape[0] == 0): continue
+         
+        this_scores = sample_models_across_time.successes_and_failures_across_time_per_model(age, this_success_pool.utterance_id, this_yyy_pool.utterance_id, this_model_dict, all_tokens_phono, optimal_beta)
             
         this_tags = this_model_dict['kwargs']['use_speaker_labels']
         this_context_width = this_model_dict['kwargs']['context_width_in_utts']

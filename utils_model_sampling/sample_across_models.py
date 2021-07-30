@@ -67,11 +67,12 @@ def sample_across_models(success_ids, yyy_ids, model, beta_values, examples_mode
         posteriors_for_age_interval['scores']['beta_value'] = beta_value
         posteriors_for_age_interval['scores']['model'] = model['title']
         
+        posteriors_for_age_interval['scores'].astype({'beta_value' : 'float16'})
         this_score = copy.deepcopy(posteriors_for_age_interval['scores'])
         
-        print('for this scoring')
-        for col, obj in zip(this_score.columns, this_score.iloc[0]):
-            print(f'\t{(col, type(obj))}')
+        #print('for this scoring')
+        #for col, obj in zip(this_score.columns, this_score.iloc[0]):
+        #    print(f'\t{(col, type(obj))}')
             
         score_store_single_model.append(this_score)
         

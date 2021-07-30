@@ -34,7 +34,7 @@ def get_child_names():
     """
     
     all_phono = load_splits.load_phono()
-    return set(all_phono.target_child_name)
+    return sorted(list(set(all_phono.target_child_name)))
    
     
 def get_child_model_dict(name):

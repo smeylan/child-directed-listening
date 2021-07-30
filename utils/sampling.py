@@ -41,7 +41,6 @@ def get_sample_path(data_type, task_name, split_name, dataset_name, eval_phase =
 
 def sample_pool_ids(this_pool, this_n):
     
-    
     this_pool = np.unique(this_pool.utterance_id) # Enforce unique utterances.
     
     num_samples = this_pool.shape[0]

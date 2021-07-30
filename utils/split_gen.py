@@ -5,9 +5,6 @@ from os.path import join, exists
 import pandas as pd
 import numpy as np
 
-import sklearn
-from sklearn import model_selection
-
 from utils import data_cleaning
 import config
 
@@ -17,6 +14,8 @@ import config
 SEED = config.SEED
 np.random.seed(SEED)
 
+import sklearn
+from sklearn import model_selection
 
 def get_age_split_data(raw_data, months = config.age_split):
     
@@ -25,9 +24,6 @@ def get_age_split_data(raw_data, months = config.age_split):
     young_mask = data['target_child_age'] <= months * 30.5
     old_mask = data['target_child_age'] > months * 30.5
     
-    # Implied that target_child_age is in days,
-    # and 30.5 days/month is used in the original Generalized Phonological analysis.
-
     young_df = data[young_mask]
     old_df = data[old_mask]
 
@@ -41,8 +37,6 @@ def get_split_folder(split_type, dataset_name, base_dir):
         os.makedirs(path)
     
     return path
-
-# Removed 'vocab.csv' because it isn't used in latest run_mlm.py code.
 
 
 def save_chi_vocab(train_data, split_type, dataset_name):
@@ -95,7 +89,9 @@ def determine_split_idxs(unsorted_cleaned_data, split_on, val_ratio = None, val_
     
     split_attr_inventory = np.unique(data[split_on])
     
-    # Note: always put at least on transcript in val, because other train data will be joined to train
+    # Note: always put at least one transcript in val, because other train data will be joined to train
+    # for child finetuning data
+    
     sample_num = val_num if val_ratio is None else max(1, int(val_ratio * len(split_attr_inventory)))
     
     train_idx, validation_idx = sklearn.model_selection.train_test_split(split_attr_inventory, test_size = sample_num)

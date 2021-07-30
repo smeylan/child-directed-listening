@@ -7,6 +7,7 @@ from os.path import join, exists
 from utils import scripts
 import config
 
+from datetime import datetime
 
 def models_get_split_folder(split_type, dataset_type, with_tags, base_dir = config.om_root_dir):
     
@@ -20,6 +21,8 @@ def get_training_shell_script(split_name, dataset_name, with_tags, om2_user = 'w
     
     tags_data_str  = '' if with_tags else '_no_tags' # For loading the proper data
     this_model_dir = models_get_split_folder(split_name, dataset_name, with_tags)
+    
+    datetime_gen = str(datetime.today()).replace(' ', '_')
     
     this_data_dir = join(config.om_root_dir, join(config.finetune_dir, join(split_name, dataset_name)))
     
@@ -80,8 +83,6 @@ def write_training_shell_script(split, dataset, is_tags, om2_user = 'wongn'):
     
     
 if __name__ == '__main__':
-    
-    # Try testing this shell script generation process on Chompsky first before moving it to OM2 -- but be sure that the commands append will even work... ?
     
     all_splits = [('all', 'all'), ('age', 'old'), ('age', 'young')]
     

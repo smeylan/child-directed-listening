@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import argparse
+from datetime import datetime
 
 def optimize_beta(split_name, dataset_name, model_dict, model_type):
     
@@ -81,6 +82,8 @@ def plot_beta_optimization(fig_path_dir, betas, beta_surprisals, split, dataset)
     
 if __name__ == '__main__':
     
+    
+    start_time = str(datetime.today())
     parser = parsers.split_parser()
     
     # 7/7/21: https://stackoverflow.com/questions/17118999/python-argparse-unrecognized-arguments    
@@ -103,11 +106,19 @@ if __name__ == '__main__':
     print(this_model_args)
    
     if this_model_args['split'] != 'child':
-        this_model_dict = load_models.get_specific_model_dict(query_model_str)
+        this_model_dict = load_models.get_model_dict(
+            this_model_args['split'],
+            this_model_args['dataset'],
+            this_model_args['use_tags'],
+            this_model_args['context_width'],
+            this_model_args['model_type'],
+        )
     else:
         # Note that model args should already be matched to the parse arguments for child scripts,
         # because they are auto-generated.
         # But assert anyway to prevent manual misuse
+        
+        # This hasn't been fully developed yet I think?
         
         this_model_dict = child_models.get_child_model_dict(this_model_args['dataset'])
         
@@ -117,5 +128,7 @@ if __name__ == '__main__':
     raw_results, beta_results = optimize_beta(this_model_args['split'], this_model_args['dataset'], this_model_dict, this_model_args['model_type'])
 
     print(f'Computations complete for: {query_model_str}')
+    print(f'Started computations at: {start_time}')
+    print(f'Finished computations at: {str(datetime.today())}')
     
     

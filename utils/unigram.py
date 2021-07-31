@@ -45,15 +45,15 @@ def get_sample_bert_token_ids(task, split = 'all', dataset = 'all'):
     # Need to extract all of the utterance ids in the entirety of the ages...
     # This will probably be very slow.
     
-    all_success_paths = load_splits.get_age_success_sample_paths('all', 'all')
-    all_yyy_paths = load_splits.get_age_yyy_sample_paths('all', 'all')
+    all_success_paths = load_splits.get_age_success_sample_paths()
+    all_yyy_paths = load_splits.get_age_yyy_sample_paths()
     
     # Use read_csv because you're just looking for utterance_ids
     this_sample_successes = pd.concat([pd.read_csv(path)[['utterance_id']] for path in all_success_paths])
     this_sample_yyy = pd.concat([pd.read_csv(path)[['utterance_id']] for path in all_yyy_paths])
 
     select_sample_id = pd.concat([this_sample_successes, this_sample_yyy])
-    select_phono = tokens.loc[tokens.id.isin(select_sample_id.utterance_id)]
+    select_phono = tokens.loc[tokens.utterance_id.isin(select_sample_id.utterance_id)]
     
     # Note that .token is not sufficient to guarantee that the failure is scoreable.
     failure_mask_bert_ids = select_phono.loc[select_phono.partition == 'yyy','bert_token_id']

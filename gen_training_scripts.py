@@ -20,7 +20,7 @@ def models_get_split_folder(split_type, dataset_type, with_tags, datetime_str, b
 
 def get_isolated_training_commands(split_name, dataset_name, with_tags, om2_user = 'wongn'):
       
-    commands = scripts.gen_command_header(mem_alloc_gb = 9, time_alloc_hrs = 7) 
+    commands = scripts.gen_command_header(mem_alloc_gb = 9, time_alloc_hrs = 6 if split_name != 'child' else (0, 15, 0))  # Allocate 15 minutes per child (based on relative length calculations)
     
     commands += get_non_header_commands(split_name, dataset_name, with_tags)
     

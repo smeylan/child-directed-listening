@@ -12,6 +12,8 @@ import config
 
 from collections import defaultdict
 
+from datetime import datetime
+
 def load_sample_model_across_time_args():
     
     sample_dict = defaultdict(dict)
@@ -35,8 +37,13 @@ def call_single_across_time_model(sample_dict, all_tokens_phono, model_class, th
    
     model_name = load_models.get_model_id(this_split, this_dataset_name, is_tags, context_width, model_class)
     
-    all_models = load_models.get_model_dict()
-    this_model_dict = all_models[model_name]
+    this_model_dict = load_models.get_model_dict(
+        this_split,
+        this_dataset_name,
+        is_tags,
+        context_width,
+        model_class,
+    )
          
     # Load the optimal beta
     optimal_beta = beta_utils.get_optimal_beta_value_with_dict(this_split, this_dataset_name, this_model_dict, model_class)
@@ -44,6 +51,8 @@ def call_single_across_time_model(sample_dict, all_tokens_phono, model_class, th
     ages = sorted(list(sample_dict.keys()))
    
     for idx, age_str in enumerate(ages):
+        
+        print('Processing', model_class, age_str) 
         
         age = float(age_str)
         
@@ -70,6 +79,8 @@ def call_single_across_time_model(sample_dict, all_tokens_phono, model_class, th
     
 if __name__ == '__main__':
     
+    start_time = str(datetime.today())
+    
     parser = parsers.split_parser()
     
     # 7/7/21: https://stackoverflow.com/questions/17118999/python-argparse-unrecognized-arguments    
@@ -86,16 +97,18 @@ if __name__ == '__main__':
         with_tags =  this_model_args['use_tags'],
         context_width = this_model_args['context_width'],
         model_type = this_model_args['model_type'],
-    )
-   
-    this_model_dict = this_model_dict = load_models.get_specific_model_dict(query_model_str)
-                                                                                   
+    )    
+
+    print('Need to update this for children.')
+                                                                    
     all_phono = load_splits.load_phono()
     this_sample_dict = load_sample_model_across_time_args()
      
     scores = call_single_across_time_model(this_sample_dict, all_phono, this_model_args['model_type'], this_model_args['split'], this_model_args['dataset'], this_model_args['use_tags'], this_model_args['context_width'])
     
     print(f'Computations complete for: {query_model_str}')
+    print(f'Started computations at: {start_time}')
+    print(f'Finished computations at: {str(datetime.today())}')
     
     
     

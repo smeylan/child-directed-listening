@@ -12,23 +12,15 @@ from utils import parsers, load_models, scripts
 import os
 from os.path import join, exists
 
-
-def gen_commands(task_file, mem_amount, split, dataset, use_tags, context_width, model_type, time_alloc = 7.5):
-    
-    commands = scripts.gen_command_header(mem_alloc_gb = mem_amount, time_alloc_hrs = 7.5) # Updating to 7.5 for 5000-based scoring.
-
-    non_header_command = get_non_header_commands(task_file, mem_amount, split, dataset, use_tags, context_width, model_type)
-
-    return model_id, commands + non_header_command
-
 def get_non_header_commands(task_file, split, dataset, use_tags, context_width, model_type):
     
     model_id = load_models.get_model_id(
         split, dataset, use_tags, context_width, model_type
     ).replace('/', '>')
-    command = f"python3 {task_file} --split {split} --dataset {dataset} --context_width {context_width} --use_tags {use_tags} --model_type {model_type}" # This may have to be "python3" on openmind? 
+    
+    command = f"python3 {task_file} --split {split} --dataset {dataset} --context_width {context_width} --use_tags {use_tags} --model_type {model_type}"
 
-    return [scripts.gen_singularity_header() + command]
+    return model_id, command
 
 
 def write_commands(sh_script_loc, task_name, model_id, commands):
@@ -40,24 +32,44 @@ def write_commands(sh_script_loc, task_name, model_id, commands):
             
 if __name__ == '__main__':
     
-    model_args = load_models.gen_all_model_args()
-    
+
     task_names = ['beta_search', 'models_across_time']
     task_files = ['run_beta_search.py', 'run_models_across_time.py']
      
-    mem_amounts = [50, 50]
+    mem_amount = 50
     
-    for task_name, task_file, mem_amount in zip(task_names, task_files, mem_amounts):
-        
-        sh_script_loc = join(config.root_dir, f'scripts_{task_name}')
+    sh_script_loc_base = join(config.root_dir, 'scripts_beta_time')
 
+    partitions = {
+        'finetune' : load_models.gen_finetune_model_args,
+        'shelf' : load_models.gen_shelf_model_args,
+    }
+    
+    for partition_name, model_args in partitions.items():
+        
+        sh_script_loc = join(sh_script_loc_base, partition_name)
+            
         if not exists(sh_script_loc):
             os.makedirs(sh_script_loc)
 
-        for arg_set in model_args:
+
+        for arg_set in model_args():
             
-            model_id, commands = gen_commands(task_file, mem_amount, *arg_set)
-            write_commands(sh_script_loc, task_name, model_id, commands)
+            py_commands = {}
+
+            header = scripts.gen_command_header(mem_alloc_gb = mem_amount, time_alloc_hrs = 15)
+
+            for task_name, task_file in zip(task_names, task_files):
+                model_id, py_commands[task_name] = get_non_header_commands(task_file, *arg_set)
+            
+            # 7/31/21: https://unix.stackexchange.com/questions/552695/how-to-run-multiple-scripts-one-after-another-but-only-after-previous-one-got-co
+            full_py_command = scripts.gen_singularity_header() + f'{py_commands["beta_search"]}; {py_commands["models_across_time"]}'
+            # end cite
+            
+            all_commands = header + [full_py_command]
+
+            write_commands(sh_script_loc, task_name, model_id, all_commands)
+
             
             
             

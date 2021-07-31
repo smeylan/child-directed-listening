@@ -40,6 +40,20 @@ def gen_adult_model_args():
     
     return load_args
     
+def gen_unigram_args():
+    
+    load_args = []
+    
+    # Two unigram baselines
+    for unigram_name in ['flat_unigram', 'data_unigram']:
+        load_args.append(('all', 'all', False) + (0, unigram_name))
+    
+    return load_args
+
+def gen_shelf_model_args():
+    
+    return gen_adult_model_args() + gen_unigram_args()
+
 def gen_all_model_args():
     
     """
@@ -47,13 +61,7 @@ def gen_all_model_args():
     Order: (split, dataset, tags, context, model_type)
     """
     
-    load_args = gen_adult_model_args() + gen_finetune_model_args()
-        
-    # Two unigram baselines
-    for unigram_name in ['flat_unigram', 'data_unigram']:
-        load_args.append(('all', 'all', False) + (0, unigram_name))
-        
-    return load_args
+    return gen_adult_model_args() + gen_finetune_model_args() + gen_unigram_args()
      
     
 def gen_model_title(split, dataset, is_tags, context_num, model_type):
@@ -111,23 +119,10 @@ def query_model_title(split, dataset, is_tags, context_num, model_type):
     return gen_model_title(split, dataset, is_tags, context_num, model_type)
     
     
-def get_model_dict():
-    """
-    Only for age/all splits. Child loading is in utils_child/child_models.py
-    """
-    
-    # The format for the name is:
-    # split name/dataset name/tags/{context width}_context
-    # for childes data.
-    
-    # If it's a pretrained BERT model with no finetuning, it has /shelf added to its model id
-    # If it's a unigram model, it's just: split name/dataset name/unigram_{unigram type}
-    
+def get_vocab_tok_modules():
     
     cmu_2syl_inchildes = get_cmu_dict_info()
     
-    adult_bertMaskedLM = BertForMaskedLM.from_pretrained('bert-base-uncased')
-    adult_bertMaskedLM.eval()
     adult_tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
     adult_softmax_mask, adult_vocab = transformers_bert_completions.get_softmax_mask(adult_tokenizer, cmu_2syl_inchildes.word)
     
@@ -136,30 +131,20 @@ def get_model_dict():
     _, initial_vocab = transformers_bert_completions.get_softmax_mask(initial_tokenizer,
     cmu_2syl_inchildes.word)  
     
-    # Order: split name, dataset name, with tags
+    return adult_tokenizer, adult_softmax_mask, initial_tokenizer, initial_vocab
     
-    # Load the BERT-based models
     
-    args = gen_finetune_model_args()
+def get_shelf_dict(split, dataset, with_tags, context):
+    """
+    Adult BERT models, no finetuning
+    """
     
-    all_model_dict = {}
+    adult_bertMaskedLM = BertForMaskedLM.from_pretrained('bert-base-uncased')
+    adult_bertMaskedLM.eval()
     
-    for arg_set in args:
-        split, dataset, tags, context_width, _ = arg_set
-        model_id = get_model_id(split, dataset, tags, context_width, 'childes')
-        all_model_dict[model_id] = {
-            'title' : gen_model_title(split, dataset, tags, context_width, 'childes'),
-            'kwargs' : get_model_from_split(split, dataset,
-                                            with_tags = tags),
-            'type' : 'BERT',
-        }
-        all_model_dict[model_id]['kwargs'].update({'context_width_in_utts' : context_width})
-
-    # Load the normal BERT model
+    adult_tokenizer, adult_softmax_mask, _, _ = get_vocab_tok_modules()
     
-    prev_bert_dict = {}
-    for context in config.context_list: # You should refactor this later to use your BERT args
-        prev_bert_dict[f'all/all/no_tags/{context}_context/adult'] = {
+    return {
             'title': gen_model_title('all', 'all', False, context, 'adult'), 
             'kwargs': {'modelLM': adult_bertMaskedLM,
                         'tokenizer': adult_tokenizer,
@@ -169,25 +154,35 @@ def get_model_dict():
                        },
              'type': 'BERT'
          }
+
+
+
+def get_data_unigram_dict(split, dataset, with_tags, context):
     
+    adult_tokenizer, adult_softmax_mask, _, initial_vocab = get_vocab_tok_modules()
     
-    # Load the unigram-based models
+    return {
+        'title': 'CHILDES Unigram',
+        'kwargs': {'child_counts_path': f'{config.finetune_dir}/all/all/chi_vocab_train.csv',
+                    'tokenizer': adult_tokenizer,
+                    'softmax_mask': adult_softmax_mask,
+                    'vocab': initial_vocab,
+
+                    # Added these default args 7/9/21 for compatibility with rest of the code
+                    'context_width_in_utts': 0,
+                    'use_speaker_labels': False,
+                   },
+         'type': 'unigram'
+        }
+
+
+
+
+def get_flat_unigram_dict(split, dataset, with_tags, context):
     
-    unigram_dict = {
-        'all/all/no_tags/0_context/data_unigram' : {
-            'title': 'CHILDES Unigram',
-            'kwargs': {'child_counts_path': f'{config.finetune_dir}/all/all/chi_vocab_train.csv',
-                        'tokenizer': adult_tokenizer,
-                        'softmax_mask': adult_softmax_mask,
-                        'vocab': initial_vocab,
-                       
-                        # Added these default args 7/9/21 for compatibility with rest of the code
-                        'context_width_in_utts': 0,
-                        'use_speaker_labels': False,
-                       },
-             'type': 'unigram'
-        },
-        'all/all/no_tags/0_context/flat_unigram' : {
+    adult_tokenizer, adult_softmax_mask, _, initial_vocab = get_vocab_tok_modules()
+    
+    return {
             'title': 'Flat Unigram',
             # Note that this assumes that flat prior = no information at all.
             # That means it doesn't observe any train/val split.
@@ -203,31 +198,59 @@ def get_model_dict():
                         'use_speaker_labels': False,
                        },
              'type': 'unigram'
-        },   
+        } 
+    
+
+    
+def get_finetune_dict(split, dataset, with_tags, context):
+    
+    model_id = get_model_id(split, dataset, tags, context_width, 'childes')
+    
+    this_dict = {
+        'title' : gen_model_title(split, dataset, tags, context_width, 'childes'),
+        'kwargs' : get_model_from_split(split, dataset,
+                                        with_tags = tags),
+        'type' : 'BERT',
     }
+    this_dict['kwargs'].update({'context_width_in_utts' : context_width})
     
-    for model_id, model_dict in all_model_dict.items():
-        
-        # 7/9/21: So childes doesn't need to re-add the tokens, and it works fine with the tokens, manually checked via prints
-        if 'childes' not in model_id:
-            #print('Adding the speaker tokens to this model dict')
-            model_dict['kwargs']['tokenizer'].add_tokens(['[chi]','[cgv]'])
-            
-        # Always add tokens to the new models.
-        model_dict['kwargs']['tokenizer'].add_tokens(['yyy','xxx']) #must maintain xxx and yyy for alignment,        
-    
-    all_model_dict.update(unigram_dict)
-    all_model_dict.update(prev_bert_dict)
-        
-    return all_model_dict
+    return this_dict
 
 
-def get_specific_model_dict(model_id):
+
+def get_model_dict(split, dataset, with_tags, context, model_type):
     """
-    Explicitly request that Python throw away this memory.
+    Only for age/all splits. Child loading is in utils_child/child_models.py
     """
-    this_model_dict = get_model_dict()[model_id] # This is probably going to be slow, optimize later
-    return this_model_dict
+    
+    # The format for the name is:
+    # split name/dataset name/tags/{context width}_context
+    # for childes data.
+    
+    # If it's a pretrained BERT model with no finetuning, it has /shelf added to its model id
+    # If it's a unigram model, it's just: split name/dataset name/unigram_{unigram type}
+    
+    
+    if model_type == 'childes': 
+        model_dict = get_finetune_dict(split, dataset, with_tags, context)
+    elif model_type == 'adult':
+        model_dict = get_shelf_dict(split, dataset, with_tags, context)
+    elif model_type == 'data_unigram': 
+        model_dict = get_data_unigram_dict(split, dataset, with_tags, context)
+    elif model_type == 'flat_unigram':
+        model_dict = get_flat_unigram_dict(split, dataset, with_tags, context)
+    
+    # Update the tokenizers if needed.
+    
+    # 7/9/21: So childes doesn't need to re-add the tokens, and it works fine with the tokens, manually checked via prints
+    if model_type != 'childes':
+        #print('Adding the speaker tokens to this model dict')
+        model_dict['kwargs']['tokenizer'].add_tokens(['[chi]','[cgv]'])
+
+    # Always add tokens to the new models.
+    model_dict['kwargs']['tokenizer'].add_tokens(['yyy','xxx']) #must maintain xxx and yyy for alignment,        
+    
+    return model_dict
     
     
     

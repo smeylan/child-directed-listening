@@ -8,9 +8,9 @@
 #SBATCH -N 1
 #SBATCH -p cpl
 #SBATCH --gres=gpu:1
-#SBATCH -t 15:00:00
-#SBATCH --mem=50G
+#SBATCH -t 0:15:0
+#SBATCH --mem=13G
 #SBATCH --constraint=high-capacity
 
 module load openmind/singularity/3.2.0
-singularity exec --nv -B /om,/om2/user/wongn /om2/user/wongn/vagrant/trans-pytorch-gpu python3 run_beta_search.py --split age --dataset young --context_width 0 --use_tags True --model_type childes; python3 run_models_across_time.py --split age --dataset young --context_width 0 --use_tags True --model_type childes
+singularity exec --nv -B /om,/om2/user/wongn /om2/user/wongn/vagrant/trans-pytorch-gpu python3 run_beta_search.py --split age --dataset young --context_width 0 --use_tags True --model_type childes; singularity exec --nv -B /om,/om2/user/wongn /om2/user/wongn/vagrant/trans-pytorch-gpu  python3 run_models_across_time.py --split age --dataset young --context_width 0 --use_tags True --model_type childes

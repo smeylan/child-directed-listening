@@ -13,22 +13,6 @@ import config
 from collections import defaultdict
 
 from datetime import datetime
-
-def load_sample_model_across_time_args():
-    
-    sample_dict = defaultdict(dict)
-    
-    success_paths = load_splits.get_ages_sample_paths('success', config.eval_phase)
-    yyy_paths = load_splits.get_ages_sample_paths('yyy', config.eval_phase)
-    
-    for name, path_set in zip(['success', 'yyy'], [success_paths, yyy_paths]):
-        for age, path in path_set.items():
-            this_data = pd.read_csv(path)
-            this_data = this_data.iloc[0:min(5, this_data.shape[0])] if config.dev_mode else this_data
-
-            sample_dict[age][name] = this_data
-        
-    return sample_dict
     
     
 def call_single_across_time_model(sample_dict, all_tokens_phono, model_class, this_split, this_dataset_name, is_tags, context_width):
@@ -102,7 +86,7 @@ if __name__ == '__main__':
     print('Need to update this for children.')
                                                                     
     all_phono = load_splits.load_phono()
-    this_sample_dict = load_sample_model_across_time_args()
+    this_sample_dict = load_splits.load_sample_model_across_time_args()
      
     scores = call_single_across_time_model(this_sample_dict, all_phono, this_model_args['model_type'], this_model_args['split'], this_model_args['dataset'], this_model_args['use_tags'], this_model_args['context_width'])
     

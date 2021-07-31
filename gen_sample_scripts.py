@@ -12,7 +12,7 @@ from utils import parsers, load_models, scripts
 import os
 from os.path import join, exists
 
-def get_non_header_commands(task_file, split, dataset, use_tags, context_width, model_type):
+def get_one_python_command(task_file, split, dataset, use_tags, context_width, model_type):
     
     model_id = load_models.get_model_id(
         split, dataset, use_tags, context_width, model_type
@@ -22,6 +22,14 @@ def get_non_header_commands(task_file, split, dataset, use_tags, context_width, 
 
     return model_id, command
 
+
+def time_and_mem_alloc():
+    
+    is_subsample = (config.n_subsample is not None)
+    this_time_alloc = (0, 15, 0) if is_subsample else 15
+    this_mem_amount = 13 if is_subsample else 50
+    return this_time_alloc, this_mem_amount
+    
 
 def write_commands(sh_script_loc, task_name, model_id, commands):
     
@@ -36,7 +44,6 @@ if __name__ == '__main__':
     task_names = ['beta_search', 'models_across_time']
     task_files = ['run_beta_search.py', 'run_models_across_time.py']
      
-    mem_amount = 50
     
     sh_script_loc_base = join(config.root_dir, 'scripts_beta_time')
 
@@ -53,17 +60,22 @@ if __name__ == '__main__':
             os.makedirs(sh_script_loc)
 
 
+        # TODO: Adapt this to have variable running times -- especially for data unigram and BERT.
+        # "subsampling amount if else non-subsampling amount"
+        this_time_alloc, this_mem_amount = time_and_mem_alloc()
+        
         for arg_set in model_args():
             
             py_commands = {}
 
-            header = scripts.gen_command_header(mem_alloc_gb = mem_amount, time_alloc_hrs = 15)
+            header = scripts.gen_command_header(mem_alloc_gb = this_mem_amount, time_alloc_hrs = this_time_alloc)
 
             for task_name, task_file in zip(task_names, task_files):
-                model_id, py_commands[task_name] = get_non_header_commands(task_file, *arg_set)
+                model_id, py_commands[task_name] = get_one_python_command(task_file, *arg_set)
             
             # 7/31/21: https://unix.stackexchange.com/questions/552695/how-to-run-multiple-scripts-one-after-another-but-only-after-previous-one-got-co
-            full_py_command = scripts.gen_singularity_header() + f'{py_commands["beta_search"]}; {py_commands["models_across_time"]}'
+            sing_header = scripts.gen_singularity_header()
+            full_py_command = sing_header + f'{py_commands["beta_search"]}; {sing_header} {py_commands["models_across_time"]}'
             # end cite
             
             all_commands = header + [full_py_command]

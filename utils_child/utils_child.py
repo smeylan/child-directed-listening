@@ -10,6 +10,22 @@ import config
 import os
 from os.path import join, exists
 
+
+def load_cross_data(child_name):
+    
+    all_phono = load_splits.load_phono()
+    this_phono = all_phono[(all_phono.target_child_name == child_name)
+                                & (all_phono.phase_child_sample == config.eval_phase)]
+    
+    return this_phono # What is the actual data needed?
+
+def load_success_utts():
+    
+
+def load_yyy_utts():
+    
+    
+    
 def get_cross_path(data_child_name, prior_child_name, beta):
     
     this_folder = join(config.exp_dir, 'child_cross')
@@ -31,6 +47,8 @@ def score_cross_prior(data_child, prior_child):
     _, is_tags = child_models.get_best_child_base_model_path()
     
     print('Re-enable optimal beta for child once these values become available!')
+    
+    load_cross_data()
     
     # optim_beta = beta_utils.get_optimal_beta_value('child', prior_child, is_tags, 0, 'childes')
     optim_beta = 3.2

@@ -12,6 +12,8 @@ import pickle
 
 import config
 
+from collections import defaultdict
+
 import numpy as np
 
 def get_ages_sample_paths(which_type, phase):
@@ -37,6 +39,15 @@ def get_ages_sample_paths(which_type, phase):
     return age2path
     
     
+def apply_if_subsample(data):
+    """
+    Applies subsampling logic for either development purposes or using a smaller sample than n = 500.
+    Because the utterances were originally randomly sampled, taking a prefix of a random sample should also be a random sample.
+    """
+    trunc_mode = (config.dev_mode or config.subsample_mode)
+    return data if not trunc_mode else data.iloc[0:min(config.n_subsample, data.shape[0])]
+    
+    
 def get_age_success_sample_paths(phase = config.eval_phase):
     return sorted(list(get_ages_sample_paths('success', phase).values()))
 
@@ -47,15 +58,31 @@ def get_age_yyy_sample_paths(phase = config.eval_phase):
 def load_sample_successes(task, split, dataset, age = None, eval_phase = config.eval_phase):
     this_path = sampling.get_sample_path('success', task, split, dataset, eval_phase, age)
     this_data = pd.read_csv(this_path)
-    return this_data if not config.dev_mode else this_data.iloc[0:min(5, this_data.shape[0])]
+    return apply_if_subsample(this_data)
 
 
 def load_sample_yyy(task, split, dataset, age = None, eval_phase = config.eval_phase):
     
     this_path = sampling.get_sample_path('yyy', task, split, dataset, eval_phase, age)
     this_data = pd.read_csv(this_path)
-    return this_data if not config.dev_mode else this_data.iloc[0:min(5, this_data.shape[0])]
+    return apply_if_subsample(this_data)
 
+
+def load_sample_model_across_time_args():
+    
+    sample_dict = defaultdict(dict)
+    
+    success_paths = get_ages_sample_paths('success', config.eval_phase)
+    yyy_paths = get_ages_sample_paths('yyy', config.eval_phase)
+    
+    for name, path_set in zip(['success', 'yyy'], [success_paths, yyy_paths]):
+        for age, path in path_set.items():
+            this_data = pd.read_csv(path)
+            this_data = apply_if_subsample(this_data)
+
+            sample_dict[age][name] = this_data
+        
+    return sample_dict
 
 def load_phono():
     

@@ -10,6 +10,8 @@ import config
 import os
 from os.path import join, exists
 
+import random
+
 
 def load_cross_data(child_name):
     
@@ -17,14 +19,30 @@ def load_cross_data(child_name):
     this_phono = all_phono[(all_phono.target_child_name == child_name)
                                 & (all_phono.phase_child_sample == config.eval_phase)]
     
-    return this_phono # What is the actual data needed?
+    return this_phono
 
-def load_success_utts():
+def load_success_yyy_utts(data_type, child_name, cross_data):
     
+    assert (child_name is None) ^ (cross_data is None), "Specify one of either child_name or cross_data." 
+    
+    if cross_data is None:
+        cross_data = load_cross_data(child_name)
+    
+    # Note: You cannot apply the truncation sub-sampling to non-beta value child data (i.e. the cross-scoring)
+    # because it's not randomly ordered
+    # For now: Possibly non-reproducible sampling from the right phase, or, seed the data and see if it results in a reproducible split.
+    
+    utt_ids = random.shuffle(list(set(cross_data[cross_data.partition == data_type].utterance_id)))
+    return pd.DataFrame.from_records({'utterance_id' : utt_ids})
+        
 
-def load_yyy_utts():
-    
-    
+def load_success_utts(child_name = None, cross_data = None):
+    return load_success_yyy_utts('success', child_name, cross_data)
+
+
+def load_yyy_utts(child_name = None, cross_data = None):
+    return load_success_yyy_utts('yyy', child_name, cross_data)
+
     
 def get_cross_path(data_child_name, prior_child_name, beta):
     

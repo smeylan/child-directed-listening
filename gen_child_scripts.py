@@ -50,6 +50,7 @@ if __name__ == '__main__':
         # Generate appropriate scripts for model_training
         
         train_file, train_commands = gen_child_train_commands(child, base_model_path, is_tags)
+        gen_sample_scripts()
         
         with open(join(sh_train_loc, train_file), 'w') as f:
             f.writelines(train_commands)

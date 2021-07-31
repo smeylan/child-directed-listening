@@ -34,13 +34,19 @@ def gen_singularity_header(om2_user = 'wongn'):
     # still part of the taken code above
     return f"singularity exec --nv -B /om,/om2/user/{om2_user} /om2/user/{om2_user}/vagrant/trans-pytorch-gpu " 
     
+def format_time(args):
+    
+    new_args = tuple([f'0{arg}' if arg < 10 else str(arg) for arg in args])
+    return new_args
+      
 
 def gen_command_header(mem_alloc_gb, time_alloc_hrs):
     
     if isinstance(time_alloc_hrs, int):
         time_alloc_hrs_str = f'{time_alloc_hrs}:00:00'
     if isinstance(time_alloc_hrs, tuple):
-        hrs, mins, secs = time_alloc_hrs
+        hrs, mins, secs = format_time(time_alloc_hrs)
+        
         time_alloc_hrs_str = f'{hrs}:{mins}:{secs}'
                 
     commands = []

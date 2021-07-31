@@ -13,19 +13,22 @@ import os
 from os.path import join, exists
 
 
-def gen_commands(task_file, mem_amount, split, dataset, use_tags, context_width, model_type):
+def gen_commands(task_file, mem_amount, split, dataset, use_tags, context_width, model_type, time_alloc = 7.5):
     
-    commands = scripts.gen_command_header(mem_alloc_gb = mem_amount, time_alloc_hrs = 2)
-    # 13 GB approx is required to store a potential CSV (estimated?)
+    commands = scripts.gen_command_header(mem_alloc_gb = mem_amount, time_alloc_hrs = 7.5) # Updating to 7.5 for 5000-based scoring.
 
+    non_header_command = get_non_header_commands(task_file, mem_amount, split, dataset, use_tags, context_width, model_type)
+
+    return model_id, commands + non_header_command
+
+def get_non_header_commands(task_file, split, dataset, use_tags, context_width, model_type):
+    
     model_id = load_models.get_model_id(
         split, dataset, use_tags, context_width, model_type
     ).replace('/', '>')
     command = f"python3 {task_file} --split {split} --dataset {dataset} --context_width {context_width} --use_tags {use_tags} --model_type {model_type}" # This may have to be "python3" on openmind? 
 
-    command = scripts.gen_singularity_header() + command
-
-    return model_id, commands + [command]
+    return [scripts.gen_singularity_header() + command]
 
 
 def write_commands(sh_script_loc, task_name, model_id, commands):

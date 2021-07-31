@@ -8,7 +8,7 @@
 #SBATCH -N 1
 #SBATCH -p cpl
 #SBATCH --gres=gpu:1
-#SBATCH -t 0:15:0
+#SBATCH -t 2:0:0
 #SBATCH --mem=13G
 #SBATCH --constraint=high-capacity
 

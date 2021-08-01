@@ -128,7 +128,7 @@ def clean_glosses(data):
         
     # Cell 267
     
-    assert all(data.punct is not None) 
+    assert all([x is not None for x in data.punct]) 
     assert not any(data.punct.isna())
     # Check to make sure that order of execution of following two lines doesn't matter
     

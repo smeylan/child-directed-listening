@@ -202,14 +202,12 @@ def get_flat_unigram_dict(split, dataset, with_tags, context):
     
 
     
-def get_finetune_dict(split, dataset, with_tags, context):
-    
-    model_id = get_model_id(split, dataset, tags, context_width, 'childes')
+def get_finetune_dict(split, dataset, with_tags, context_width):
     
     this_dict = {
-        'title' : gen_model_title(split, dataset, tags, context_width, 'childes'),
+        'title' : gen_model_title(split, dataset, with_tags, context_width, 'childes'),
         'kwargs' : get_model_from_split(split, dataset,
-                                        with_tags = tags),
+                                        with_tags = with_tags),
         'type' : 'BERT',
     }
     this_dict['kwargs'].update({'context_width_in_utts' : context_width})

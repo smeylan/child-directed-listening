@@ -601,9 +601,17 @@ def get_posteriors(prior_data, levdists, initial_vocab, bert_token_ids=None, bet
         # need to subset to bert_token_ods found by other models        
         # also need to limit the scores in some way
 
+    print(prior_data['priors'])
+    
     likelihoods = np.exp(-1*beta_value*levdists)
     unnormalized = np.multiply(prior_data['priors'], likelihoods)
+    
+    print('unnormalized', unnormalized)
+    
     row_sums = np.sum(unnormalized,1)
+    
+    print('invoked for row_sum', row_sums[:, np.newaxis])
+    
     normalized =  (unnormalized / row_sums[:, np.newaxis]).astype(np.float16)
     
     # add entropies

@@ -11,18 +11,23 @@ import os
 from os.path import join, exists
 
 import random
+import pandas as pd 
 
-
-def load_cross_data(child_name):
+def load_cross_data(child_name, all_phono = None):
     
     all_phono = load_splits.load_phono()
-    this_phono = all_phono[(all_phono.target_child_name == child_name)
-                                & (all_phono.phase_child_sample == config.eval_phase)]
+    child_phono = all_phono[all_phono.target_child_name == child_name]
+    this_phono = child_phono[child_phono.phase_child_sample == config.eval_phase]
     
     return this_phono
 
 def load_success_yyy_utts(data_type, child_name, cross_data):
     
+    
+    if not isinstance(child_name, str):
+        cross_data = child_name # Didn't specify positional argument.
+        child_name = None
+   
     assert (child_name is None) ^ (cross_data is None), "Specify one of either child_name or cross_data." 
     
     if cross_data is None:
@@ -66,7 +71,9 @@ def score_cross_prior(data_child, prior_child):
     
     print('Re-enable optimal beta for child once these values become available!')
     
-    load_cross_data()
+    this_cross_data = load_cross_data(data_child)
+    success_utts = load_success_utts(this_cross_data).utterance_id
+    yyy_utts = load_yyy_utts(this_cross_data).utterance_id
     
     # optim_beta = beta_utils.get_optimal_beta_value('child', prior_child, is_tags, 0, 'childes')
     optim_beta = 3.2
@@ -78,8 +85,7 @@ def score_cross_prior(data_child, prior_child):
     model = child_models.get_child_model_dict(prior_child)
     
     # Use id, not utterance id, because this is Providence second query data.
-    cross_priors = transformers_bert_completions.compare_successes_failures(eval_data['phono'], eval_data['success_utts'].utterance_id, eval_data['yyy_utts'].utterance_id, **model['kwargs'])
-    
+    cross_priors = transformers_bert_completions.compare_successes_failures(this_cross_data, success_utts, yyy_utts, **model['kwargs'])
     
     # Calculate distances -- depending on how implementation is done hopefully can abstract this out.
     

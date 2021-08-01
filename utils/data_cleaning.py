@@ -104,13 +104,16 @@ def clean_glosses(data):
         
     fill_punct_val = '.'
     
+    # 8/1/21: changed for more punctuation types.
     punct_for_type = {
-    'question':'?',
-    'declarative':'.',
-    'interruption':'!',
-    'trail off':'...',
-    'trail off question':'?',
-    'imperative_emphatic':'!' 
+        'question':'?',
+        'declarative':'.',
+        'self interruption':'.',
+        'interruption':'!',
+        'trail off':'...',
+        'interruption question':'?',
+        'trail off question':'?',
+        'imperative_emphatic':'!' 
     }
     
     data.gloss = [fix_gloss(x) for x in data.gloss]
@@ -124,6 +127,11 @@ def clean_glosses(data):
     if config.verbose: print('Cell 238', data.iloc[0])
         
     # Cell 267
+    
+    assert all(data.punct is not None) 
+    assert not any(data.punct.isna())
+    # Check to make sure that order of execution of following two lines doesn't matter
+    
     data['speaker_code_simple'] = ['[CHI]' if x == 'CHI' else '[CGV]'
                                           for x in data.speaker_code]
     

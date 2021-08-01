@@ -27,10 +27,11 @@ def time_and_mem_alloc():
     
     is_subsample = (config.n_subsample is not None)
     
-    # Use 2 hrs = 15 minutes + 1.75 h for the models across time (x7 anticipated cost)
+    # Unsure if it will actually run in 4 hours, but based on old BERT statistics.
     
-    this_time_alloc = (2, 0, 0) if is_subsample else 15
+    this_time_alloc = (0, 45, 0) if is_subsample else 5
     this_mem_amount = 13 if is_subsample else 50
+    
     return this_time_alloc, this_mem_amount
     
 

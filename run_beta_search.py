@@ -37,15 +37,7 @@ def optimize_beta(split_name, dataset_name, model_dict, model_type):
     # Internally uses GPU if available.
     # speaker tags handled internally in the transformers bert completions file.
     
-    if split_name != 'child':
-        
-        success_utts_sample = load_splits.load_sample_successes('beta', split_name, dataset_name).utterance_id
-        
-    else:
-        # TODO: Optimize on the right part of the split for child set.
-        
-        data_dict = load_splits.load_pvd_data(split_name, dataset_name, config.eval_phase)
-        success_utts_sample = data_dict['success_utts']
+    success_utts_sample = load_splits.load_sample_successes('beta', split_name, dataset_name).utterance_id
         
     # Don't use failures for beta search
     this_raw_beta_results = sample_across_models.sample_across_models(success_utts_sample,

@@ -489,8 +489,12 @@ def compare_successes_failures_unigram_model(all_tokens, selected_success_utts, 
         unigram_model['prob'] = 1/unigram_model.shape[0]        
 
     # for successes, get the probability of all words        
-    success_utt_contents = all_tokens.loc[all_tokens.utterance_id.isin(selected_success_utts)]
-    success_utt_contents = success_utt_contents.loc[~success_utt_contents.token.isin(['[chi]'])]
+    # Only score the success tokens
+    success_utt_contents = all_tokens.loc[(all_tokens.utterance_id.isin(selected_success_utts))
+                                         & (all_tokens.partition == 'success')]
+    
+    # Always override tags specification to False
+    success_utt_contents = success_utt_contents.loc[~success_utt_contents.token.isin(['[chi]', '[cgv]'])]
 
     success_scores = success_utt_contents[['token','bert_token_id']].merge(unigram_model, left_on='token', right_on='word', how='left')
     

@@ -53,7 +53,7 @@ def load_yyy_utts(child_name = None, cross_data = None):
     
 def get_cross_path(data_child_name, prior_child_name, beta):
     
-    this_folder = join(config.exp_dir, 'child_cross')
+    this_folder = join(config.scores_dir, 'child_cross')
     
     if not exists(this_path):
         os.makedirs(this_folder)
@@ -81,7 +81,7 @@ def score_cross_prior(data_child, prior_child):
     optim_beta = 3.2
     
     # Load the evaluation successes and yyy for a given child.
-    eval_data = load_splits.load_pvd_data('child', data_child, config.eval_phase)
+    eval_data = load_splits.load_child_cross_data('child', data_child, config.eval_phase)
     
     # Load the prior
     model = child_models.get_child_model_dict(prior_child)

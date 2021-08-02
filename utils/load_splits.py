@@ -45,7 +45,13 @@ def apply_if_subsample(data):
     Because the utterances were originally randomly sampled, taking a prefix of a random sample should also be a random sample.
     """
     trunc_mode = (config.dev_mode or config.subsample_mode)
-    return data if not trunc_mode else data.iloc[0:min(config.n_subsample, data.shape[0])]
+    
+    assert config.n_beta == config.n_across_time, "Assumption for apply if subsample to hold."
+    
+    trunc_to_ideal = config.n_beta if not trunc_mode else config.n_subsample
+    trunc_to =  min(trunc_to_ideal, data.shape[0])
+    
+    return data.iloc[0:trunc_to]
     
     
 def get_age_success_sample_paths(phase = config.eval_phase):

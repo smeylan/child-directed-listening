@@ -8,6 +8,20 @@ import config
 
 from datetime import datetime
 
+import gen_sample_scripts
+
+
+def get_versioning(split_name, dataset_name, with_tags):
+    
+    datetime_gen = str(datetime.today()).replace(' ', '_')
+    
+    datetime_gen = 'no_versioning' # Versioning temporarily on hold
+    
+    this_model_dir = models_get_split_folder(split_name, dataset_name, with_tags, datetime_gen)
+    
+    return this_model_dir
+    
+    
 
 def models_get_split_folder(split_type, dataset_type, with_tags, datetime_str, base_dir = config.om_root_dir):
     
@@ -20,8 +34,17 @@ def models_get_split_folder(split_type, dataset_type, with_tags, datetime_str, b
 
 def get_isolated_training_commands(split_name, dataset_name, with_tags, om2_user = 'wongn'):
       
-    commands = scripts.gen_command_header(mem_alloc_gb = 9, time_alloc_hrs = 6 if split_name != 'child' else (0, 15, 0),
-                                         two_gpus = False)#(split_name != 'child')) 
+    if split_name == 'child':
+        # Need to run beta simultaneously
+        time, mem = gen_sample_scripts.time_and_mem_alloc()
+        mem_alloc_gb = mem
+        time_alloc_hrs = time
+    else:
+        mem_alloc_gb = 9
+        time_alloc_hrs = 6
+        
+    commands = scripts.gen_command_header(mem_alloc_gb = mem_alloc_gb, time_alloc_hrs = time_alloc_hrs,
+                                         two_gpus = False)
     
     # Allocate 15 minutes per child (based on relative length calculations)
     # Don't train on 2 GPUs if child, else use 2 GPUs
@@ -34,11 +57,8 @@ def get_isolated_training_commands(split_name, dataset_name, with_tags, om2_user
 def get_non_header_commands(split_name, dataset_name, with_tags, om2_user = 'wongn'):
     
     tags_data_str  = '' if with_tags else '_no_tags' # For loading the proper data
-    datetime_gen = str(datetime.today()).replace(' ', '_')
     
-    datetime_gen = 'no_versioning' # Versioning temporarily on hold
-    
-    this_model_dir = models_get_split_folder(split_name, dataset_name, with_tags, datetime_gen)
+    this_model_dir = get_versioning(split_name, dataset_name, with_tags)
     
     this_data_dir = join(config.om_root_dir, join(config.finetune_dir_name, join(split_name, dataset_name)))
     

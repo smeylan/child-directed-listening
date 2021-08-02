@@ -4,6 +4,8 @@ from os.path import join, exists
 from utils_child import child_models
 from utils import scripts
 
+import gen_sample_scripts
+
 import config
 
 if __name__ == '__main__':
@@ -22,7 +24,9 @@ if __name__ == '__main__':
             
             with open(join(sh_loc, f'run_cross_{data_child}_{prior_child}.sh'), 'w') as f:
                 
-                headers = scripts.gen_command_header(mem_alloc_gb = 21, time_alloc_hrs = (1, 0, 0)) + [scripts.gen_singularity_header()]
+                time, mem = gen_sample_scripts.time_and_mem_alloc()
+                
+                headers = scripts.gen_command_header(mem_alloc_gb = mem, time_alloc_hrs = time) + [scripts.gen_singularity_header()]
                 
                 f.writelines(headers + [command] + ['\n# end all cites'])
          

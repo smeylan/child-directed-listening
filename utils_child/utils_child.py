@@ -21,10 +21,10 @@ def load_cross_data(child_name, all_phono = None):
     
     return this_phono
 
-def load_success_yyy_utts(data_type, child_name, cross_data):
+def load_success_yyy_utts(data_type, child_name, cross_data, display_all = False):
     
     
-    if not isinstance(child_name, str):
+    if (child_name is not None) and (not isinstance(child_name, str)):
         cross_data = child_name # Didn't specify positional argument.
         child_name = None
    
@@ -35,20 +35,25 @@ def load_success_yyy_utts(data_type, child_name, cross_data):
     
     # For now: Possibly non-reproducible sampling from the right phase (intermediate results), or, seed the data and see if it results in a reproducible split.
     
-    utt_ids = random.shuffle(list(set(cross_data[cross_data.partition == data_type].utterance_id)))
+    utt_pool = list(set(cross_data[cross_data.partition == data_type].utterance_id))
+    random.shuffle(utt_pool)
+    utt_ids = utt_pool
     
-    if config.dev_mode:
-        utt_ids = utt_ids[:min(len(utt_ids), config.n_subsample)]
+    if not display_all:
+        if config.subsample_mode:
+            utt_ids = utt_ids[:min(len(utt_ids), config.n_subsample)]
+    
+    # Need to shuffle and truncate appropriately?
      
     return pd.DataFrame.from_records({'utterance_id' : utt_ids})
         
 
-def load_success_utts(child_name = None, cross_data = None):
-    return load_success_yyy_utts('success', child_name, cross_data)
+def load_success_utts(child_name = None, cross_data = None, display_all = False):
+    return load_success_yyy_utts('success', child_name, cross_data, display_all)
 
 
-def load_yyy_utts(child_name = None, cross_data = None):
-    return load_success_yyy_utts('yyy', child_name, cross_data)
+def load_yyy_utts(child_name = None, cross_data = None, display_all = False):
+    return load_success_yyy_utts('yyy', child_name, cross_data, display_all)
 
     
 def get_cross_path(data_child_name, prior_child_name):

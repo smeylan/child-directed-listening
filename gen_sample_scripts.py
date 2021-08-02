@@ -25,12 +25,12 @@ def get_one_python_command(task_file, split, dataset, use_tags, context_width, m
 
 def time_and_mem_alloc():
     
-    is_subsample = (config.n_subsample is not None)
+    is_subsample = (config.n_subsample == 500) # Always use n_subsample, just depends if 500 or 1000
     
     # Unsure if it will actually run in 4 hours, but based on old BERT statistics.
     
-    this_time_alloc = (0, 45, 0) if is_subsample else 5
-    this_mem_amount = 13 if is_subsample else 50
+    this_time_alloc = (0, 45, 0) if is_subsample else (2, 5, 0)
+    this_mem_amount = 13 if is_subsample else 35
     
     return this_time_alloc, this_mem_amount
     

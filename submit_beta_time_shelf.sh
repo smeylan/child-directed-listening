@@ -11,10 +11,8 @@
 #SBATCH --mem=50M
 
 module load openmind/singularity/3.2.0
-rm -r ./experiments
 
 singularity exec --nv -B /om,/om2/user/wongn /om2/user/wongn/vagrant/trans-pytorch-gpu python3 gen_sample_scripts.py
-
 
 # NOTE : Quote it else use array to avoid problems #
 # All of the text in this, including the header and comment above, are from

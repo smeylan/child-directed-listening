@@ -36,7 +36,7 @@ def get_non_header_commands(split_name, dataset_name, with_tags, om2_user = 'won
     
     this_model_dir = models_get_split_folder(split_name, dataset_name, with_tags, datetime_gen)
     
-    this_data_dir = join(config.om_root_dir, join(config.finetune_dir, join(split_name, dataset_name)))
+    this_data_dir = join(config.om_root_dir, join(config.finetune_dir_name, join(split_name, dataset_name)))
     
     if not exists(this_model_dir) and config.root_dir == config.om_root_dir: # You are on OM
         os.makedirs(this_model_dir)

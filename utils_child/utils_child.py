@@ -33,11 +33,13 @@ def load_success_yyy_utts(data_type, child_name, cross_data):
     if cross_data is None:
         cross_data = load_cross_data(child_name)
     
-    # Note: You cannot apply the truncation sub-sampling to non-beta value child data (i.e. the cross-scoring)
-    # because it's not randomly ordered
-    # For now: Possibly non-reproducible sampling from the right phase, or, seed the data and see if it results in a reproducible split.
+    # For now: Possibly non-reproducible sampling from the right phase (intermediate results), or, seed the data and see if it results in a reproducible split.
     
     utt_ids = random.shuffle(list(set(cross_data[cross_data.partition == data_type].utterance_id)))
+    
+    if config.dev_mode:
+        utt_ids = utt_ids[:min(len(utt_ids), config.n_subsample)]
+     
     return pd.DataFrame.from_records({'utterance_id' : utt_ids})
         
 

@@ -66,6 +66,7 @@ if __name__ == '__main__':
 
         # TODO: Adapt this to have variable running times -- especially for data unigram and BERT.
         # "subsampling amount if else non-subsampling amount"
+        
         this_time_alloc, this_mem_amount = time_and_mem_alloc()
         
         for arg_set in model_args():

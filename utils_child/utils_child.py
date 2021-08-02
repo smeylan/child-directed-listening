@@ -51,14 +51,14 @@ def load_yyy_utts(child_name = None, cross_data = None):
     return load_success_yyy_utts('yyy', child_name, cross_data)
 
     
-def get_cross_path(data_child_name, prior_child_name, beta):
+def get_cross_path(data_child_name, prior_child_name):
     
     this_folder = join(config.scores_dir, 'child_cross')
     
     if not exists(this_path):
         os.makedirs(this_folder)
     
-    this_path = join(this_folder, f'data_{data_child_name}_prior_{prior_child_name}_beta_{beta}.pkl')
+    this_path = join(this_folder, f'data_{data_child_name}_prior_{prior_child_name}.pkl')
     return this_path
     
 def score_cross_prior(data_child, prior_child):

@@ -75,7 +75,7 @@ if __name__ == '__main__':
             
             py_commands = {}
 
-            header = scripts.gen_command_header(mem_alloc_gb = this_mem_amount, time_alloc_hrs = this_time_alloc)
+            header = scripts.gen_command_header(mem_alloc_gb = this_mem_amount, time_alloc_hrs = this_time_alloc, two_gpus = False)
 
             for task_name, task_file in zip(task_names, task_files):
                 model_id, py_commands[task_name] = get_one_python_command(task_file, *arg_set)

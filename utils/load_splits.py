@@ -86,7 +86,13 @@ def load_sample_model_across_time_args():
 
 def load_phono():
     
-    return pd.read_pickle(join(config.prov_dir, 'pvd_all_tokens_phono_for_eval.pkl'))
+    print('phono is temporarily being changed to old data for development purposes! restore previous line')
+    # 8/1/21: Temporary line only! Should not affect the actual data generation.
+    # Checked to make sure this isn't used anywhere in Providence - Retrieve
+    
+    return pd.read_pickle('/home/nwong/child_repo/former_data/prov/pvd_all_tokens_phono_for_eval.pkl')
+
+    #return pd.read_pickle(join(config.prov_dir, 'pvd_all_tokens_phono_for_eval.pkl'))
 
 
     

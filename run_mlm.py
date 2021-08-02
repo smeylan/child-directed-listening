@@ -191,6 +191,11 @@ def main():
 
     # Detecting last checkpoint.
     last_checkpoint = None
+    
+    # 8/1/21 added line
+    training_args.save_total_limit = 1
+    # end added
+    
     if os.path.isdir(training_args.output_dir) and training_args.do_train and not training_args.overwrite_output_dir:
         last_checkpoint = get_last_checkpoint(training_args.output_dir)
         if last_checkpoint is None and len(os.listdir(training_args.output_dir)) > 0:
@@ -446,9 +451,6 @@ def main():
         train_dataset=train_dataset if training_args.do_train else None,
         eval_dataset=eval_dataset if training_args.do_eval else None,
         tokenizer=tokenizer,
-        # 8/1/21: modified
-        save_total_limit=1,
-        # end modifications
         data_collator=data_collator,
     )
 

@@ -312,15 +312,6 @@ def get_model_from_path(model_path, with_tags):
     return {'modelLM' : model, 'tokenizer' : tokenizer, 'softmax_mask' : softmax_mask, 'use_speaker_labels' : with_tags }
  
     
-def old_get_meylan_original_model(with_tags):
-    
-    # Fine-tuned model 
-    # Temporarily local for now
-    
-    model_name = '' if not with_tags else '2'
-    model_path = join(config.meylan_model_dir, f'model_output{model_name}')
-    return get_model_from_path(model_path, with_tags)
-
 
 def get_cmu_dict_info():
     

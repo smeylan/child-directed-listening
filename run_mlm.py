@@ -194,7 +194,9 @@ def main():
     
     # 8/1/21 added line
     training_args.save_total_limit = 1
-    # end added
+    #training_args.dataloader_num_workers = 4
+    #training_args.n_gpu = 2
+    # end added 
     
     if os.path.isdir(training_args.output_dir) and training_args.do_train and not training_args.overwrite_output_dir:
         last_checkpoint = get_last_checkpoint(training_args.output_dir)

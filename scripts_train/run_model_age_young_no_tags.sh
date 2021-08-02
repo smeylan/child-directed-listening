@@ -7,7 +7,7 @@
 
 #SBATCH -N 1
 #SBATCH -p cpl
-#SBATCH --gres=gpu:2
+#SBATCH --gres=gpu:1
 #SBATCH -t 6:00:00
 #SBATCH --mem=9G
 #SBATCH --constraint=high-capacity

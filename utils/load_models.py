@@ -83,7 +83,8 @@ def gen_model_title(split, dataset, is_tags, context_num, model_type):
         'old' : 'older children'
     }
     
-    dataset_dict.update({ k : k for k in child_models.get_child_names()})
+    if split == 'child':
+        dataset_dict.update({ k : k for k in child_models.get_child_names()})
 
     speaker_tags_dict = {
         True : 'with tags',

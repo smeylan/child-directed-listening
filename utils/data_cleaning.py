@@ -93,10 +93,15 @@ def fix_gloss(gloss):
  
 def drop_errors(utt_data):
     
-    utt_data['contains_error'] = ['xxx' in str(x) or 'yyy' in str(x) for x in utt_data.gloss]
+    cvt_lowercase = lambda s : str(s).lower()
+    all_lowercase = list(map(cvt_lowercase, utt_data.gloss))
+    
+    assert len(all_lowercase) == utt_data.shape[0]
+    
+    utt_data['contains_error'] = ['xxx' in str(x) or 'yyy' in str(x) for x in all_lowercase]
     utt_data = utt_data.loc[~utt_data.contains_error]
     
-    return utt_data.copy() # Avoid setting based on a slice of a dataframe.
+    return utt_data
 
 
 
@@ -142,37 +147,5 @@ def clean_glosses(data):
     return data
 
 
-   
-def prep_utt_glosses(data):
-    
-    """
-    Highest level call for converting and augmenting raw queried data.
- 
-    Cleans a given utt_glosses dataframe (to_clean_data) from its original query return
-        (or close to original for children -- use the filtered chi_phono csv)
-    Drops all types of errors.
-    
-    This function expects the raw query/utt_glosses dataframe equivalent.
-    
-    verbose controls whether or not printouts are active
-        (for checking correctness relative to unfactored code on all/all split)
-    """
 
-    # Changed to drop xxx and yyy for all of the splits.
     
-    if config.verbose: print('Cell 232 output', data.shape)
-    
-    # Cell 233 in the notebook relative to Dr Meylan's commit
-    data = drop_errors(data)
-    
-    if config.verbose: print('Cell 233 output', data.shape)
-        
-    data = clean_glosses(data)
-   
-    if config.verbose: print('Cell 269', data.head(5).gloss_with_punct)
-    
-    # Cell 271: This was moved outside of token cleaning because it's needed for the CHI analysis.
-    data['tokens'] = [str(x).lower().split(' ') for x in data.gloss]
-    
-    return data # Ready for input into token cleaning, get_chi_frequencies, get_token_frequencies
-

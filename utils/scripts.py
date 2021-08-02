@@ -40,7 +40,7 @@ def format_time(args):
     return new_args
       
 
-def gen_command_header(mem_alloc_gb, time_alloc_hrs):
+def gen_command_header(mem_alloc_gb, time_alloc_hrs, two_gpus = True):
     
     if isinstance(time_alloc_hrs, int):
         time_alloc_hrs_str = f'{time_alloc_hrs}:00:00'
@@ -57,7 +57,7 @@ def gen_command_header(mem_alloc_gb, time_alloc_hrs):
     
     commands.append("\n#SBATCH -N 1\n")                         
     commands.append("#SBATCH -p cpl\n")
-    commands.append("#SBATCH --gres=gpu:1\n")
+    commands.append(f"#SBATCH --gres=gpu:{2 if two_gpus else 1}\n")
     commands.append(f"#SBATCH -t {time_alloc_hrs_str}\n")
     commands.append(f"#SBATCH --mem={mem_alloc_gb}G\n")
     commands.append("#SBATCH --constraint=high-capacity\n")

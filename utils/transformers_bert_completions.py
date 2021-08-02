@@ -19,7 +19,7 @@ def softmax(x, axis=None):
     '''
     x = x - x.max(axis=axis, keepdims=True)
     y = np.exp(x)
-    return (y / y.sum(axis=axis, keepdims=True)).astype(np.float16)
+    return (y / y.sum(axis=axis, keepdims=True))
 
 
 def bert_completions(text, model, tokenizer, softmax_mask):
@@ -88,7 +88,7 @@ def bert_completions(text, model, tokenizer, softmax_mask):
   # the size is the size of the vocabulary -> the softmax array itself.
   words = np.array(tokenizer.convert_ids_to_tokens(range(predictions.size()[2])))[softmax_mask]
   
-  word_predictions  = pd.DataFrame({'prob': probs, 'word':words}).astype({'prob' : 'float16'})
+  word_predictions  = pd.DataFrame({'prob': probs, 'word':words})
     
   word_predictions = word_predictions.sort_values(by='prob', ascending=False)    
   word_predictions['rank'] = range(word_predictions.shape[0])
@@ -156,7 +156,7 @@ def get_completions_for_mask(utt_df, true_word, bertMaskedLM, tokenizer, softmax
     # 7/29/21: https://jakevdp.github.io/PythonDataScienceHandbook/02.01-understanding-data-types.html For information on sizes of integers etc.
     
     return_df = pd.DataFrame({'rank':[rank], 'prob': [prob], 'entropy':[entropy], 'num_tokens_in_context':[utt_df.shape[0]-1],
-    'bert_token_id' : utt_df.loc[utt_df.token == '[MASK]'].bert_token_id}).astype({'num_tokens_in_context' : 'int32', 'entropy' : 'float16', 'prob': 'float16'})
+    'bert_token_id' : utt_df.loc[utt_df.token == '[MASK]'].bert_token_id}).astype({'num_tokens_in_context' : 'int32'})
     
     return(priors, completions , return_df)
 
@@ -616,7 +616,7 @@ def get_posteriors(prior_data, levdists, initial_vocab, bert_token_ids=None, bet
     
     print('invoked for row_sum', row_sums[:, np.newaxis])
     
-    normalized =  (unnormalized / row_sums[:, np.newaxis]).astype(np.float16)
+    normalized =  (unnormalized / row_sums[:, np.newaxis])
     
     # add entropies
     posterior_entropies = np.apply_along_axis(scipy.stats.entropy, 1, normalized) 
@@ -688,9 +688,6 @@ def get_posteriors(prior_data, levdists, initial_vocab, bert_token_ids=None, bet
             highest_posterior_indices = np.argsort(normalized[i, :])[::-1]
             highest_posterior_words = np.array(initial_vocab)[highest_posterior_indices][0:num_highest_to_keep]
 
-            # Store a lower memory version
-            normalized = normalized.astype(np.float16)
-
             prior_data['scores'].loc[prior_data['scores'].sample_index == i, 
                    'highest_posterior_words'] = ' '.join(highest_posterior_words)
             prior_data['scores'].loc[prior_data['scores'].sample_index == i, 
@@ -698,10 +695,6 @@ def get_posteriors(prior_data, levdists, initial_vocab, bert_token_ids=None, bet
         
 
     convert_mem_save = ['posterior_surprisal', 'prior_surprisal', 'kl_flat_to_prior', 'kl_flat_to_posterior', 'edit_distance']
-    
-    prior_data['scores'] = prior_data['scores'].astype({
-        k : 'float16' for k in convert_mem_save
-    })
     
     return(prior_data)
 

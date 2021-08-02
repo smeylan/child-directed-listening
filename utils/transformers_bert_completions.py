@@ -7,7 +7,7 @@ import time
 from string import punctuation
 import Levenshtein
 
-from utils import unigram, data_cleaning
+from utils import unigram, data_cleaning, load_models
 
 def softmax(x, axis=None):
     '''
@@ -238,15 +238,10 @@ def get_stats_for_failure(all_tokens, selected_utt_id, bertMaskedLM, tokenizer, 
         
     # Prevent overly long sequences that will break BERT
     if utt_df.shape[0] > (512 - 2): # If there's no room to fit CLS and end token into BERT. 
-        print('Cutting example', selected_utt_id)
-        print(f'\t shape: {utt_df.shape[0]}')
         utt_df = data_cleaning.cut_context_df(utt_df)
-        print(f'\t shape afterwards: {utt_df.shape[0]}')
     
     if utt_df.shape[0] > 0:
         t2 = time.time()        
-        #print('GPU retrieval time: '+str(time.time() - t2))
-        #print('Total time: '+str(time.time() - t1))    
         return(get_completions_for_mask(utt_df, None, bertMaskedLM, tokenizer, softmax_mask))
     else:
         print('Empty tokens for utterance '+str(selected_utt_id))
@@ -454,6 +449,45 @@ def compare_successes_failures(all_tokens, selected_success_utts, selected_yyy_u
 
     return(rdict)
 
+
+
+def construct_limited_unigram_vocab(raw_vocab):
+    
+    _, cmu_in_initial_vocab = load_models.get_initial_vocab_info()
+    cmu_limited_set = set(cmu_in_initial_vocab['word'])
+    this_vocab_set = set(raw_vocab)
+    
+    assert cmu_limited_set.issubset(this_vocab_set)
+    
+    limited_vocab = cmu_limited_set & this_vocab_set
+    vocab = np.array(list(limited_vocab))
+    
+    return vocab
+
+def construct_limited_unigram(raw_vocab, child_count_path):
+    
+    vocab = construct_limited_unigram_vocab(raw_vocab)
+    
+    # The original code here
+    unigram_model = pd.DataFrame({'word':vocab})
+    
+    if child_count_path is not None: 
+        childes_counts_raw = pd.read_csv(child_count_path) 
+        unigram_model = unigram_model.merge(childes_counts_raw, how='left')
+        unigram_model = unigram_model.fillna(0) 
+        unigram_model['count'] = unigram_model['count'] + .01 #additive smoothing
+        
+        unigram_model['prob'] = unigram_model['count'] / np.sum(unigram_model['count'])
+    
+    else:
+        # build a flat prior: assign all words equal probability
+        unigram_model['prob'] = 1/unigram_model.shape[0]    
+    # end original code
+    
+    assert unigram_model.shape[0] == vocab.shape[0]
+    return unigram_model
+
+
 def compare_successes_failures_unigram_model(all_tokens, selected_success_utts, selected_yyy_utts, tokenizer, softmax_mask,  child_counts_path, vocab, context_width_in_utts, use_speaker_labels):
     '''
         Get prior probaiblities, completions, and scores from a unigram model (limiting to the vocab) or flat prior for a list of utterance ids for communicative successes and a list of utterance ids for communicative failures 
@@ -465,7 +499,7 @@ def compare_successes_failures_unigram_model(all_tokens, selected_success_utts, 
         tokenizer: BERT tokenizer
         softmax_mask: a vector of indices of vocabulary items over which to compute the softmax
         child_counts_path: file to read with 'word' and 'count' in the column titles to use for unigram counts. If set to None, return a uniform prior
-        vocab: a string representation of the vocab
+        raw_vocab: a string representation of the vocab without CMU/BERT limitations
         
         context_width_in_utts, use_speaker_labels : Ignored, used for compatibility with expected model dictionary elements in BERT models.
 
@@ -473,22 +507,9 @@ def compare_successes_failures_unigram_model(all_tokens, selected_success_utts, 
             priors: n * m matrix of prior probabilities, where n is the number of communicative failures + communicative successes, and m is the size of the vocab identified by the softmax map. Failures are stacked on top of successes and are identified by a bert_token_id
             scores: a datframe of length n containing concatenated entropy scores, ranks, surprisals. Failures are stacked on top of successes and are identified by a bert_token_id
     '''    
-
-    unigram_model = pd.DataFrame({'word':vocab})
     
-    if child_counts_path is not None: 
-        childes_counts_raw = pd.read_csv(child_counts_path) 
-        
-        unigram_model = unigram_model.merge(childes_counts, how='left')
-        unigram_model = unigram_model.fillna(0) 
-        unigram_model['count'] = unigram_model['count'] + .01 #additive smoothing
-        
-        unigram_model['prob'] = unigram_model['count'] / np.sum(unigram_model['count'])
+    unigram_model = construct_limited_unigram(vocab, child_counts_path)
     
-    else:
-        # build a flat prior: assign all words equal probability
-        unigram_model['prob'] = 1/unigram_model.shape[0]        
-
     # for successes, get the probability of all words        
     # Only score the success tokens
     success_utt_contents = all_tokens.loc[(all_tokens.utterance_id.isin(selected_success_utts))
@@ -606,16 +627,10 @@ def get_posteriors(prior_data, levdists, initial_vocab, bert_token_ids=None, bet
         # need to subset to bert_token_ods found by other models        
         # also need to limit the scores in some way
 
-    print(prior_data['priors'])
-    
     likelihoods = np.exp(-1*beta_value*levdists)
     unnormalized = np.multiply(prior_data['priors'], likelihoods)
     
-    print('unnormalized', unnormalized)
-    
     row_sums = np.sum(unnormalized,1)
-    
-    print('invoked for row_sum', row_sums[:, np.newaxis])
     
     normalized =  (unnormalized / row_sums[:, np.newaxis])
     

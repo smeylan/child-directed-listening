@@ -56,6 +56,8 @@ if __name__ == '__main__':
         'shelf' : load_models.gen_shelf_model_args,
     }
     
+    print('Generating sample scripts again!')
+    
     for partition_name, model_args in partitions.items():
         
         sh_script_loc = join(sh_script_loc_base, partition_name)

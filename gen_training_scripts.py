@@ -27,7 +27,7 @@ def models_get_split_folder(split_type, dataset_type, with_tags, datetime_str, b
     
     tags_str = 'with_tags' if with_tags else 'no_tags' # For naming the model folder
     
-    base_dir = join(base_dir, f'experiments/models/{datetime_str}') 
+    base_dir = join(base_dir, f'experiments/{datetime_str}/models') 
     return join(base_dir, join(join(split_type, dataset_type), tags_str))
 
 

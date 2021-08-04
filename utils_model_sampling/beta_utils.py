@@ -54,10 +54,7 @@ def get_optimal_beta_value(split, dataset, tags, context, model_type):
     
     argmin_beta = np.argmin(list_surp)
     best_beta = list_beta_results[argmin_beta]
-    
-    print(f'All beta: {this_beta_results}')
-    print(f'Chose beta: {best_beta}')
-    
+
     return best_beta
     
     

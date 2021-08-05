@@ -1,4 +1,8 @@
 
+import sys
+reload(sys)
+sys.setdefaultencoding('utf-8')
+
 from utils import load_models, transformers_bert_completions, split_gen
 import numpy as np
 

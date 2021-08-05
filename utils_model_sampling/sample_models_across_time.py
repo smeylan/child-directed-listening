@@ -14,14 +14,14 @@ import pandas as pd
 import glob
 
 
-def assemble_scores_no_order(is_subset = False):
+def assemble_scores_no_order():
     """
     Assumes order of the the model vs age loop doesn't matter.
     """
     
     # is_subset is for development purposes
     
-    this_load_args = load_models.gen_all_model_args() if not is_subset else load_models.gen_shelf_model_args()
+    this_load_args = load_models.gen_all_model_args()
     
     score_store = []
     

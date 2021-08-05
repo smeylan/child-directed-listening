@@ -1,8 +1,4 @@
 
-import sys
-reload(sys)
-sys.setdefaultencoding('utf-8')
-
 from utils import load_models, transformers_bert_completions, split_gen
 import numpy as np
 
@@ -51,7 +47,7 @@ def analyze_model_tags(split = 'all', dataset = 'all'):
         sentences = f.readlines()
         
     random.shuffle(sentences)
-    raw_sorted_sentences = sorted(sentences[:config.n_subsample])
+    raw_sorted_sentences = sorted(sentences[:config.n_iter_sample])
     
     sorted_sentences = list(map(mask_speaker, raw_sorted_sentences))
 

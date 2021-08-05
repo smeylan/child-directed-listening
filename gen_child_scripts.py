@@ -17,7 +17,7 @@ def gen_child_commands(name, base_model_path, is_tags):
     copy_commands = [
         # 7/15/21: rsync advice and command
         # https://askubuntu.com/questions/86822/how-can-i-copy-the-contents-of-a-folder-to-another-folder-in-a-different-directo
-        f'\nrsync -a --progress {base_model_path} {this_model_dir}',
+        f"\nrsync -a --progress {base_model_path} {this_model_dir}",
         # end rsync
         f'\nmv {base_model_path} {this_model_dir}\n',
     ]
@@ -31,15 +31,14 @@ def gen_child_commands(name, base_model_path, is_tags):
     # Drop the "end cite" command at the end, get the final training command
     # Need to edit the last command to have the beta search attached.
     
-    commands[-1] = commands[-1] + f"; {gen_sample_scripts.get_one_python_command('run_beta_search.py', 'child', name, is_tags, 0, 'childes')[1]}"
+    sing_header = scripts.gen_singularity_header()
+    
+    commands[-1] = commands[-1] + f"; {sing_header} {gen_sample_scripts.get_one_python_command('run_beta_search.py', 'child', name, is_tags, 0, 'childes')[1]}"
     
     filename = scripts.get_script_name('child', name, is_tags)
     
     return filename, commands
 
-
-#def gen_child_cross_scripts():
-    
     
 if __name__ == '__main__':
     

@@ -17,7 +17,7 @@ def gen_child_commands(name, base_model_path, is_tags):
     copy_commands = [
         # 7/15/21: rsync advice and command
         # https://askubuntu.com/questions/86822/how-can-i-copy-the-contents-of-a-folder-to-another-folder-in-a-different-directo
-        f'\nrsync -a {base_model_path} {this_model_dir}',
+        f'\nrsync -a --progress {base_model_path} {this_model_dir}',
         # end rsync
         f'\nmv {base_model_path} {this_model_dir}\n',
     ]

@@ -15,5 +15,6 @@
 module load openmind/singularity/3.2.0
 mkdir ~/.cache/$SLURM_JOB_ID
 # 7/13/21: https://stackoverflow.com/questions/19960332/use-slurm-job-id for variable name of job ID
-singularity exec --nv -B /om,/om2/user/wongn /om2/user/wongn/vagrant/trans-pytorch-gpu     python3 run_mlm.py             --model_name_or_path bert-base-uncased             --do_train             --do_eval             --output_dir /om2/user/wongn/child-directed-listening/experiments/models/no_versioning/all/all/no_tags            --train_file /om2/user/wongn/child-directed-listening/finetune/all/all/train_no_tags.txt             --validation_file /om2/user/wongn/child-directed-listening/finetune/all/all/val_no_tags.txt             --cache_dir ~/.cache/$SLURM_JOB_ID             --overwrite_output_dir
+singularity exec --nv -B /om,/om2/user/wongn /om2/user/wongn/vagrant/trans-pytorch-gpu     python3 run_mlm.py             --model_name_or_path bert-base-uncased             --do_train             --do_eval             --output_dir /om2/user/wongn/child-directed-listening/experiments/no_versioning/models/all/all/no_tags            --train_file /om2/user/wongn/child-directed-listening/finetune/all/all/train_no_tags.txt             --validation_file /om2/user/wongn/child-directed-listening/finetune/all/all/val_no_tags.txt             --cache_dir ~/.cache/$SLURM_JOB_ID	--overwrite_output_dir
+
 # end taken command code 6/24/21 and slurm id reference 7/13/21

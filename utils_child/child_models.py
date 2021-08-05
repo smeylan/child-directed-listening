@@ -42,44 +42,19 @@ def get_child_names():
     
 def get_child_model_dict(name):
     
-    
-    #_, is_tags = get_best_child_base_model_path()
-    
-    is_tags = True
-    print('Temporarily hardcoding child tags  to make sure that child work runs! Be sure to change this back.')
+    _, is_tags = get_best_child_base_model_path()
     
     model_args = ('child', name, is_tags, config.child_context_width, 'childes')
      
     model_id = load_models.get_model_id(*model_args)
     
     model_path = load_models.get_model_path('child', name, is_tags)
-    
-    print('Make this load from actual paths once models are available! Important. Right now just using a substitute model')
-    
-    
-    # This block is temporary stuff to get things to run, remove it
-    
-    adult_bertMaskedLM = BertForMaskedLM.from_pretrained('bert-base-uncased')
-    adult_bertMaskedLM.eval()
-    
-    adult_tokenizer, adult_softmax_mask, _, _ = load_models.get_vocab_tok_modules()
-    
-    # end remove
-    
+       
     model_dict = {
         'title' : load_models.gen_model_title(*model_args),
-        # 'kwargs' : get_model_from_path(model_path, is_tags), # You will need to load this?
-        
-        # Below: temporary stuff that has to change!
-        'kwargs' : {'modelLM': adult_bertMaskedLM,
-                        'tokenizer': adult_tokenizer,
-                        'softmax_mask': adult_softmax_mask,
-                       'use_speaker_labels':False
-                       },
-        # end stuff that has to change.
+        'kwargs' : get_model_from_path(model_path, is_tags),
         'type' : 'BERT', 
     }
-    
     
     model_dict['kwargs'].update({'context_width_in_utts' : 0, 'use_speaker_labels' : is_tags})
    

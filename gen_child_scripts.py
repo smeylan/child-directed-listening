@@ -12,9 +12,11 @@ def gen_child_commands(name, base_model_path, is_tags):
     
     your_model_path = split_gen.get_split_folder('child', name, config.model_dir)
     
-    this_model_dir = gen_training_scripts.get_versioning('child', name, is_tags)
+    # Get the directory of this model so rsync works correctly
+    this_model_dir = '/'.join(gen_training_scripts.get_versioning('child', name, is_tags).split('/')[:-1])
     
     copy_commands = [
+        f"\nrm -r {this_model_dir}\n"
         # 7/15/21: rsync advice and command
         # https://askubuntu.com/questions/86822/how-can-i-copy-the-contents-of-a-folder-to-another-folder-in-a-different-directo
         f"\nrsync -a --progress {base_model_path} {this_model_dir}",

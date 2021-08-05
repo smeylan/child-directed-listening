@@ -77,7 +77,8 @@ def get_non_header_commands(split_name, dataset_name, with_tags, om2_user = 'won
     commands.append("mkdir ~/.cache/$SLURM_JOB_ID\n")
     # end usage of variable
     commands.append("# 7/13/21: https://stackoverflow.com/questions/19960332/use-slurm-job-id for variable name of job ID\n")
-    commands.append(f"singularity exec --nv -B /om,/om2/user/{om2_user} /om2/user/{om2_user}/vagrant/trans-pytorch-gpu \
+    
+    main_command = f"singularity exec --nv -B /om,/om2/user/{om2_user} /om2/user/{om2_user}/vagrant/trans-pytorch-gpu \
     python3 run_mlm.py \
             --model_name_or_path bert-base-uncased \
             --do_train \
@@ -85,8 +86,13 @@ def get_non_header_commands(split_name, dataset_name, with_tags, om2_user = 'won
             --output_dir {this_model_dir}\
             --train_file {this_data_dir}/train{tags_data_str}.txt \
             --validation_file {this_data_dir}/val{tags_data_str}.txt \
-            --cache_dir ~/.cache/$SLURM_JOB_ID \
-            --overwrite_output_dir")
+            --cache_dir ~/.cache/$SLURM_JOB_ID"
+    
+    # If child, finetune from the copied model.
+    if split_name != 'child':
+        main_command += '\t--overwrite_output_dir\n'
+    
+    commands.append(main_command)
     
     # end 7/13/21
     # end taken command code 6/24/21

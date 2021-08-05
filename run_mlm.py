@@ -199,6 +199,7 @@ def main():
     # end added 
     
     if os.path.isdir(training_args.output_dir) and training_args.do_train and not training_args.overwrite_output_dir:
+        print('~'*50, 'Successfully called non-overwrite output dir!')
         last_checkpoint = get_last_checkpoint(training_args.output_dir)
         if last_checkpoint is None and len(os.listdir(training_args.output_dir)) > 0:
             raise ValueError(
@@ -307,7 +308,9 @@ def main():
         )
 
     # 6/24/21 I added the add_tokens and the print statements here.
+    print('*'*100)
     print('Adding the speaker tags to the tokenizers')
+    print('*'*100)
     # 6/19/21 Below line from Dr. Meylan
     tokenizer.add_tokens(['[chi]','[cgv]'])
     
@@ -456,6 +459,9 @@ def main():
         data_collator=data_collator,
     )
 
+    
+    print('~'*50, 'Training begins!')
+    
     # Training
     if training_args.do_train:
         checkpoint = None

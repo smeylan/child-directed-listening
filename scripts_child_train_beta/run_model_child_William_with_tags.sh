@@ -11,7 +11,7 @@ rsync -a --progress /om2/user/wongn/child-directed-listening/experiments/no_vers
 #SBATCH -N 1
 #SBATCH -p cpl
 #SBATCH --gres=gpu:1
-#SBATCH -t 02:05:00
+#SBATCH -t 2:05:00
 #SBATCH --mem=35G
 #SBATCH --constraint=high-capacity
 

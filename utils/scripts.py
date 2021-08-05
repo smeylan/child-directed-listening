@@ -36,8 +36,11 @@ def gen_singularity_header(om2_user = 'wongn'):
     
 def format_time(args):
     
-    new_args = tuple([f'0{arg}' if arg < 10 else str(arg) for arg in args])
-    return new_args
+    # Skip formatting hours, it should not add a 0 in front of the hours.
+    # If a 0 is added it will terminate running early
+     
+    new_args = tuple([f'0{arg}' if arg < 10 else str(arg) for arg in args[1:]])
+    return (args[0],) + new_args
       
 
 def gen_command_header(mem_alloc_gb, time_alloc_hrs, two_gpus = True):

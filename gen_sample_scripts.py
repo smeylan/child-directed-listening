@@ -60,7 +60,7 @@ if __name__ == '__main__':
     
     for partition_name, model_args in partitions.items():
         
-        sh_script_loc = join(sh_script_loc_base, partition_name)
+        sh_script_loc = join(sh_script_loc_base, partition_name) 
             
         if not exists(sh_script_loc):
             os.makedirs(sh_script_loc)
@@ -73,9 +73,16 @@ if __name__ == '__main__':
         
         for arg_set in model_args():
             
+            split, dataset = arg_set
+            slurm_folder = scripts.cvt_root_dir(split, dataset, config.scores_dir) 
+            
             py_commands = {}
 
-            header = scripts.gen_command_header(mem_alloc_gb = this_mem_amount, time_alloc_hrs = this_time_alloc, two_gpus = False)
+            header = scripts.gen_command_header(mem_alloc_gb = this_mem_amount,
+                                                time_alloc_hrs = this_time_alloc,
+                                                slurm_folder = slurm_folder,
+                                                slurm_name = 'beta_time',
+                                                two_gpus = False)
 
             for task_name, task_file in zip(task_names, task_files):
                 model_id, py_commands[task_name] = get_one_python_command(task_file, *arg_set)

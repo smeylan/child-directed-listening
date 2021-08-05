@@ -3,7 +3,7 @@
 import os
 from os.path import join, exists
 
-from utils import scripts
+from utils import scripts, split_gen
 import config
 
 from datetime import datetime
@@ -43,8 +43,11 @@ def get_isolated_training_commands(split_name, dataset_name, with_tags, om2_user
         mem_alloc_gb = 9
         time_alloc_hrs = 6
         
+    model_dir = get_versioning(split_name, dataset_name, with_tags)
     commands = scripts.gen_command_header(mem_alloc_gb = mem_alloc_gb, time_alloc_hrs = time_alloc_hrs,
-                                         two_gpus = False)
+                                          slurm_folder = scripts.cvt_root_dir(split_name, dataset_name, model_dir),
+                                          slurm_name = f'training_tags={with_tags}', 
+                                          two_gpus = False)
     
     # Allocate 15 minutes per child (based on relative length calculations)
     # Don't train on 2 GPUs if child, else use 2 GPUs

@@ -20,13 +20,17 @@ if __name__ == '__main__':
     for data_child in all_names:
         for prior_child in all_names:
             
+            slurm_folder = scripts.cvt_root_dir('name', dataset, config.scores_dir) 
+            
             command = f'python3 run_child_cross.py --data_child {data_child} --prior_child {prior_child}'
             
             with open(join(sh_loc, f'run_cross_{data_child}_{prior_child}.sh'), 'w') as f:
                 
                 time, mem = gen_sample_scripts.time_and_mem_alloc()
                 
-                headers = scripts.gen_command_header(mem_alloc_gb = mem, time_alloc_hrs = time) + [scripts.gen_singularity_header()]
+                headers = scripts.gen_command_header(mem_alloc_gb = mem, time_alloc_hrs = time,
+                                                     slurm_folder = slurm_folder,
+                                                     slurm_name = f'data_{data_child}_prior_{prior_child}') + [scripts.gen_singularity_header()]
                 
                 f.writelines(headers + [command] + ['\n# end all cites'])
          

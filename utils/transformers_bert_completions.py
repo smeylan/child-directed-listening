@@ -338,10 +338,10 @@ def get_stats_for_success(all_tokens, selected_utt_id, bertMaskedLM, tokenizer, 
             utt_df_local = data_cleaning.cut_context_df(utt_df_local)
             print(f'\t shape afterwards: {utt_df_local.shape[0]}')
         
-        import pdb
-        pdb.set_trace()
+        #import pdb
+        #pdb.set_trace()
         
-        print(mask_position)
+        #print(mask_position)
         
         this_priors, this_completions, this_stats = get_completions_for_mask(utt_df_local, 
             utt_df.iloc[mask_position].token, bertMaskedLM, tokenizer, softmax_mask) 

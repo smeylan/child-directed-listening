@@ -85,6 +85,8 @@ def gen_command_header(mem_alloc_gb, time_alloc_hrs, slurm_folder, slurm_name = 
     commands.append("#SBATCH --constraint=high-capacity\n")
     commands.append(slurm_organization_command)
     
+    commands.append(f"mkdir {slurm_folder}\n")
+    
     commands.append("\nmodule load openmind/singularity/3.2.0\n")
     
     return commands

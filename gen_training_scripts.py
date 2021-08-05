@@ -44,8 +44,11 @@ def get_isolated_training_commands(split_name, dataset_name, with_tags, om2_user
         time_alloc_hrs = 6
         
     model_dir = get_versioning(split_name, dataset_name, with_tags)
+    
+    print('Use of cvt root dir will not be compatible with eventual updating datetime in gen_training_scripts')
+    
     commands = scripts.gen_command_header(mem_alloc_gb = mem_alloc_gb, time_alloc_hrs = time_alloc_hrs,
-                                          slurm_folder = scripts.cvt_root_dir(split_name, dataset_name, model_dir),
+                                          slurm_folder = scripts.cvt_root_dir(split_name, dataset_name, config.model_dir),
                                           slurm_name = f'training_tags={with_tags}', 
                                           two_gpus = False)
     

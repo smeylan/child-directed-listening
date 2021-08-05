@@ -11,6 +11,8 @@
 #SBATCH -t 6:00:00
 #SBATCH --mem=9G
 #SBATCH --constraint=high-capacity
+#SBATCH --output=/om2/user/wongn/child-directed-listening/experiments/no_versioning/models/age/old/%j_training_tags=False.out
+mkdir /om2/user/wongn/child-directed-listening/experiments/no_versioning/models/age/old
 
 module load openmind/singularity/3.2.0
 mkdir ~/.cache/$SLURM_JOB_ID

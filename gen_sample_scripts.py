@@ -73,7 +73,7 @@ if __name__ == '__main__':
         
         for arg_set in model_args():
             
-            split, dataset = arg_set
+            split, dataset, _, _, _ = arg_set
             slurm_folder = scripts.cvt_root_dir(split, dataset, config.scores_dir) 
             
             py_commands = {}

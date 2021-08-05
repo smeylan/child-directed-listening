@@ -10,7 +10,7 @@ from utils import split_gen, scripts
 
 def gen_child_commands(name, base_model_path, is_tags):
     
-    your_model_path = split_gen.get_split_folder('child', name, config.model_dir)
+    your_model_path = scripts.cvt_root_dir('child', name, config.model_dir)
     
     # Get the directory of this model so rsync works correctly
     this_model_dir = '/'.join(gen_training_scripts.get_versioning('child', name, is_tags).split('/')[:-1])

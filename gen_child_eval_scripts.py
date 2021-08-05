@@ -20,7 +20,7 @@ if __name__ == '__main__':
     for data_child in all_names:
         for prior_child in all_names:
             
-            slurm_folder = scripts.cvt_root_dir('name', dataset, config.scores_dir) 
+            slurm_folder = scripts.cvt_root_dir('name', data_child, config.scores_dir) 
             
             command = f'python3 run_child_cross.py --data_child {data_child} --prior_child {prior_child}'
             

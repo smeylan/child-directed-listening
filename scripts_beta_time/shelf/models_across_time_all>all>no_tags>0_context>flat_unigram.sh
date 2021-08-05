@@ -8,9 +8,11 @@
 #SBATCH -N 1
 #SBATCH -p cpl
 #SBATCH --gres=gpu:1
-#SBATCH -t 00:45:00
-#SBATCH --mem=13G
+#SBATCH -t 2:05:00
+#SBATCH --mem=35G
 #SBATCH --constraint=high-capacity
+#SBATCH --output=/om2/user/wongn/child-directed-listening/experiments/no_versioning/scores/n=500/val/all/all/%j_beta_time.out
+mkdir /om2/user/wongn/child-directed-listening/experiments/no_versioning/scores/n=500/val/all/all
 
 module load openmind/singularity/3.2.0
 singularity exec --nv -B /om,/om2/user/wongn /om2/user/wongn/vagrant/trans-pytorch-gpu python3 run_beta_search.py --split all --dataset all --context_width 0 --use_tags False --model_type flat_unigram; singularity exec --nv -B /om,/om2/user/wongn /om2/user/wongn/vagrant/trans-pytorch-gpu  python3 run_models_across_time.py --split all --dataset all --context_width 0 --use_tags False --model_type flat_unigram

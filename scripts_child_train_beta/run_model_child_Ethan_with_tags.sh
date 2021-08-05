@@ -14,6 +14,8 @@ rsync -a --progress /om2/user/wongn/child-directed-listening/experiments/no_vers
 #SBATCH -t 2:05:00
 #SBATCH --mem=35G
 #SBATCH --constraint=high-capacity
+#SBATCH --output=/om2/user/wongn/child-directed-listening/experiments/no_versioning/models/child/Ethan/%j_training_tags=True.out
+mkdir /om2/user/wongn/child-directed-listening/experiments/no_versioning/models/child/Ethan
 
 module load openmind/singularity/3.2.0
 mkdir ~/.cache/$SLURM_JOB_ID

@@ -8,8 +8,6 @@
 rm -r /om2/user/wongn/child-directed-listening/experiments/no_versioning/models/child/Naima
 
 rsync -a --progress /om2/user/wongn/child-directed-listening/experiments/no_versioning/models/all/all/with_tags /om2/user/wongn/child-directed-listening/experiments/no_versioning/models/child/Naima
-mv /om2/user/wongn/child-directed-listening/experiments/no_versioning/models/all/all/with_tags /om2/user/wongn/child-directed-listening/experiments/no_versioning/models/child/Naima
-
 #SBATCH -N 1
 #SBATCH -p cpl
 #SBATCH --gres=gpu:1

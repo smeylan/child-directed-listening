@@ -117,10 +117,14 @@ if __name__ == '__main__':
         assert this_model_dict['kwargs']['use_speaker_labels'] == this_model_args['use_tags']
         assert this_model_dict['kwargs']['context_width_in_utts'] == this_model_args['context_width']
         
-    raw_results, beta_results = optimize_beta(this_model_args['split'], this_model_args['dataset'], this_model_dict, this_model_args['model_type'])
+    beta_args = (this_model_args['split'], this_model_args['dataset'], this_model_dict, this_model_args['model_type'])
+    raw_results, beta_results = optimize_beta(*beta_args)
 
     print(f'Computations complete for: {query_model_str}')
     print(f'Started computations at: {start_time}')
     print(f'Finished computations at: {str(datetime.today())}')
+    
+    
+    
     
     

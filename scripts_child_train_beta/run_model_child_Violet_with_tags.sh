@@ -8,8 +8,6 @@
 rm -r /om2/user/wongn/child-directed-listening/experiments/no_versioning/models/child/Violet
 
 rsync -a --progress /om2/user/wongn/child-directed-listening/experiments/no_versioning/models/all/all/with_tags /om2/user/wongn/child-directed-listening/experiments/no_versioning/models/child/Violet
-mv /om2/user/wongn/child-directed-listening/experiments/no_versioning/models/all/all/with_tags /om2/user/wongn/child-directed-listening/experiments/no_versioning/models/child/Violet
-
 #SBATCH -N 1
 #SBATCH -p cpl
 #SBATCH --gres=gpu:1

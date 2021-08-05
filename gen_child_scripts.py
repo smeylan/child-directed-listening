@@ -21,7 +21,6 @@ def gen_child_commands(name, base_model_path, is_tags):
         # https://askubuntu.com/questions/86822/how-can-i-copy-the-contents-of-a-folder-to-another-folder-in-a-different-directo
         f"\nrsync -a --progress {base_model_path} {this_model_dir}",
         # end rsync
-        f'\nmv {base_model_path} {this_model_dir}\n',
     ]
 
     # will automatically switch time/mem usage to beta search type.

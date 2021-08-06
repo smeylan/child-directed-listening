@@ -7,9 +7,6 @@ import shutil
 from utils import load_models, load_splits
 import config
 
-# temp import
-from transformers import BertTokenizer, BertForMaskedLM
-# end temp
 
 def get_best_child_base_model_path(which_metric = 'perplexity'):
     """
@@ -49,13 +46,10 @@ def get_child_model_dict(name):
     model_id = load_models.get_model_id(*model_args)
     
     model_path = load_models.get_model_path('child', name, is_tags)
-       
-    print('Temporarily loading all child models from with tags') 
           
     model_dict = {
         'title' : load_models.gen_model_title(*model_args),
-        #'kwargs' : load_models.get_model_from_path(model_path, is_tags),
-        'kwargs' : load_models.get_model_from_split('all', 'all', is_tags),
+        'kwargs' : load_models.get_model_from_path(model_path, is_tags),
         'type' : 'BERT', 
     }
     

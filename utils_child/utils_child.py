@@ -58,7 +58,7 @@ def get_cross_path(data_child_name, prior_child_name):
     
     this_folder = join(config.scores_dir, 'child_cross')
     
-    if not exists(this_path):
+    if not exists(this_folder):
         os.makedirs(this_folder)
     
     this_path = join(this_folder, f'data_{data_child_name}_prior_{prior_child_name}.pkl')
@@ -74,14 +74,11 @@ def score_cross_prior(data_child, prior_child):
     initial_vocab, cmu_in_initial_vocab = load_models.get_initial_vocab_info()
     _, is_tags = child_models.get_best_child_base_model_path()
     
-    print('Re-enable optimal beta for child once these values become available!')
-    
     this_cross_data = load_cross_data(data_child)
     success_utts = load_success_utts(this_cross_data).utterance_id
     yyy_utts = load_yyy_utts(this_cross_data).utterance_id
     
-    # optim_beta = beta_utils.get_optimal_beta_value('child', prior_child, is_tags, 0, 'childes')
-    optim_beta = 3.2
+    optim_beta = beta_utils.get_optimal_beta_value('child', prior_child, is_tags, 0, 'childes')
     
     # Load the prior
     model = child_models.get_child_model_dict(prior_child)
@@ -94,16 +91,16 @@ def score_cross_prior(data_child, prior_child):
     dists = None
     
     if config.dist_type == 'levdist':
-        dists = transformers_bert_completions.get_edit_distance_matrix(eval_data['phono'], 
-            cross_priors, initial_vocab, cmu_in_initial_vocab)    
+        dists = transformers_bert_completions.get_edit_distance_matrix(this_cross_data, 
+            cross_priors, initial_vocab, cmu_in_initial_vocab)
     else:
         assert False, "Invalid dist specified in config file. Choose from: {levdist}"
     
-    posteriors_for_age_interval = transformers_bert_completions.get_posteriors(cross_priors, 
+    posteriors = transformers_bert_completions.get_posteriors(cross_priors, 
                     dists, initial_vocab, None, optim_beta)
     
-    posteriors_for_age_interval['scores']['beta_value'] = optim_beta
-    posteriors_for_age_interval['scores']['model'] = model['title']
+    posteriors['scores']['beta_value'] = optim_beta
+    posteriors['scores']['model'] = model['title']
         
     scores = copy.deepcopy(posteriors['scores'])
     

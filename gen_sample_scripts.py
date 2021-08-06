@@ -1,10 +1,5 @@
 # Generate the scripts for a beta search.
 
-# What is submit.sh here?
-# May be worth writing a submit.sh to automatically submit all of your scripts in a given folder.
-
-# Unless GPU running is very, very fast -- somewhat doubtful?
-
 import config
 import argparse
 from utils import parsers, load_models, scripts
@@ -25,11 +20,11 @@ def get_one_python_command(task_file, split, dataset, use_tags, context_width, m
 
 def time_and_mem_alloc():
     
-    is_subsample = (config.n_subsample == 500) # Always use n_subsample, just depends if 500 or 1000
+    is_subsample = (config.n_subsample <= 500) # Always use n_subsample, just depends if 500 or 1000
     
     # Unsure if it will actually run in 4 hours, but based on old BERT statistics.
     
-    this_time_alloc = (0, 45, 0) if is_subsample else (2, 5, 0)
+    this_time_alloc = (0, 45, 0) if is_subsample else (2, 30, 0)
     this_mem_amount = 13 if is_subsample else 35
     
     return this_time_alloc, this_mem_amount

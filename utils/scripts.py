@@ -57,7 +57,7 @@ def format_time(args):
      
     new_args = tuple([f'0{arg}' if arg < 10 else str(arg) for arg in args[1:]])
     return (args[0],) + new_args
-      
+  
 
 def gen_command_header(mem_alloc_gb, time_alloc_hrs, slurm_folder, slurm_name = None, two_gpus = True):
     
@@ -65,7 +65,6 @@ def gen_command_header(mem_alloc_gb, time_alloc_hrs, slurm_folder, slurm_name = 
         time_alloc_hrs_str = f'{time_alloc_hrs}:00:00'
     if isinstance(time_alloc_hrs, tuple):
         hrs, mins, secs = format_time(time_alloc_hrs)
-        
         time_alloc_hrs_str = f'{hrs}:{mins}:{secs}'
               
     
@@ -85,7 +84,7 @@ def gen_command_header(mem_alloc_gb, time_alloc_hrs, slurm_folder, slurm_name = 
     commands.append("#SBATCH --constraint=high-capacity\n")
     commands.append(slurm_organization_command)
     
-    commands.append(f"mkdir {slurm_folder}\n")
+    commands.append(f"mkdir -p {slurm_folder}\n")
     
     commands.append("\nmodule load openmind/singularity/3.2.0\n")
     

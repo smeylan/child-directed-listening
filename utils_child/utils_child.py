@@ -13,7 +13,7 @@ from os.path import join, exists
 import random
 import pandas as pd 
 
-def load_cross_data(child_name, all_phono = None):
+def load_cross_data(child_name):
     
     all_phono = load_splits.load_phono()
     child_phono = all_phono[all_phono.target_child_name == child_name]
@@ -42,8 +42,6 @@ def load_success_yyy_utts(data_type, child_name, cross_data, display_all = False
     if not display_all:
         if config.subsample_mode:
             utt_ids = utt_ids[:min(len(utt_ids), config.n_subsample)]
-    
-    # Need to shuffle and truncate appropriately?
      
     return pd.DataFrame.from_records({'utterance_id' : utt_ids})
         
@@ -84,9 +82,6 @@ def score_cross_prior(data_child, prior_child):
     
     # optim_beta = beta_utils.get_optimal_beta_value('child', prior_child, is_tags, 0, 'childes')
     optim_beta = 3.2
-    
-    # Load the evaluation successes and yyy for a given child.
-    eval_data = load_splits.load_child_cross_data('child', data_child, config.eval_phase)
     
     # Load the prior
     model = child_models.get_child_model_dict(prior_child)

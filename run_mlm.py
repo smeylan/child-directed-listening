@@ -199,7 +199,7 @@ def main():
     # end added 
     
     if os.path.isdir(training_args.output_dir) and training_args.do_train and not training_args.overwrite_output_dir:
-        print('~'*50, 'Successfully called non-overwrite output dir!')
+        logger.info('~'*50, 'Successfully called non-overwrite output dir!')
         last_checkpoint = get_last_checkpoint(training_args.output_dir)
         if last_checkpoint is None and len(os.listdir(training_args.output_dir)) > 0:
             raise ValueError(
@@ -308,15 +308,15 @@ def main():
         )
 
     # 6/24/21 I added the add_tokens and the print statements here.
-    print('*'*100)
-    print('Adding the speaker tags to the tokenizers')
-    print('*'*100)
+    logger.info('*'*100)
+    logger.info('Adding the speaker tags to the tokenizers')
+    logger.info('*'*100)
     # 6/19/21 Below line from Dr. Meylan
     tokenizer.add_tokens(['[chi]','[cgv]'])
     
-    print('Result of tokenizing tags')
-    print(tokenizer.convert_ids_to_tokens(tokenizer.encode("[CHI] i'm not going to do anything.")))
-    print(tokenizer.convert_ids_to_tokens(tokenizer.encode('[CGV] back on the table if you wanna finish it.')))
+    logger.info('Result of tokenizing tags')
+    logger.info(tokenizer.convert_ids_to_tokens(tokenizer.encode("[CHI] i'm not going to do anything.")))
+    logger.info(tokenizer.convert_ids_to_tokens(tokenizer.encode('[CGV] back on the table if you wanna finish it.')))
     
     if model_args.model_name_or_path:
         model = AutoModelForMaskedLM.from_pretrained(
@@ -460,7 +460,7 @@ def main():
     )
 
     
-    print('~'*50, 'Training begins!')
+    logger.info('~'*50, 'Training begins!')
     
     # Training
     if training_args.do_train:

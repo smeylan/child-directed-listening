@@ -31,9 +31,8 @@ def models_get_split_folder(split_type, dataset_type, with_tags, datetime_str, b
     return join(base_dir, join(join(split_type, dataset_type), tags_str))
 
 
-
-def get_isolated_training_commands(split_name, dataset_name, with_tags, om2_user = 'wongn'):
-      
+def get_training_alloc(split_name):
+    
     if split_name == 'child':
         # Need to run beta simultaneously
         time, mem = gen_sample_scripts.time_and_mem_alloc()
@@ -42,20 +41,32 @@ def get_isolated_training_commands(split_name, dataset_name, with_tags, om2_user
     else:
         mem_alloc_gb = 9
         time_alloc_hrs = 6
+    
+    return time_alloc_hrs, mem_alloc_gb
+
+def get_training_header_commands(split_name, dataset_name, with_tags, om2_user = 'wongn'):
+    
+    time_alloc_hrs, mem_alloc_gb = get_training_alloc(split_name)
         
     model_dir = get_versioning(split_name, dataset_name, with_tags)
     
     print('Use of cvt root dir will not be compatible with eventual updating datetime in gen_training_scripts')
     
-    commands = scripts.gen_command_header(mem_alloc_gb = mem_alloc_gb, time_alloc_hrs = time_alloc_hrs,
+    header_commands = scripts.gen_command_header(mem_alloc_gb = mem_alloc_gb, time_alloc_hrs = time_alloc_hrs,
                                           slurm_folder = scripts.cvt_root_dir(split_name, dataset_name, config.model_dir),
                                           slurm_name = f'training_tags={with_tags}', 
                                           two_gpus = False)
+    return header_commands
     
-    # Allocate 15 minutes per child (based on relative length calculations)
-    # Don't train on 2 GPUs if child, else use 2 GPUs
     
-    commands += get_non_header_commands(split_name, dataset_name, with_tags)
+
+def get_isolated_training_commands(split_name, dataset_name, with_tags, om2_user = 'wongn'):
+      
+    
+    header_commands = get_training_header_commands(split_name, dataset_name, with_tags, om2_user)
+    non_header_commands = get_non_header_commands(split_name, dataset_name, with_tags, om2_user)
+    
+    commands = header_commands + non_header_commands
     
     return commands
 

@@ -50,9 +50,12 @@ def get_child_model_dict(name):
     
     model_path = load_models.get_model_path('child', name, is_tags)
        
+    print('Temporarily loading all child models from with tags') 
+          
     model_dict = {
         'title' : load_models.gen_model_title(*model_args),
-        'kwargs' : get_model_from_path(model_path, is_tags),
+        #'kwargs' : load_models.get_model_from_path(model_path, is_tags),
+        'kwargs' : load_models.get_model_from_split('all', 'all', is_tags),
         'type' : 'BERT', 
     }
     

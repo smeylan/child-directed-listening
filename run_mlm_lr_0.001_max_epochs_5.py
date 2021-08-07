@@ -426,6 +426,12 @@ def main():
             load_from_cache_file=not data_args.overwrite_cache,
         )
 
+    # 8/6/21: Added these lines
+    training_args.num_train_epochs=5
+    training_args.learning_rate=0.001
+    logger.info('Sucessfully edited the training arguments.')
+    # end additions 
+    
     if training_args.do_train:
         if "train" not in tokenized_datasets:
             raise ValueError("--do_train requires a train dataset")
@@ -457,10 +463,6 @@ def main():
         eval_dataset=eval_dataset if training_args.do_eval else None,
         tokenizer=tokenizer,
         data_collator=data_collator,
-        # 8/6/21: Added these lines
-        max_epochs=5,
-        learning_rate=0.001
-        # end additions 
     )
 
     

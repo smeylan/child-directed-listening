@@ -30,8 +30,9 @@ def get_sample_bert_token_ids(task, split = 'all', dataset = 'all'):
     all_success_paths = load_splits.get_age_success_sample_paths()
     all_yyy_paths = load_splits.get_age_yyy_sample_paths()
     
-    this_sample_successes = pd.concat([pd.read_csv(path)[['utterance_id']] for path in all_success_paths])
-    this_sample_yyy = pd.concat([pd.read_csv(path)[['utterance_id']] for path in all_yyy_paths])
+    
+    this_sample_successes = pd.concat([load_splits.apply_if_subsample(pd.read_csv(path)[['utterance_id']]) for path in all_success_paths])
+    this_sample_yyy = pd.concat([load_splits.apply_if_subsample(pd.read_csv(path)[['utterance_id']]) for path in all_yyy_paths])
 
     select_sample_id = pd.concat([this_sample_successes, this_sample_yyy])
     select_phono = tokens.loc[tokens.utterance_id.isin(select_sample_id.utterance_id)]

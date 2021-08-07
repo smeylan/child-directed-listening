@@ -340,21 +340,7 @@ def main():
         model = AutoModelForMaskedLM.from_config(config)
 
     model.resize_token_embeddings(len(tokenizer))
-    
-    
-    # 8/6/21: Added these lines
-    # Run for 10 for the children, manually edit the training file for now
-    # Add a parser later if this is useful
-     
-    training_args.num_train_epochs=10
-    
-    # This depends on the model, esp. for children shouldn't be too high?
-    # But resuming training after a long finetune may not be advantageous
-    # Because the learning rate is too low.
-    
-    training_args.learning_rate=0.0001
-    logger.info('Sucessfully edited the training arguments.')
-    # end additions 
+   
 
     # Preprocessing the datasets.
     # First we tokenize all the texts.
@@ -491,13 +477,29 @@ def main():
         if training_args.resume_from_checkpoint is not None:
             checkpoint = training_args.resume_from_checkpoint
             
-            logger.info('~~~~~~~~~~~~~~~~~~~~~~~~~~~~ CHECKING TO SEE if lr change is wiped out by resume from checkpoint')
-            
-            logger.info(training_args.learning_rate)
-            logger.info(training_args.max_train_epochs)
-            
         elif last_checkpoint is not None:
             checkpoint = last_checkpoint
+            
+        # 8/6/21: Added these lines
+        # Run for 10 for the children, manually edit the training file for now
+        # Add a parser later if this is useful
+
+        training_args.num_train_epochs=10
+
+        # This depends on the model, esp. for children shouldn't be too high?
+        # But resuming training after a long finetune may not be advantageous
+        # Because the learning rate is too low.
+
+        training_args.learning_rate=0.0001
+        logger.info('Sucessfully edited the training arguments.')
+        
+        logger.info('~~~~~~~~~~~~~~~~~~~~~~~~~~~~ CHECKING TO SEE if lr change is wiped out by resume from checkpoint')
+            
+        logger.info(training_args.learning_rate)
+        logger.info(training_args.max_train_epochs)
+        
+        # end additions 
+        
         train_result = trainer.train(resume_from_checkpoint=checkpoint)
         trainer.save_model()  # Saves the tokenizer too for easy upload
         metrics = train_result.metrics

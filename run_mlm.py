@@ -196,7 +196,6 @@ def main():
     
     training_args.save_total_limit = 1
     training_args.evaluation_strategy = "steps"
-    training_args.num_steps
     
     # For the child scripts
     # this assumes line by line is enabled.
@@ -348,6 +347,11 @@ def main():
     # Add a parser later if this is useful
      
     training_args.num_train_epochs=10
+    
+    # This depends on the model, esp. for children shouldn't be too high?
+    # But resuming training after a long finetune may not be advantageous
+    # Because the learning rate is too low.
+    
     training_args.learning_rate=0.0001
     logger.info('Sucessfully edited the training arguments.')
     # end additions 

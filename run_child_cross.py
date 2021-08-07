@@ -2,8 +2,11 @@
 from utils_child import child_parser, child_models, utils_child
 from utils import split_gen, load_models
 
+from datetime import datetime
+
 if __name__ == '__main__':
     
+    start_time = str(datetime.today())
     parser = child_parser.child_parser()
     
     # 7/7/21: https://stackoverflow.com/questions/17118999/python-argparse-unrecognized-arguments    
@@ -25,3 +28,7 @@ if __name__ == '__main__':
     
     print(f'Computations complete for: {data_child}, {prior_child}')
     print(f'Scores saved to: {score_path}')
+    
+    print(f'Started computations at: {start_time}')
+    print(f'Finished computations at: {str(datetime.today())}')
+   

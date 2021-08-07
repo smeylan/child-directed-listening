@@ -194,6 +194,7 @@ def main():
     
     # 8/1/21 added line
     training_args.save_total_limit = 1
+    training_args.evaluation_strategy = "steps"
     #training_args.dataloader_num_workers = 4
     # end added 
     
@@ -485,6 +486,12 @@ def main():
 
         trainer.log_metrics("train", metrics)
         trainer.save_metrics("train", metrics)
+        
+        # Added 8/7/21
+        trainer.log_metrics("eval", metrics)
+        trainer.save_metrics("eval", metrics)
+        # end additions
+        
         trainer.save_state()
 
     # Evaluation

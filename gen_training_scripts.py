@@ -11,13 +11,15 @@ from datetime import datetime
 import gen_sample_scripts
 
 
-def get_versioning(split_name, dataset_name, with_tags):
+def get_versioning(split_name, dataset_name, with_tags, name = None):
     
-    datetime_gen = str(datetime.today()).replace(' ', '_')
+    if name is None:
+        #datetime_gen = str(datetime.today()).replace(' ', '_')
+        version = 'no_versioning' # Versioning temporarily on hold
+    else:
+        version = name
     
-    datetime_gen = 'no_versioning' # Versioning temporarily on hold
-    
-    this_model_dir = models_get_split_folder(split_name, dataset_name, with_tags, datetime_gen)
+    this_model_dir = models_get_split_folder(split_name, dataset_name, with_tags, version)
     
     return this_model_dir
     
@@ -71,11 +73,11 @@ def get_isolated_training_commands(split_name, dataset_name, with_tags, om2_user
     return commands
 
 
-def get_non_header_commands(split_name, dataset_name, with_tags, om2_user = 'wongn'):
+def get_non_header_commands(split_name, dataset_name, with_tags, version_name, om2_user = 'wongn'):
     
     tags_data_str  = '' if with_tags else '_no_tags' # For loading the proper data
     
-    this_model_dir = get_versioning(split_name, dataset_name, with_tags)
+    this_model_dir = get_versioning(split_name, dataset_name, with_tags, name = version_name)
     
     this_data_dir = join(config.om_root_dir, join(config.finetune_dir_name, join(split_name, dataset_name)))
     

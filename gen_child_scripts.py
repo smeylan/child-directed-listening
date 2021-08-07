@@ -18,17 +18,18 @@ def gen_child_commands(name, base_model_path, is_tags):
     
     # Generate the appropriate header and the slurm folder
     
+    version_name = 'child_epoch_10_with_val_lr_0.0001'
     time_alloc_hrs, mem_alloc_gb = gen_training_scripts.get_training_alloc('child')
     
     header_commands = scripts.gen_command_header(mem_alloc_gb = mem_alloc_gb, time_alloc_hrs = time_alloc_hrs,
-                                          slurm_folder = scripts.cvt_root_dir('child', name, config.scores_dir),
+                                          slurm_folder = scripts.cvt_root_dir('child', name, config.scores_dir, name = version_name),
                                           slurm_name = f'training_beta_tags={is_tags}', 
                                           two_gpus = False)
     
     # Reset and rsync the right model configuration over
     
     ## Get the directory of this model so rsync works correctly
-    this_model_dir = '/'.join(gen_training_scripts.get_versioning('child', name, is_tags).split('/')[:-1])
+    this_model_dir = '/'.join(gen_training_scripts.get_versioning('child', name, is_tags, name = version_name).split('/')[:-1])
 
     copy_commands = [
         f"\nrm -r {this_model_dir}\n"
@@ -42,7 +43,7 @@ def gen_child_commands(name, base_model_path, is_tags):
     
     # Construct the python/training-related commands
     
-    run_commands = gen_training_scripts.get_non_header_commands('child', name, is_tags)[:-1] 
+    run_commands = gen_training_scripts.get_non_header_commands('child', name, is_tags, version_name)[:-1] 
     
     ## Edit the last command to append the beta search.
     sing_header = scripts.gen_singularity_header()

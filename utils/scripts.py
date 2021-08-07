@@ -7,7 +7,7 @@ from utils import split_gen
 import config
 
 
-def cvt_root_dir(split, dataset, base_dir):
+def cvt_root_dir(split, dataset, base_dir, name = 'no_versioning'):
     
     # Convert to the OM root dir while using the Chompsky equivalents to specify folders
     # like scores_dir, etc.
@@ -17,7 +17,8 @@ def cvt_root_dir(split, dataset, base_dir):
     if config.om_root_dir == config.root_dir:
         return local_path
     
-    return local_path.replace(config.root_dir, config.om_root_dir)
+    print('Need to make this more maintainable, cvt root dir converting no versioning to the appropriate name for child work.')
+    return local_path.replace(config.root_dir, config.om_root_dir).replace('no_versioning', name)
     
     
 def write_training_shell_script(split, dataset, is_tags, dir_name, get_command_func, om2_user = 'wongn'): 

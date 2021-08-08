@@ -114,7 +114,7 @@ def get_non_header_commands(split_name, dataset_name, with_tags, version_name, o
             --train_file {this_data_dir}/train{tags_data_str}.txt \
             --validation_file {this_data_dir}/val{tags_data_str}.txt \
             --cache_dir ~/.cache/$SLURM_JOB_ID \
-            --overwrite_output_dir\n" 
+            --overwrite_output_dir" 
     
     commands.append(main_command)
     

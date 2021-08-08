@@ -200,16 +200,20 @@ def main():
     interval_steps = 5 if is_child else 500
     # end add
     
+    # 8/8/21 added
+    if data_args.line_by_line:
+        batch_size = 7500 # rough approximation, <8000 examples.
+        training_args.batch_size = batch_size
+    # end add
+    
     # 8/1/21 added line
     training_args.save_total_limit = 1
     training_args.evaluation_strategy = "steps"
     
     # For the child scripts
-    # this assumes line by line is enabled.
-    
+    interval_steps = 5
     training_args.save_steps = interval_steps
     training_args.logging_steps = interval_steps
-    
     # end added 
     
     if os.path.isdir(training_args.output_dir) and training_args.do_train and not training_args.overwrite_output_dir:

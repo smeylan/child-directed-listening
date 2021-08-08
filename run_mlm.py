@@ -195,14 +195,14 @@ def main():
     
     # 8/7/21 added
     is_child = bool(model_args.model_name_or_path)
-    num_epochs = 10 if is_child else 5
+    num_epochs = 10 if is_child else 3
     learning_rate = 5e-4
     interval_steps = 5 if is_child else 500
     # end add
     
     # 8/8/21 added
     if data_args.line_by_line:
-        batch_size = 7500 # rough approximation, <8000 examples.
+        batch_size = 400e3 # rough approximation, <8000 examples.
         training_args.batch_size = batch_size
     # end add
     
@@ -211,7 +211,7 @@ def main():
     training_args.evaluation_strategy = "steps"
     
     # For the child scripts
-    interval_steps = 5
+    interval_steps = 5 if is_child else 500
     training_args.save_steps = interval_steps
     training_args.logging_steps = interval_steps
     # end added 

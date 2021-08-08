@@ -7,8 +7,8 @@
 
 #SBATCH -N 1
 #SBATCH -p cpl
-#SBATCH --gres=gpu:1
-#SBATCH -t 6:00:00
+#SBATCH --gres=gpu:2
+#SBATCH -t 4:00:00
 #SBATCH --mem=9G
 #SBATCH --constraint=high-capacity
 #SBATCH --output=/om2/user/wongn/child-directed-listening/experiments/scripts_train_eval_loss_specify/models/all/all/%j_training_tags=True.out

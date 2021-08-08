@@ -202,7 +202,7 @@ def main():
     
     # 8/8/21 added
     if data_args.line_by_line:
-        batch_size = 400e3 # rough approximation, <8000 examples.
+        batch_size = 64560000 # rough approximation using runtimes, etc.
         training_args.batch_size = batch_size
     # end add
     

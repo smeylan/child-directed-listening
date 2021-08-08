@@ -8,7 +8,14 @@ import config
 from utils_child import child_models
 from utils import split_gen, scripts
 
-def gen_child_commands(name, base_model_path, is_tags):
+
+def gen_base_model_path(name, ):
+    
+    
+    return this_model_dir
+    
+    
+def gen_child_commands(name, is_tags):
     
     your_model_path = scripts.cvt_root_dir('child', name, config.model_dir)
     
@@ -26,7 +33,6 @@ def gen_child_commands(name, base_model_path, is_tags):
                                           slurm_name = f'training_beta_tags={is_tags}', 
                                           two_gpus = False)
     
-    ## Get the directory of this model so rsync works correctly
     this_model_dir = '/'.join(gen_training_scripts.get_versioning('child', name, is_tags, name = version_name).split('/')[:-1])
     
     # Construct the python/training-related commands
@@ -36,7 +42,7 @@ def gen_child_commands(name, base_model_path, is_tags):
     ## Edit the last command to append the beta search.
     sing_header = scripts.gen_singularity_header()
     
-    run_commands[-1] = run_commands[-1] + f"\t --model_name_or_path {base_model_path}; {sing_header} {gen_sample_scripts.get_one_python_command('run_beta_search.py', 'child', name, is_tags, 0, 'childes')[1]}\n"
+    run_commands[-1] = run_commands[-1] + f"; {sing_header} {gen_sample_scripts.get_one_python_command('run_beta_search.py', 'child', name, is_tags, 0, 'childes')[1]}\n"
 
     # Put the copy commands between the header and the actual python runs.
     
@@ -49,6 +55,7 @@ def gen_child_commands(name, base_model_path, is_tags):
     
 if __name__ == '__main__':
     
+    _, is_tags = child_models.get_best_child_base_model_path()
     child_names = child_models.get_child_names()
     
     sh_train_loc = join(config.root_dir, 'scripts_child_train_beta')
@@ -56,14 +63,13 @@ if __name__ == '__main__':
     if not exists(sh_train_loc):
         os.makedirs(sh_train_loc)
 
-    _, is_tags = child_models.get_best_child_base_model_path()
-    base_model_path = gen_training_scripts.get_versioning('all', 'all', is_tags)
+        
     
     for child in child_names:
     
         # Generate appropriate scripts for model_training
         
-        train_file, train_commands = gen_child_commands(child, base_model_path, is_tags)
+        train_file, train_commands = gen_child_commands(child, is_tags)
         
         with open(join(sh_train_loc, train_file), 'w') as f:
             f.writelines(train_commands)

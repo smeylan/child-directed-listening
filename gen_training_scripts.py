@@ -4,6 +4,7 @@ import os
 from os.path import join, exists
 
 from utils import scripts, split_gen
+from utils_child import child_models
 import config
 
 from datetime import datetime
@@ -84,6 +85,13 @@ def get_non_header_commands(split_name, dataset_name, with_tags, version_name, o
     if not exists(this_model_dir) and config.root_dir == config.om_root_dir: # You are on OM
         os.makedirs(this_model_dir)
         
+    if split_name:
+        _, is_tags = child_models.get_best_child_base_model_path()
+        base_model = get_versioning('all', 'all', is_tags)
+    else:
+        base_model = 'bert-base-uncased'
+    
+        
     commands = []
    
     # For the command text
@@ -99,17 +107,14 @@ def get_non_header_commands(split_name, dataset_name, with_tags, version_name, o
     
     main_command = f"singularity exec --nv -B /om,/om2/user/{om2_user} /om2/user/{om2_user}/vagrant/trans-pytorch-gpu \
     python3 run_mlm.py \
-            --model_name_or_path bert-base-uncased \
+            --model_name_or_path {base_model} \
             --do_train \
             --do_eval \
             --output_dir {this_model_dir}\
             --train_file {this_data_dir}/train{tags_data_str}.txt \
             --validation_file {this_data_dir}/val{tags_data_str}.txt \
-            --cache_dir ~/.cache/$SLURM_JOB_ID"
-    
-    # If child, finetune from the copied model.
-    if split_name != 'child':
-        main_command += '\t--overwrite_output_dir\n'
+            --cache_dir ~/.cache/$SLURM_JOB_ID \
+            --overwrite_output_dir\n" 
     
     commands.append(main_command)
     

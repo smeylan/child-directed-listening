@@ -347,6 +347,7 @@ def main():
     # Add a parser later if this is useful
      
     training_args.num_train_epochs=1
+    training_args.metric_for_best_model = "eval_loss"
     
     # This depends on the model, esp. for children shouldn't be too high?
     # But resuming training after a long finetune may not be advantageous

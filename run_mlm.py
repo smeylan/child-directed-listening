@@ -198,13 +198,7 @@ def main():
     num_epochs = 10 if is_child else 3
     learning_rate = 5e-4
     # end add
-    
-    # 8/8/21 added
-    if data_args.line_by_line:
-        batch_size = 128
-        training_args.per_device_train_batch_size = batch_size
-        training_args.per_device_eval_batch_size = batch_size
-    # end add
+   
     
     # 8/1/21 added line
     training_args.save_total_limit = 1
@@ -212,9 +206,27 @@ def main():
     
     # For the child scripts
     interval_steps = 5 if is_child else 500
+    
+    # end added 
+    
+    # 8/8/21 added
+    if data_args.line_by_line:
+        batch_size = 64
+        # Note: this is min power of 2 that will fit in current GPU request
+        # This will run for 10:02:18 on all/all split.
+        # Total optimization steps = 74571, original: 19194
+        # Therefore, save every? 2500 steps? For now
+        # The batched version is still faster -- may be worth running?
+        
+        training_args.per_device_train_batch_size = batch_size
+        training_args.per_device_eval_batch_size = batch_size
+        
+        # Overwrite the non-linebyline version
+        interval_steps = 2000
+    # end add
+    
     training_args.save_steps = interval_steps
     training_args.logging_steps = interval_steps
-    # end added 
     
     if os.path.isdir(training_args.output_dir) and training_args.do_train and not training_args.overwrite_output_dir:
         logger.info('~'*50, 'Successfully called non-overwrite output dir!')

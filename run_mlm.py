@@ -330,12 +330,13 @@ def main():
     logger.info('*'*100)
     
     # 6/19/21 Below line from Dr. Meylan
-    if is_child:
+    if not is_child:
         tokenizer.add_tokens(['[chi]','[cgv]'])
     
     logger.info('Result of tokenizing tags')
     logger.info(tokenizer.convert_ids_to_tokens(tokenizer.encode("[CHI] i'm not going to do anything.")))
     logger.info(tokenizer.convert_ids_to_tokens(tokenizer.encode('[CGV] back on the table if you wanna finish it.')))
+    
     
     if model_args.model_name_or_path:
         model = AutoModelForMaskedLM.from_pretrained(

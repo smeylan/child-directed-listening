@@ -201,7 +201,7 @@ def main():
     
     # 8/8/21 added
     if data_args.line_by_line:
-        batch_size = 512
+        batch_size = 16384
         training_args.batch_size = batch_size
     # end add
     

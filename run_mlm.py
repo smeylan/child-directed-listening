@@ -194,15 +194,14 @@ def main():
     last_checkpoint = None
     
     # 8/7/21 added
-    is_child = bool(model_args.model_name_or_path)
+    is_child = model_args.model_name_or_path != 'bert-base-uncased'
     num_epochs = 10 if is_child else 3
     learning_rate = 5e-4
-    interval_steps = 5 if is_child else 500
     # end add
     
     # 8/8/21 added
     if data_args.line_by_line:
-        batch_size = 64560000 # rough approximation using runtimes, etc.
+        batch_size = 512
         training_args.batch_size = batch_size
     # end add
     
@@ -416,6 +415,8 @@ def main():
             remove_columns=[text_column_name],
             load_from_cache_file=not data_args.overwrite_cache,
         )
+        
+
     else:
         # Otherwise, we tokenize every text, then concatenate them together before splitting them in smaller parts.
         # We use `return_special_tokens_mask=True` because DataCollatorForLanguageModeling (see below) is more
@@ -460,7 +461,7 @@ def main():
             num_proc=data_args.preprocessing_num_workers,
             load_from_cache_file=not data_args.overwrite_cache,
         )
-
+        
     if training_args.do_train:
         if "train" not in tokenized_datasets:
             raise ValueError("--do_train requires a train dataset")

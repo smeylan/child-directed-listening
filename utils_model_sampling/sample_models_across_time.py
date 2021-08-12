@@ -37,9 +37,6 @@ def assemble_scores_no_order():
             
             data_df = pd.read_pickle(this_data_path)
             
-            # print(f'\t{this_data_path}')
-            # print(f'\tthis shape {data_df.shape[0]}')
-            
             score_store.append(data_df)
                       
     return score_store

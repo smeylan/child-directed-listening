@@ -19,6 +19,11 @@ Here is the full list of checkpoints on the hub that can be fine-tuned by this s
 https://huggingface.co/models?filter=masked-lm
 """
 # You can also adapt this script on your own masked language modeling task. Pointers for this are left as comments.
+# added cite ~8/11/21: https://github.com/huggingface/transformers/blob/v4.6.1/examples/pytorch/language-modeling/run_mlm.py
+
+"""
+Changes were made to this script!!!
+"""
 
 import logging
 import math
@@ -28,6 +33,9 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 from datasets import load_dataset
+
+import json # Added this import
+import torch # Added this import
 
 import transformers
 from transformers import (
@@ -163,7 +171,7 @@ class DataTrainingArguments:
             "value if set."
         },
     )
-
+        
     def __post_init__(self):
         if self.dataset_name is None and self.train_file is None and self.validation_file is None:
             raise ValueError("Need either a dataset name or a training/validation file.")
@@ -193,40 +201,58 @@ def main():
     # Detecting last checkpoint.
     last_checkpoint = None
     
+    
+    ############################### 
+    #    Begin added portions!    #
+    ############################### 
+    
+    # Added these lines
+    training_args.load_best_model_at_end = True
+    training_args.metric_for_best_model = "eval_loss"
+    # end added 
+    
     # 8/7/21 added
     is_child = model_args.model_name_or_path != 'bert-base-uncased'
-    num_epochs = 10 if is_child else 3
+    # num_epochs = 10 if is_child else 3
+    logger.info('run_mlm.py is in debug mode and is requesting epoch = 20 for non-child! Need to revert!')
+    num_epochs = 10 if is_child else 10 # Debug mode only!!!
     learning_rate = 5e-4
     # end add
    
     
     # 8/1/21 added line
     training_args.save_total_limit = 1
-    training_args.evaluation_strategy = "steps"
+    strategy = "steps"
+    training_args.logging_strategy = strategy
+    training_args.evaluation_strategy = strategy
+    training_args.save_strategy = strategy
     
     # For the child scripts
-    interval_steps = 5 if is_child else 500
+    #interval_steps = 5 if is_child else 500
+    logger.info('run_mlm.py is in debug mode and is requesting epoch = 20 for non-child! Need to revert!')
+    interval_steps = 5 if is_child else 2
     
-    # end added 
-    
-    # 8/8/21 added
-    if data_args.line_by_line:
-        batch_size = 64
-        # Note: this is min power of 2 that will fit in current GPU request
-        # This will run for 10:02:18 on all/all split.
-        # Total optimization steps = 74571, original: 19194
-        # Therefore, save every? 2500 steps? For now
-        # The batched version is still faster -- may be worth running?
-        
-        training_args.per_device_train_batch_size = batch_size
-        training_args.per_device_eval_batch_size = batch_size
-        
-        # Overwrite the non-linebyline version
-        interval_steps = 2000
-    # end add
     
     training_args.save_steps = interval_steps
     training_args.logging_steps = interval_steps
+    training_args.eval_steps = interval_steps
+    # end added
+    
+        
+    # 8/6/21: Added these lines
+    # Run for 10 for the children, manually edit the training file for now
+    # Add a parser later if this is useful
+     
+    # For now train for fewer epochs because perplexity difference is not very large.
+    training_args.num_train_epochs = num_epochs
+    training_args.learning_rate = learning_rate
+    # end additions 
+    
+        
+    ############################### 
+    ##    End added portions!    ##
+    ############################### 
+   
     
     if os.path.isdir(training_args.output_dir) and training_args.do_train and not training_args.overwrite_output_dir:
         logger.info('~'*50, 'Successfully called non-overwrite output dir!')
@@ -365,21 +391,7 @@ def main():
         model = AutoModelForMaskedLM.from_config(config)
 
     model.resize_token_embeddings(len(tokenizer))
-    
-    
-    # 8/6/21: Added these lines
-    # Run for 10 for the children, manually edit the training file for now
-    # Add a parser later if this is useful
-     
-    # For now train for fewer epochs because perplexity difference is not very large.
-    training_args.num_train_epochs = num_epochs
-    
-    # TODO: If possible check somehow if this is working?
-    training_args.metric_for_best_model = "eval_loss"
-    
-    training_args.learning_rate = learning_rate
-    logger.info('Sucessfully edited the training arguments.')
-    # end additions 
+   
 
     # Preprocessing the datasets.
     # First we tokenize all the texts.
@@ -552,6 +564,33 @@ def main():
 
         trainer.log_metrics("eval", metrics)
         trainer.save_metrics("eval", metrics)
+        
+    # Added lines!
+    # For debugging use only -- confirm that key arguments were correctly set and weren't overwritten in the child case #
+    
+    torch.save(trainer.args, os.path.join(training_args.output_dir, "verification_only_trainer_args.bin"))
+    
+    # For the torch.save line:
+    # coding=utf-8
+    # Copyright 2020-present the HuggingFace Inc. team.
+    #
+    # Licensed under the Apache License, Version 2.0 (the "License");
+    # you may not use this file except in compliance with the License.
+    # You may obtain a copy of the License at
+    #
+    #     http://www.apache.org/licenses/LICENSE-2.0
+    #
+    # Unless required by applicable law or agreed to in writing, software
+    # distributed under the License is distributed on an "AS IS" BASIS,
+    # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    # See the License for the specific language governing permissions and
+    # limitations under the License.
+    """
+    The Trainer class, to easily train a 🤗 Transformers from scratch or finetune it on a new task.
+    """
+    # The thing that was changed was the arguments.
+    
+    # end added lines 
 
     if training_args.push_to_hub:
         kwargs = {"finetuned_from": model_args.model_name_or_path, "tags": "fill-mask"}

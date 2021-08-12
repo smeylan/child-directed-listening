@@ -51,7 +51,7 @@ non_child_args = {
 
 ### Base arguments
 
-batch_size = 128 # For a single GPU run.
+batch_size = 8 # Maximal for linebyline = False, 9 GB GPU.
 interval_steps = 500 
 
 base_args = {

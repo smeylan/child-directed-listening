@@ -59,7 +59,7 @@ def get_training_header_commands(split_name, dataset_name, with_tags, om2_user =
     header_commands = scripts.gen_command_header(mem_alloc_gb = mem_alloc_gb, time_alloc_hrs = time_alloc_hrs,
                                           slurm_folder = scripts.cvt_root_dir(split_name, dataset_name, config.model_dir),
                                           slurm_name = f'training_tags={with_tags}', 
-                                          two_gpus = False)
+                                          two_gpus = (dataset_name == 'all'))
     return header_commands
     
     

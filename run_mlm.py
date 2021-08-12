@@ -563,35 +563,8 @@ def main():
         metrics["perplexity"] = perplexity
 
         trainer.log_metrics("eval", metrics)
-        trainer.save_metrics("eval", metrics)
+        trainer.save_metrics("eval", metrics) 
         
-    # Added lines!
-    # For debugging use only -- confirm that key arguments were correctly set and weren't overwritten in the child case #
-    
-    torch.save(trainer.args, os.path.join(training_args.output_dir, "verification_only_trainer_args.bin"))
-    
-    # For the torch.save line:
-    # coding=utf-8
-    # Copyright 2020-present the HuggingFace Inc. team.
-    #
-    # Licensed under the Apache License, Version 2.0 (the "License");
-    # you may not use this file except in compliance with the License.
-    # You may obtain a copy of the License at
-    #
-    #     http://www.apache.org/licenses/LICENSE-2.0
-    #
-    # Unless required by applicable law or agreed to in writing, software
-    # distributed under the License is distributed on an "AS IS" BASIS,
-    # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    # See the License for the specific language governing permissions and
-    # limitations under the License.
-    """
-    The Trainer class, to easily train a 🤗 Transformers from scratch or finetune it on a new task.
-    """
-    # The thing that was changed was the arguments.
-    
-    # end added lines 
-
     if training_args.push_to_hub:
         kwargs = {"finetuned_from": model_args.model_name_or_path, "tags": "fill-mask"}
         if data_args.dataset_name is not None:

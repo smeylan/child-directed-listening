@@ -51,7 +51,10 @@ from transformers import (
 from transformers.trainer_utils import get_last_checkpoint, is_main_process
 from transformers.utils import check_min_version
 
-import wandb # Added this line
+# added these lines
+import wandb
+import json
+# end lines
 
 
 # Will error if the minimal version of Transformers is not installed. Remove at your own risks.
@@ -186,7 +189,6 @@ class DataTrainingArguments:
 
 def main():
     
-    wandb.init(project="child-directed-listening") # Added this line
 
     # See all possible arguments in src/transformers/training_args.py
     # or by passing the --help flag to this script.
@@ -200,6 +202,22 @@ def main():
     else:
         model_args, data_args, training_args = parser.parse_args_into_dataclasses()
 
+        
+    # Added these lines
+    project_name = "child-directed-listening"
+    wandb.init(project=project_name)
+    
+    run_info_path = os.path.join(training_args.output_dir, 'wandb_logging_info.json')
+    with open(run_info_path, 'w') as f:
+        json.dump({
+            'project' : project_name,
+            'run_id' : wandb.run.id,
+        }, f)
+    
+    print(f'Wrote json with wandb run information to: {run_info_path}')
+    # End line additions
+    
+    
     # Detecting last checkpoint.
     last_checkpoint = None
     if os.path.isdir(training_args.output_dir) and training_args.do_train and not training_args.overwrite_output_dir:

@@ -6,6 +6,7 @@ from os.path import join, exists
 from utils import scripts, split_gen
 from utils_child import child_models
 import config
+import config_train
 
 from datetime import datetime
 
@@ -42,8 +43,8 @@ def get_training_alloc(split_name):
         mem_alloc_gb = mem
         time_alloc_hrs = time
     else:
-        mem_alloc_gb = 9
-        time_alloc_hrs = 6
+        mem_alloc_gb = 12
+        time_alloc_hrs = 6 if config_train.non_child_epochs < 5 else 9
     
     return time_alloc_hrs, mem_alloc_gb
 
@@ -105,16 +106,22 @@ def get_non_header_commands(split_name, dataset_name, with_tags, version_name, o
     # end usage of variable
     commands.append("# 7/13/21: https://stackoverflow.com/questions/19960332/use-slurm-job-id for variable name of job ID\n")
     
-    main_command = f"singularity exec --nv -B /om,/om2/user/{om2_user} /om2/user/{om2_user}/vagrant/trans-pytorch-gpu \
-    python3 run_mlm.py \
-            --model_name_or_path {base_model} \
-            --do_train \
-            --do_eval \
-            --output_dir {this_model_dir}\
-            --train_file {this_data_dir}/train{tags_data_str}.txt \
-            --validation_file {this_data_dir}/val{tags_data_str}.txt \
-            --cache_dir ~/.cache/$SLURM_JOB_ID \
-            --overwrite_output_dir" 
+    main_command = f"singularity exec --nv -B /om,/om2/user/{om2_user} /om2/user/{om2_user}/vagrant/trans-pytorch-gpu python3 run_mlm.py"
+    
+    data_args = [
+        f"--train_file {this_data_dir}/train{tags_data_str}.txt",
+        f"--validation_file {this_data_dir}/val{tags_data_str}.txt", 
+        f"--cache_dir ~/.cache/$SLURM_JOB_ID",
+    ]
+    
+    this_args_dict = config_train.child_args if split_name == 'child' else config_train.non_child_args
+    this_args_list = sorted(list(this_args_dict.keys())) # readability
+    trainer_args = [
+        f"--{key} {this_args_dict[key]}"
+        for key in this_args_list
+    ]
+    
+    main_command = f"{main_command} {' '.join(data_args + trainer_args)}"
     
     commands.append(main_command)
     

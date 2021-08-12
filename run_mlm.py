@@ -19,10 +19,11 @@ Here is the full list of checkpoints on the hub that can be fine-tuned by this s
 https://huggingface.co/models?filter=masked-lm
 """
 # You can also adapt this script on your own masked language modeling task. Pointers for this are left as comments.
+
 # added cite ~8/11/21: https://github.com/huggingface/transformers/blob/v4.6.1/examples/pytorch/language-modeling/run_mlm.py
 
 """
-Changes were made to this script!!!
+Changes were made to this script relative to the original!
 """
 
 import logging
@@ -33,9 +34,6 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 from datasets import load_dataset
-
-import json # Added this import
-import torch # Added this import
 
 import transformers
 from transformers import (
@@ -52,6 +50,8 @@ from transformers import (
 )
 from transformers.trainer_utils import get_last_checkpoint, is_main_process
 from transformers.utils import check_min_version
+
+import wandb # Added this line
 
 
 # Will error if the minimal version of Transformers is not installed. Remove at your own risks.
@@ -171,7 +171,7 @@ class DataTrainingArguments:
             "value if set."
         },
     )
-        
+
     def __post_init__(self):
         if self.dataset_name is None and self.train_file is None and self.validation_file is None:
             raise ValueError("Need either a dataset name or a training/validation file.")
@@ -186,6 +186,8 @@ class DataTrainingArguments:
 
 def main():
     
+    wandb.init(project="child-directed-listening") # Added this line
+
     # See all possible arguments in src/transformers/training_args.py
     # or by passing the --help flag to this script.
     # We now keep distinct sets of args, for a cleaner separation of concerns.
@@ -200,62 +202,7 @@ def main():
 
     # Detecting last checkpoint.
     last_checkpoint = None
-    
-    
-    ############################### 
-    #    Begin added portions!    #
-    ############################### 
-    
-    # Added these lines
-    training_args.load_best_model_at_end = True
-    training_args.metric_for_best_model = "eval_loss"
-    # end added 
-    
-    # 8/7/21 added
-    is_child = model_args.model_name_or_path != 'bert-base-uncased'
-    # num_epochs = 10 if is_child else 3
-    logger.info('run_mlm.py is in debug mode and is requesting epoch = 20 for non-child! Need to revert!')
-    num_epochs = 10 if is_child else 10 # Debug mode only!!!
-    learning_rate = 5e-4
-    # end add
-   
-    
-    # 8/1/21 added line
-    training_args.save_total_limit = 1
-    strategy = "steps"
-    training_args.logging_strategy = strategy
-    training_args.evaluation_strategy = strategy
-    training_args.save_strategy = strategy
-    
-    # For the child scripts
-    #interval_steps = 5 if is_child else 500
-    logger.info('run_mlm.py is in debug mode and is requesting epoch = 20 for non-child! Need to revert!')
-    interval_steps = 5 if is_child else 2
-    
-    
-    training_args.save_steps = interval_steps
-    training_args.logging_steps = interval_steps
-    training_args.eval_steps = interval_steps
-    # end added
-    
-        
-    # 8/6/21: Added these lines
-    # Run for 10 for the children, manually edit the training file for now
-    # Add a parser later if this is useful
-     
-    # For now train for fewer epochs because perplexity difference is not very large.
-    training_args.num_train_epochs = num_epochs
-    training_args.learning_rate = learning_rate
-    # end additions 
-    
-        
-    ############################### 
-    ##    End added portions!    ##
-    ############################### 
-   
-    
     if os.path.isdir(training_args.output_dir) and training_args.do_train and not training_args.overwrite_output_dir:
-        logger.info('~'*50, 'Successfully called non-overwrite output dir!')
         last_checkpoint = get_last_checkpoint(training_args.output_dir)
         if last_checkpoint is None and len(os.listdir(training_args.output_dir)) > 0:
             raise ValueError(
@@ -363,20 +310,6 @@ def main():
             "You can do it from another script, save it, and load it from here, using --tokenizer_name."
         )
 
-    # 6/24/21 I added the add_tokens and the print statements here.
-    logger.info('*'*100)
-    logger.info('Adding the speaker tags to the tokenizers')
-    logger.info('*'*100)
-    
-    # 6/19/21 Below line from Dr. Meylan
-    if not is_child:
-        tokenizer.add_tokens(['[chi]','[cgv]'])
-    
-    logger.info('Result of tokenizing tags')
-    logger.info(tokenizer.convert_ids_to_tokens(tokenizer.encode("[CHI] i'm not going to do anything.")))
-    logger.info(tokenizer.convert_ids_to_tokens(tokenizer.encode('[CGV] back on the table if you wanna finish it.')))
-    
-    
     if model_args.model_name_or_path:
         model = AutoModelForMaskedLM.from_pretrained(
             model_args.model_name_or_path,
@@ -391,7 +324,6 @@ def main():
         model = AutoModelForMaskedLM.from_config(config)
 
     model.resize_token_embeddings(len(tokenizer))
-   
 
     # Preprocessing the datasets.
     # First we tokenize all the texts.
@@ -441,8 +373,6 @@ def main():
             remove_columns=[text_column_name],
             load_from_cache_file=not data_args.overwrite_cache,
         )
-        
-
     else:
         # Otherwise, we tokenize every text, then concatenate them together before splitting them in smaller parts.
         # We use `return_special_tokens_mask=True` because DataCollatorForLanguageModeling (see below) is more
@@ -487,7 +417,7 @@ def main():
             num_proc=data_args.preprocessing_num_workers,
             load_from_cache_file=not data_args.overwrite_cache,
         )
-        
+
     if training_args.do_train:
         if "train" not in tokenized_datasets:
             raise ValueError("--do_train requires a train dataset")
@@ -521,15 +451,11 @@ def main():
         data_collator=data_collator,
     )
 
-    
-    logger.info('~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Training begins!')
-    
     # Training
     if training_args.do_train:
         checkpoint = None
         if training_args.resume_from_checkpoint is not None:
             checkpoint = training_args.resume_from_checkpoint
-            
         elif last_checkpoint is not None:
             checkpoint = last_checkpoint
         train_result = trainer.train(resume_from_checkpoint=checkpoint)
@@ -543,12 +469,6 @@ def main():
 
         trainer.log_metrics("train", metrics)
         trainer.save_metrics("train", metrics)
-        
-        # Added 8/7/21
-        trainer.log_metrics("eval", metrics)
-        trainer.save_metrics("eval", metrics)
-        # end additions
-        
         trainer.save_state()
 
     # Evaluation
@@ -563,8 +483,8 @@ def main():
         metrics["perplexity"] = perplexity
 
         trainer.log_metrics("eval", metrics)
-        trainer.save_metrics("eval", metrics) 
-        
+        trainer.save_metrics("eval", metrics)
+
     if training_args.push_to_hub:
         kwargs = {"finetuned_from": model_args.model_name_or_path, "tags": "fill-mask"}
         if data_args.dataset_name is not None:

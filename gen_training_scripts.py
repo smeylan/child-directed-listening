@@ -112,6 +112,7 @@ def get_non_header_commands(split_name, dataset_name, with_tags, version_name, o
         f"--train_file {this_data_dir}/train{tags_data_str}.txt",
         f"--validation_file {this_data_dir}/val{tags_data_str}.txt", 
         f"--cache_dir ~/.cache/$SLURM_JOB_ID",
+        f"--output_dir {this_model_dir}",
     ]
     
     this_args_dict = config_train.child_args if split_name == 'child' else config_train.non_child_args

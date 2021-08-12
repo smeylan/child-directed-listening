@@ -54,6 +54,7 @@ from transformers.utils import check_min_version
 # added these lines
 import wandb
 import json
+import config_train
 # end lines
 
 
@@ -204,14 +205,14 @@ def main():
 
         
     # Added these lines
-    project_name = "child-directed-listening"
-    wandb.init(project=project_name)
+    wandb.init(project=config_train.project_name)
     
     run_info_path = os.path.join(training_args.output_dir, 'wandb_logging_info.json')
     with open(run_info_path, 'w') as f:
         json.dump({
-            'project' : project_name,
+            'project' : config_train.project_name,
             'run_id' : wandb.run.id,
+            'url' : f'https://wandb.ai/{config_train.wandb_user}/{config_train.project_name}/runs/{wandb.run.id}'
         }, f)
     
     print(f'Wrote json with wandb run information to: {run_info_path}')

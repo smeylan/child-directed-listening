@@ -139,5 +139,6 @@ if __name__ == '__main__':
     for split_args in all_splits:
         for has_tags in [True, False]:
             t_split, t_dataset = split_args
-            scripts.write_training_shell_script(t_split, t_dataset, has_tags, 'scripts_train', get_isolated_training_commands)
+            tags_str = 'with_tags' if has_tags else 'no_tags'
+            scripts.write_training_shell_script(t_split, t_dataset, has_tags, f'scripts_train/{tags_str}', get_isolated_training_commands)
             

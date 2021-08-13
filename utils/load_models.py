@@ -262,6 +262,10 @@ def get_primary_tokenizer():
     
 def get_initial_vocab_info(initial_tokenizer = None):
     
+    """
+    Satisfies all constraints of successes if syllables counted via CMU (not by actual_phonology or model_phonology) 
+    """
+    
     # tokenize with the most extensive tokenizer, which is the one used for model #2
     
     if initial_tokenizer is None:

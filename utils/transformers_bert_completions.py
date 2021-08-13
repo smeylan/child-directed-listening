@@ -672,8 +672,7 @@ def get_posteriors(prior_data, levdists, initial_vocab, bert_token_ids=None, bet
     prior_data['scores'].set_index('sample_index')
     
     flat_prior = np.repeat(1/len(initial_vocab), len(initial_vocab))
-    # Compare all of the distributions to the flat prior on CHILDES,
-    # regardless of the training split, etc. 
+    # Compare all of the distributions to the flat prior cmu_2syl set.
 
     for i in range(prior_data['scores'].shape[0]):
         if np.isnan(prior_data['scores'].iloc[i]['position_in_mask']):

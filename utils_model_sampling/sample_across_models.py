@@ -54,14 +54,14 @@ def sample_across_models(success_ids, yyy_ids, model, beta_values, examples_mode
         # get the posteriors        
         if model['type'] == 'BERT':
             posteriors_for_age_interval = transformers_bert_completions.get_posteriors(priors_for_age_interval, 
-                edit_distances_for_age_interval, initial_vocab, None, beta_value, examples_mode = examples_mode)
+                edit_distances_for_age_interval, cmu_in_initial_vocab, None, beta_value, examples_mode = examples_mode)
 
         elif model['type'] == 'unigram':
             # special unigram hack
             this_bert_token_ids = unigram.get_sample_bert_token_ids('beta')
             
             posteriors_for_age_interval = transformers_bert_completions.get_posteriors(priors_for_age_interval, edit_distances_for_age_interval, 
-                initial_vocab, this_bert_token_ids, beta_value, examples_mode = examples_mode)
+                cmu_in_initial_vocab, this_bert_token_ids, beta_value, examples_mode = examples_mode)
             print('If possible compare the bert_token_id in sample_across_models to the bert_token_id in one of the other scores sets from bert.')
             
         posteriors_for_age_interval['scores']['beta_value'] = beta_value

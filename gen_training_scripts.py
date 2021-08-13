@@ -44,7 +44,7 @@ def get_training_alloc(split_name):
         time_alloc_hrs = time
     else:
         mem_alloc_gb = 9
-        time_alloc_hrs = 6
+        time_alloc_hrs = 8
     
     return time_alloc_hrs, mem_alloc_gb
 

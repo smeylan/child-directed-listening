@@ -1,4 +1,6 @@
 
+import glob
+
 import os
 from os.path import join, exists
 
@@ -44,7 +46,10 @@ def gen_submit_script(dir_name, arg_set, task):
     
     text.extend(mkdir_commands)
     
-    text.append(f'FILES="./scripts_{dir_name}/*"')
+    base_dir = f'./scripts_{dir_name}'
+    base_add = '/*' if len(glob.glob(base_dir+'/*')) == 2 else ''
+    
+    text.append(f'FILES="{base_dir}/*{base_add}"')
     text.append('for f in $FILES')
     text.append('do')
     text.append('\techo "Processing $f file..."')

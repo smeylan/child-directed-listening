@@ -8,9 +8,68 @@ import numpy as np
 import config
 
 import math
+import re
 
 from utils import load_models, load_splits
 
+
+def combine_num_vowels_phonology(phono_df):
+    """
+    Assign the greater of the number of vowels,
+        to limit both on num_vowels <= 2 for actual and model phonology.
+    """
+    
+    # If one of the numbers is NaN, the result is NaN -- this is desired behavior.
+    phono_df['num_vowels'] = [min(num1, num2) for num1, num2 in zip(phono_df['num_vowels_actual'], phono_df['num_vowels_model'])]
+    
+    return phono_df
+
+
+def cv_mapper(x, cv_map):
+        try:
+            return(cv_map[x])
+        except:
+            raise ValueError(x)
+
+def get_cv_map_dict():
+    
+    # Get the IPA map
+    phone_map_df = pd.read_csv('phon/phon_map_populated.csv')
+    phone_map_df.head()
+
+    cv_map = dict(zip(phone_map_df['ipa'], phone_map_df['c_or_v']))
+    cv_map['o'] = 'v' 
+    cv_map['ɜ'] = 'v'
+    cv_map['e'] = 'v'
+    cv_map['ʔ'] = 'c'
+    cv_map['ɾ'] = 'c'
+    cv_map['ɲ'] = 'c'
+    cv_map['x'] = 'c'
+    cv_map['ɱ'] = 'c'
+    cv_map['ɣ'] = 'c'
+    
+    # Added this from model phonology clean
+    cv_map['ɫ'] = 'c'
+    
+    return cv_map
+    
+    
+def assign_num_vowels_per_phonology(phono_df, phono_key):
+    
+    assert phono_key in {'actual', 'model'}
+    
+    this_cv_map = get_cv_map_dict()
+    
+    print('Currently handling * in IPA by dropping from consideration in num_vowels.')
+    
+    phono_df[f'cv_raw_{phono_key}'] = [''.join([cv_mapper(x, this_cv_map) for x in list(y)]) if (y != '' and '*' not in y) else '' for y in phono_df[f'{phono_key}_phonology_no_dia']]    
+    phono_df[f'cv_collapsed_{phono_key}']  = [re.sub(r'(.)\1+', r'\1', str(x)) if x != '' else '' for x in phono_df[f'cv_raw_{phono_key}']]
+    
+
+    
+    phono_df[f'num_vowels_{phono_key}'] = [np.sum(np.array(list(x)) == 'v') if x !='' else np.nan for x in phono_df[f'cv_collapsed_{phono_key}']]
+    
+    return phono_df
 
 def find_transcripts_with_successes_and_yyy(df):
     

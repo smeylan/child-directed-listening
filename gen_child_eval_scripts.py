@@ -15,12 +15,15 @@ if __name__ == '__main__':
     if not exists(sh_loc):
         os.makedirs(sh_loc)
     
+    task_name = 'child_cross'
     all_names = child_models.get_child_names()
+    
+    scripts.gen_submit_script(task_name, [('child', name) for name in all_names], task_name)
     
     for data_child in all_names:
         for prior_child in all_names:
             
-            slurm_folder = scripts.cvt_root_dir('child', data_child, config.scores_dir) 
+            slurm_folder = scripts.get_slurm_folder('child', data_child, 'child_cross') 
             
             command = f'python3 run_child_cross.py --data_child {data_child} --prior_child {prior_child}'
             

@@ -1,5 +1,28 @@
 
+import os
+from os.path import join, exists
 from utils import load_models
+
+import config
+
+
+# Arguments that control model versioning
+
+version_name = 'goal_to_convergence'
+
+# Arguments that control taking a subset of the dataset
+
+cut_ratio = 0.25 # Take 1/4 of all of the non-child text files for iterating on training to convergence.
+use_full_text = False
+
+finetune_cut_dir_name = f'finetune_cut_{cut_ratio}'
+finetune_run_dir_name = finetune_cut_dir_name if not use_full_text else config.finetune_dir_name
+finetune_run_path = join(config.root_dir, finetune_run_dir_name)
+
+if not exists(finetune_run_path):
+    os.makedirs(finetune_run_path)
+
+# Wandb arguments -- not currently used.
 
 wandb_user = 'w-nicole'
 project_name = "child-directed-listening" 
@@ -30,9 +53,9 @@ child_args = {
 ## NON-CHILD ARGUMENTS ##
 #########################
 
-non_child_lr = 5e-4
+non_child_lr = 0.00075 # Searched manually, 1000 examples, on no tags with the max_train_samples truncation
 non_child_interval = 500
-non_child_epochs = 5
+non_child_epochs = 15 # Until convergence, if possible.
 
 non_child_args = {
     
@@ -51,8 +74,7 @@ non_child_args = {
 
 ### Base arguments
 
-
-batch_size = 8 # Maximal for linebyline = False, 9 GB GPU, 2 GPU
+batch_size = 8 # Maximal for linebyline = False, 9 GB GPU.
 interval_steps = 500 
 
 base_args = {

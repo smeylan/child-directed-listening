@@ -39,12 +39,13 @@ def write_commands(sh_script_loc, task_name, model_id, commands):
             
 if __name__ == '__main__':
     
+    label = 'non_child_beta_time'
 
     task_names = ['beta_search', 'models_across_time']
     task_files = ['run_beta_search.py', 'run_models_across_time.py']
      
     
-    sh_script_loc_base = join(config.root_dir, 'scripts_beta_time')
+    sh_script_loc_base = join(config.root_dir, f'scripts_{label}')
 
     partitions = {
         'finetune' : load_models.gen_finetune_model_args,
@@ -52,6 +53,16 @@ if __name__ == '__main__':
     }
     
     print('Generating sample scripts again!')
+    
+    take_split_dataset = lambda arg_set : arg_set[:2]
+    partitions_for_submit_script = {
+        k : list(map(take_split_dataset, v())) for k, v in partitions.items() # Split, dataset
+    }
+    
+    print(partitions_for_submit_script)
+    
+    for key in ['shelf', 'finetune']:
+        scripts.gen_submit_script(f'{label}/{key}', partitions_for_submit_script[key], label)
     
     for partition_name, model_args in partitions.items():
         
@@ -68,15 +79,15 @@ if __name__ == '__main__':
         
         for arg_set in model_args():
             
-            split, dataset, _, _, _ = arg_set
-            slurm_folder = scripts.cvt_root_dir(split, dataset, config.scores_dir) 
+            split, dataset, tags, context, model_type = arg_set
+            slurm_folder = scripts.get_slurm_folder(split, dataset, task = label)
             
             py_commands = {}
 
             header = scripts.gen_command_header(mem_alloc_gb = this_mem_amount,
                                                 time_alloc_hrs = this_time_alloc,
                                                 slurm_folder = slurm_folder,
-                                                slurm_name = 'beta_time',
+                                                slurm_name = f'{label}_model={model_type}_tags={tags}_context={context}',
                                                 two_gpus = False)
 
             for task_name, task_file in zip(task_names, task_files):

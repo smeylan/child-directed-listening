@@ -121,11 +121,18 @@ def assign_and_find_phase_data(phase, split_on, phase_idxs, data_pool, phase_lab
     return phase_data, data_pool
 
 
-def filter_text(text_path):
+def filter_text_from_content(lines):
     
     remove_tags = lambda this_str : this_str.replace('[CHI] ', ''). replace('[CGV] ', '')
+    return list(map(remove_tags, lines))
+
+def filter_text(text_path):
+    """
+    8/14/21: Just refactored this into two layers after initial text generation
+        to support the subsampling in gen_partial_dataset.
+    """
     with open(text_path, 'r') as f:
-        all_str = list(map(remove_tags, f.readlines()))
+        all_str = filter_text_from_content(f.readlines())
         
     return all_str
 

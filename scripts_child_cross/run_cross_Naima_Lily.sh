@@ -8,11 +8,11 @@
 #SBATCH -N 1
 #SBATCH -p cpl
 #SBATCH --gres=gpu:1
-#SBATCH -t 0:45:00
+#SBATCH -t 1:00:00
 #SBATCH --mem=13G
 #SBATCH --constraint=high-capacity
-#SBATCH --output=/om2/user/wongn/child-directed-listening/experiments/no_versioning/scores/n=500/val/child/Naima/%j_data_Naima_prior_Lily.out
-mkdir -p /om2/user/wongn/child-directed-listening/experiments/no_versioning/scores/n=500/val/child/Naima
+#SBATCH --output=/om2/user/wongn/child-directed-listening/experiments/goal_to_convergence/scores/n=500/val/child/Naima/%j_data_Naima_prior_Lily.out
+mkdir -p /om2/user/wongn/child-directed-listening/experiments/goal_to_convergence/scores/n=500/val/child/Naima
 
 module load openmind/singularity/3.2.0
 singularity exec --nv -B /om,/om2/user/wongn /om2/user/wongn/vagrant/trans-pytorch-gpu python3 run_child_cross.py --data_child Naima --prior_child Lily

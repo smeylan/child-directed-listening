@@ -19,7 +19,7 @@ model_dir = join(exp_dir, 'models')
 # Arguments that control taking a subset of the dataset
 
 #cut_ratio = 0.25 # Take 1/4 of all of the non-child text files for iterating on training to convergence.
-cut_ratio = 46000 # For the hyperparam searhc
+cut_ratio = 92000 # For the hyperparam searhc
 
 use_full_text = False
 

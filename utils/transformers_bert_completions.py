@@ -696,6 +696,7 @@ def get_posteriors(prior_data, levdists, initial_vocab, bert_token_ids=None, bet
                 print(i)
                 with open('./debugging_get_posteriors.txt', 'w') as f:
                     f.writelines([f'bad index: {i}'])
+                    prior_data.to_pickle('./bad_posteriors_prior_data.pkl')
  
         # get the highest prior probability words + probs
         

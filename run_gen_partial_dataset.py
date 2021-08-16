@@ -21,7 +21,7 @@ def cut_texts(split, dataset, save_dir, phase):
         text = f.readlines()
     
     random.shuffle(text)
-    num_samples = int(config_train.cut_ratio * len(text))
+    num_samples = int(config_train.cut_ratio * len(text)) if not isinstance(config_train.cut_ratio, int) else config_train.cut_ratio
     
     cut_text = text[:num_samples]
     

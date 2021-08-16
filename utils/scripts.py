@@ -15,7 +15,8 @@ import subprocess
 def get_slurm_folder(split, dataset, task):
     
     base_paths = {
-        'non_child_train' : config.model_dir, # Non-child train
+        'non_child_train' : config_train.model_dir, # Non-child train
+        'non_child_train_search' : config_train.model_dir, # Non-child train
         'non_child_beta_time' : config.scores_dir, # Non-child beta + time scoring
         
         'child_train' : config.scores_dir, # Child train + beta search

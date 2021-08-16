@@ -28,17 +28,15 @@ def get_training_alloc(split_name):
         mem_alloc_gb = mem
         time_alloc_hrs = time
     else:
-        mem_alloc_gb = 9
-        time_alloc_hrs = 8
+        mem_alloc_gb = 9 
+        time_alloc_hrs = (1, 30, 0) if config_train.version_name == 'lr_search' else 8
     
     return time_alloc_hrs, mem_alloc_gb
     
     
-def get_training_header_commands(split_name, dataset_name, with_tags, om2_user = 'wongn'):
+def get_training_header_commands(split_name, dataset_name, with_tags, om2_user = 'wongn', lr = None):
     
     time_alloc_hrs, mem_alloc_gb = get_training_alloc(split_name)
-    
-    print('hello here')
     
     model_dir = models_get_split_folder(split_name, dataset_name, with_tags)
     
@@ -46,12 +44,11 @@ def get_training_header_commands(split_name, dataset_name, with_tags, om2_user =
     
     header_commands = scripts.gen_command_header(mem_alloc_gb = mem_alloc_gb, time_alloc_hrs = time_alloc_hrs,
                                           slurm_folder = scripts.get_slurm_folder(split_name, dataset_name, task = 'non_child_train'),
-                                          slurm_name = f'training_tags={with_tags}', 
+                                          slurm_name = f'training_tags={with_tags}{f"_{lr}" if lr is not None else ""}', 
                                           two_gpus = (dataset_name in {'young', 'all'}))
     return header_commands
     
     
-
 def get_isolated_training_commands(split_name, dataset_name, with_tags, om2_user = 'wongn'):
     
     header_commands = get_training_header_commands(split_name, dataset_name, with_tags, om2_user)
@@ -62,18 +59,49 @@ def get_isolated_training_commands(split_name, dataset_name, with_tags, om2_user
     return commands
 
 
+def get_run_mlm_command(split_name, this_data_dir, this_model_dir, tags_data_str):
+    
+    
+    list_python_commands = []
+    
+    this_args_dict = config_train.child_args if split_name == 'child' else config_train.non_child_args
+    this_args_list = sorted(list(this_args_dict.keys())) # readability
+    
+    list_lr = config_train.lr_search_params if config_train.is_search else [this_args_dict['learning_rate']]
+    
+    for lr in list_lr:
+    
+        data_args = [
+            f"--train_file {this_data_dir}/train{tags_data_str}.txt",
+            f"--validation_file {this_data_dir}/val{tags_data_str}.txt", 
+            f"--cache_dir ~/.cache/$SLURM_JOB_ID",
+            f"--output_dir {this_model_dir}",
+        ]
+
+        trainer_args = [f"--learning_rate={lr}"]
+        
+        trainer_args.extend([
+            f"--{key} {this_args_dict[key]}"
+            for key in this_args_list if key != 'learning_rate'
+        ])
+
+        this_python_command = f' python3 run_mlm.py {" ".join(data_args + trainer_args)}'
+        list_python_commands.append(this_python_command)
+        
+    all_python_command = '; '.join(list_python_commands)
+
+    return all_python_command
+    
+
 def get_non_header_commands(split_name, dataset_name, with_tags, om2_user = 'wongn'):
     
     tags_data_str  = '' if with_tags else '_no_tags' # For loading the proper data
     
-    this_model_dir = models_get_split_folder(split_name, dataset_name, with_tags)
+    model_dir = models_get_split_folder(split_name, dataset_name, with_tags)
     
-    this_data_dir = join(config.om_root_dir, join(config_train.finetune_run_dir_name, join(split_name, dataset_name)))
+    data_dir = join(config.om_root_dir, join(config_train.finetune_run_dir_name, join(split_name, dataset_name)))
     
-    if not exists(this_model_dir) and config.root_dir == config.om_root_dir: # You are on OM
-        os.makedirs(this_model_dir)
-        
-    if split_name:
+    if split_name == 'child':
         _, is_tags = child_models.get_best_child_base_model_path()
         base_model = models_get_split_folder('all', 'all', is_tags)
     else:
@@ -93,23 +121,9 @@ def get_non_header_commands(split_name, dataset_name, with_tags, om2_user = 'won
     # end usage of variable
     commands.append("# 7/13/21: https://stackoverflow.com/questions/19960332/use-slurm-job-id for variable name of job ID\n")
     
-    main_command = f"singularity exec --nv -B /om,/om2/user/{om2_user} /om2/user/{om2_user}/vagrant/trans-pytorch-gpu python3 run_mlm.py"
+    main_command = f"singularity exec --nv -B /om,/om2/user/{om2_user} /om2/user/{om2_user}/vagrant/trans-pytorch-gpu"
     
-    data_args = [
-        f"--train_file {this_data_dir}/train{tags_data_str}.txt",
-        f"--validation_file {this_data_dir}/val{tags_data_str}.txt", 
-        f"--cache_dir ~/.cache/$SLURM_JOB_ID",
-        f"--output_dir {this_model_dir}",
-    ]
-    
-    this_args_dict = config_train.child_args if split_name == 'child' else config_train.non_child_args
-    this_args_list = sorted(list(this_args_dict.keys())) # readability
-    trainer_args = [
-        f"--{key} {this_args_dict[key]}"
-        for key in this_args_list
-    ]
-    
-    main_command = f"{main_command} {' '.join(data_args + trainer_args)}"
+    main_command = f"{main_command}{get_run_mlm_command(split_name, model_dir, data_dir, tags_data_str)}"
     
     commands.append(main_command)
     
@@ -131,6 +145,6 @@ if __name__ == '__main__':
             t_split, t_dataset = split_args
             tags_str = 'with_tags' if has_tags else 'no_tags'
             scripts.write_training_shell_script(t_split, t_dataset, has_tags, f'scripts_{label}/{tags_str}', get_isolated_training_commands)
-            
+
     scripts.gen_submit_script(label, config.childes_model_args, label)
     

@@ -8,19 +8,24 @@ import config
 
 # Arguments that control model versioning
 
-version_name = 'goal_to_convergence'
+version_name = 'lr_search' # {'lr_search' for hyperparameter search}
+is_search = version_name == 'lr_search'
+
+lr_search_params = [1e-3, 7.5e-4, 5e-4, 1e-4, 5e-5] 
+
+exp_dir = join(join(config.root_dir, 'experiments'), version_name)
+model_dir = join(exp_dir, 'models')
 
 # Arguments that control taking a subset of the dataset
 
-cut_ratio = 0.25 # Take 1/4 of all of the non-child text files for iterating on training to convergence.
+#cut_ratio = 0.25 # Take 1/4 of all of the non-child text files for iterating on training to convergence.
+cut_ratio = 46000 # For the hyperparam searhc
+
 use_full_text = False
 
 finetune_cut_dir_name = f'finetune_cut_{cut_ratio}'
 finetune_run_dir_name = finetune_cut_dir_name if not use_full_text else config.finetune_dir_name
 finetune_run_path = join(config.root_dir, finetune_run_dir_name)
-
-if not exists(finetune_run_path):
-    os.makedirs(finetune_run_path)
 
 # Wandb arguments -- not currently used.
 
@@ -98,6 +103,8 @@ base_args = {
     
     'per_device_train_batch_size' : batch_size,
     'per_device_eval_batch_size'  : batch_size,
+    
+    'weight_decay': 1e-7, 
     
 }
 

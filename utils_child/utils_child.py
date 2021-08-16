@@ -97,7 +97,7 @@ def score_cross_prior(data_child, prior_child):
         assert False, "Invalid dist specified in config file. Choose from: {levdist}"
     
     posteriors = transformers_bert_completions.get_posteriors(cross_priors, 
-                    dists, cmu_in_initial_vocab, None, optim_beta)
+                    dists, initial_vocab, None, optim_beta)
     
     posteriors['scores']['beta_value'] = optim_beta
     posteriors['scores']['model'] = model['title']

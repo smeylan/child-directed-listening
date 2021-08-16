@@ -59,8 +59,8 @@ child_args = {
 #########################
 
 non_child_lr = 0.00075 # Searched manually, 1000 examples, on no tags with the max_train_samples truncation
-non_child_interval = 500
-non_child_epochs = 15 # Until convergence, if possible.
+non_child_interval = 500 if not is_search else 100
+non_child_epochs = 15 if not is_search else 5
 
 non_child_args = {
     

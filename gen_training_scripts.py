@@ -70,12 +70,14 @@ def get_run_mlm_command(split_name, this_data_dir, this_model_dir, tags_data_str
     list_lr = config_train.lr_search_params if config_train.is_search else [this_args_dict['learning_rate']]
     
     for lr in list_lr:
-    
+        
+        modify_model_dir = f'/{lr}' if config_train.is_search else ''
+        
         data_args = [
             f"--train_file {this_data_dir}/train{tags_data_str}.txt",
             f"--validation_file {this_data_dir}/val{tags_data_str}.txt", 
             f"--cache_dir ~/.cache/$SLURM_JOB_ID",
-            f"--output_dir {this_model_dir}",
+            f"--output_dir {this_model_dir}{modify_model_dir}",
         ]
 
         trainer_args = [f"--learning_rate={lr}"]
@@ -123,7 +125,8 @@ def get_non_header_commands(split_name, dataset_name, with_tags, om2_user = 'won
     
     main_command = f"singularity exec --nv -B /om,/om2/user/{om2_user} /om2/user/{om2_user}/vagrant/trans-pytorch-gpu"
     
-    main_command = f"{main_command}{get_run_mlm_command(split_name, model_dir, data_dir, tags_data_str)}"
+    
+    main_command = f"{main_command}{get_run_mlm_command(split_name, data_dir, model_dir, tags_data_str)}"
     
     commands.append(main_command)
     

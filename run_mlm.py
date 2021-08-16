@@ -55,7 +55,7 @@ from transformers.utils import check_min_version
 #import wandb
 #import json
 import config_train
-import config
+import config as config_repository
 # end lines
 
 
@@ -442,7 +442,7 @@ def main():
         if "train" not in tokenized_datasets:
             raise ValueError("--do_train requires a train dataset")
         train_dataset = tokenized_datasets["train"]
-        train_dataset = train_dataset.shuffle(config.SEED) # Added this line 8/16/21
+        train_dataset = train_dataset.shuffle(config_repository.SEED) # Added this line 8/16/21
         if data_args.max_train_samples is not None:
             train_dataset = train_dataset.select(range(data_args.max_train_samples))
 

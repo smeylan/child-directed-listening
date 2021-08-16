@@ -59,7 +59,7 @@ def get_isolated_training_commands(split_name, dataset_name, with_tags, om2_user
     return commands
 
 
-def get_run_mlm_command(split_name, this_data_dir, this_model_dir, tags_data_str):
+def get_run_mlm_command(split_name, this_data_dir, this_model_dir, tags_data_str, om2_user):
     
     
     list_python_commands = []
@@ -87,8 +87,10 @@ def get_run_mlm_command(split_name, this_data_dir, this_model_dir, tags_data_str
             for key in this_args_list if key != 'learning_rate'
         ])
 
+        main_command = f"singularity exec --nv -B /om,/om2/user/{om2_user} /om2/user/{om2_user}/vagrant/trans-pytorch-gpu"
+        
         this_python_command = f' python3 run_mlm.py {" ".join(data_args + trainer_args)}'
-        list_python_commands.append(this_python_command)
+        list_python_commands.append(f"{main_command}{this_python_command}")
         
     all_python_command = '; '.join(list_python_commands)
 
@@ -123,12 +125,9 @@ def get_non_header_commands(split_name, dataset_name, with_tags, om2_user = 'won
     # end usage of variable
     commands.append("# 7/13/21: https://stackoverflow.com/questions/19960332/use-slurm-job-id for variable name of job ID\n")
     
-    main_command = f"singularity exec --nv -B /om,/om2/user/{om2_user} /om2/user/{om2_user}/vagrant/trans-pytorch-gpu"
+    main_command_all = get_run_mlm_command(split_name, data_dir, model_dir, tags_data_str, om2_user)
     
-    
-    main_command = f"{main_command}{get_run_mlm_command(split_name, data_dir, model_dir, tags_data_str)}"
-    
-    commands.append(main_command)
+    commands.append(main_command_all)
     
     # end 7/13/21
     # end taken command code 6/24/21

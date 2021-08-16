@@ -687,12 +687,16 @@ def get_posteriors(prior_data, levdists, initial_vocab, bert_token_ids=None, bet
             prior_data['scores'].loc[prior_data['scores'].sample_index == i, 
                 'prior_surprisal'] = prior_data['priors'][i, \
                 int(prior_data['scores'].iloc[i]['position_in_mask'])]
-            prior_data['scores'].loc[prior_data['scores'].sample_index == i, 
-                'kl_flat_to_prior'] = scipy.stats.entropy(flat_prior, prior_data['priors'][i,:])
-            prior_data['scores'].loc[prior_data['scores'].sample_index == i, 
-                'kl_flat_to_posterior'] = scipy.stats.entropy(flat_prior, normalized[i,:])
-
-
+            try:
+                prior_data['scores'].loc[prior_data['scores'].sample_index == i, 
+                    'kl_flat_to_prior'] = scipy.stats.entropy(flat_prior, prior_data['priors'][i,:])
+                prior_data['scores'].loc[prior_data['scores'].sample_index == i, 
+                    'kl_flat_to_posterior'] = scipy.stats.entropy(flat_prior, normalized[i,:])
+            except:
+                print(i)
+                with open('./debugging_get_posteriors.txt', 'w') as f:
+                    f.writelines([f'bad index: {i}'])
+ 
         # get the highest prior probability words + probs
         
         if examples_mode:

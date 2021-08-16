@@ -82,8 +82,6 @@ if __name__ == '__main__':
         context_width = this_model_args['context_width'],
         model_type = this_model_args['model_type'],
     )    
-
-    print('Need to update this for children.')
                                                                     
     all_phono = load_splits.load_phono()
     this_sample_dict = load_splits.load_sample_model_across_time_args()

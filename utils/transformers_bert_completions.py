@@ -693,11 +693,8 @@ def get_posteriors(prior_data, levdists, initial_vocab, bert_token_ids=None, bet
                 prior_data['scores'].loc[prior_data['scores'].sample_index == i, 
                     'kl_flat_to_posterior'] = scipy.stats.entropy(flat_prior, normalized[i,:])
             except:
-                print(i)
-                with open('./debugging_get_posteriors.txt', 'w') as f:
-                    f.writelines([f'bad index: {i}'])
-                    prior_data['scores'].to_pickle('./bad_posteriors_scores_data.pkl')
-                    prior_data['priors'].to_pickle('./bad_posteriors_prior_data.pkl')
+                import pdb
+                pdb.set_trace()
  
         # get the highest prior probability words + probs
         

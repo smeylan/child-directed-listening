@@ -20,7 +20,7 @@ def combine_num_vowels_phonology(phono_df):
     """
     
     # If one of the numbers is NaN, the result is NaN -- this is desired behavior.
-    phono_df['num_vowels'] = [min(num1, num2) for num1, num2 in zip(phono_df['num_vowels_actual'], phono_df['num_vowels_model'])]
+    phono_df['num_vowels'] = [max(num1, num2) for num1, num2 in zip(phono_df['num_vowels_actual'], phono_df['num_vowels_model'])]
     
     return phono_df
 

@@ -2,9 +2,13 @@
 
 import os
 from os.path import join, exists
+import json
 
 from utils import scripts, split_gen
 from utils_child import child_models
+
+from utils_model_analysis import hyperparams
+
 import config
 import config_train
 
@@ -59,7 +63,7 @@ def get_isolated_training_commands(split_name, dataset_name, with_tags, om2_user
     return commands
 
 
-def get_run_mlm_command(split_name, this_data_dir, this_model_dir, tags_data_str, om2_user):
+def get_run_mlm_command(split_name, dataset_name, this_data_dir, this_model_dir, tags_data_str, om2_user):
     
     
     list_python_commands = []
@@ -67,7 +71,13 @@ def get_run_mlm_command(split_name, this_data_dir, this_model_dir, tags_data_str
     this_args_dict = config_train.child_args if split_name == 'child' else config_train.non_child_args
     this_args_list = sorted(list(this_args_dict.keys())) # readability
     
-    list_lr = config_train.lr_search_params if config_train.is_search else [this_args_dict['learning_rate']]
+    json_path = hyperparams.get_best_lr_dict_loc()
+    
+    with open(json_path, 'r') as f:
+        hyperparam_id = '/'.join(split_name, dataset_name, tags_data_str)
+        single_lr = json.load(json_path)[hyperparam_id]
+        
+    list_lr = config_train.lr_search_params if config_train.is_search else [single_lr]
     
     for lr in list_lr:
         
@@ -125,7 +135,7 @@ def get_non_header_commands(split_name, dataset_name, with_tags, om2_user = 'won
     # end usage of variable
     commands.append("# 7/13/21: https://stackoverflow.com/questions/19960332/use-slurm-job-id for variable name of job ID\n")
     
-    main_command_all = get_run_mlm_command(split_name, data_dir, model_dir, tags_data_str, om2_user)
+    main_command_all = get_run_mlm_command(split_name, dataset_name, data_dir, model_dir, tags_data_str, om2_user)
     
     commands.append(main_command_all)
     

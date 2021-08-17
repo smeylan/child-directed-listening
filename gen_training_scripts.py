@@ -83,7 +83,7 @@ def get_run_mlm_command(split_name, dataset_name, this_data_dir, this_model_dir,
     main_command = f"singularity exec --nv -B /om,/om2/user/{om2_user} /om2/user/{om2_user}/vagrant/trans-pytorch-gpu"
     this_python_command = f' python3 run_mlm.py {" ".join(data_args + trainer_args)}'
 
-    return this_python_command 
+    return f"{main_command}{this_python_command}"
     
 
 def get_non_header_commands(split_name, dataset_name, with_tags, om2_user = 'wongn'):

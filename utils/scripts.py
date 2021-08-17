@@ -81,8 +81,7 @@ def cvt_root_dir(split, dataset, base_dir, name = config_train.version_name):
     if config.om_root_dir == config.root_dir:
         return local_path
     
-    print('Need to make this more maintainable, cvt root dir converting no versioning to the appropriate name for child work.')
-    return local_path.replace(config.root_dir, config.om_root_dir).replace('no_versioning', config_train.version_name)
+    return local_path.replace(config.root_dir, config.om_root_dir).replace(config.exp_determiner, config_train.version_name)
     
     
 def write_training_shell_script(split, dataset, is_tags, dir_name, get_command_func, om2_user = 'wongn'): 

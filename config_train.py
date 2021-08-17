@@ -1,43 +1,20 @@
-
 import os
 from os.path import join, exists
 from utils import load_models
 
 import config
 
-
-# Arguments that control model versioning
-
-version_name = 'lr_search' # {'lr_search' for hyperparameter search}
-is_search = version_name == 'lr_search'
-
-lr_search_params = [1e-3, 7.5e-4, 5e-4, 1e-4, 5e-5] 
-
-exp_dir = join(join(config.root_dir, 'experiments'), version_name)
-model_dir = join(exp_dir, 'models')
-
-# Arguments that control taking a subset of the dataset
-
-#cut_ratio = 0.25 # Take 1/4 of all of the non-child text files for iterating on training to convergence.
-cut_ratio = 92000 # For the hyperparam searhc
-
-use_full_text = False
-
-finetune_cut_dir_name = f'finetune_cut_{cut_ratio}'
-finetune_run_dir_name = finetune_cut_dir_name if not use_full_text else config.finetune_dir_name
-finetune_run_path = join(config.root_dir, finetune_run_dir_name)
-
-# Wandb arguments -- not currently used.
-
-wandb_user = 'w-nicole'
-project_name = "child-directed-listening" 
-
 #########################
 #### CHILD ARGUMENTS ####
 #########################
 
 
-child_lr = 1e-4
+version_name = 'no_search_retrain_default' # Separate from exp determiner, because you may want to generate separate training files than scoring on Chompsky
+
+exp_dir = join(join(config.root_dir, 'experiments'), version_name)
+model_dir = join(exp_dir, 'models')
+
+child_lr = 5e-5
 child_interval = 10
 child_epochs = 10
 
@@ -58,9 +35,9 @@ child_args = {
 ## NON-CHILD ARGUMENTS ##
 #########################
 
-non_child_lr = 0.00075 # Searched manually, 1000 examples, on no tags with the max_train_samples truncation
-non_child_interval = 500 if not is_search else 100
-non_child_epochs = 15 if not is_search else 5
+non_child_lr = 5e-5 # Default arguments
+non_child_interval = 500
+non_child_epochs = 3
 
 non_child_args = {
     
@@ -104,12 +81,9 @@ base_args = {
     'per_device_train_batch_size' : batch_size,
     'per_device_eval_batch_size'  : batch_size,
     
-    'weight_decay': 1e-7, 
-    
 }
 
 # Update the specific args with the base args
 
 non_child_args.update(base_args)
 child_args.update(base_args)
-

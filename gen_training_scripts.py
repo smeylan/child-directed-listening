@@ -33,7 +33,7 @@ def get_training_alloc(split_name):
         time_alloc_hrs = time
     else:
         mem_alloc_gb = 9 
-        time_alloc_hrs = (1, 30, 0) if config_train.version_name == 'lr_search' else 8
+        time_alloc_hrs = 6
     
     return time_alloc_hrs, mem_alloc_gb
     
@@ -65,46 +65,25 @@ def get_isolated_training_commands(split_name, dataset_name, with_tags, om2_user
 
 def get_run_mlm_command(split_name, dataset_name, this_data_dir, this_model_dir, tags_data_str, om2_user):
     
-    
-    list_python_commands = []
-    
     this_args_dict = config_train.child_args if split_name == 'child' else config_train.non_child_args
     this_args_list = sorted(list(this_args_dict.keys())) # readability
     
-    json_path = hyperparams.get_best_lr_dict_loc()
-    
-    with open(json_path, 'r') as f:
-        hyperparam_id = '/'.join(split_name, dataset_name, tags_data_str)
-        single_lr = json.load(json_path)[hyperparam_id]
-        
-    list_lr = config_train.lr_search_params if config_train.is_search else [single_lr]
-    
-    for lr in list_lr:
-        
-        modify_model_dir = f'/{lr}' if config_train.is_search else ''
-        
-        data_args = [
+    data_args = [
             f"--train_file {this_data_dir}/train{tags_data_str}.txt",
             f"--validation_file {this_data_dir}/val{tags_data_str}.txt", 
             f"--cache_dir ~/.cache/$SLURM_JOB_ID",
-            f"--output_dir {this_model_dir}{modify_model_dir}",
+            f"--output_dir {this_model_dir}",
         ]
 
-        trainer_args = [f"--learning_rate={lr}"]
-        
-        trainer_args.extend([
-            f"--{key} {this_args_dict[key]}"
-            for key in this_args_list if key != 'learning_rate'
-        ])
+    trainer_args = [
+        f"--{key} {this_args_dict[key]}"
+        for key in this_args_list
+    ]
 
-        main_command = f"singularity exec --nv -B /om,/om2/user/{om2_user} /om2/user/{om2_user}/vagrant/trans-pytorch-gpu"
-        
-        this_python_command = f' python3 run_mlm.py {" ".join(data_args + trainer_args)}'
-        list_python_commands.append(f"{main_command}{this_python_command}")
-        
-    all_python_command = '; '.join(list_python_commands)
+    main_command = f"singularity exec --nv -B /om,/om2/user/{om2_user} /om2/user/{om2_user}/vagrant/trans-pytorch-gpu"
+    this_python_command = f' python3 run_mlm.py {" ".join(data_args + trainer_args)}'
 
-    return all_python_command
+    return this_python_command 
     
 
 def get_non_header_commands(split_name, dataset_name, with_tags, om2_user = 'wongn'):
@@ -113,7 +92,7 @@ def get_non_header_commands(split_name, dataset_name, with_tags, om2_user = 'won
     
     model_dir = models_get_split_folder(split_name, dataset_name, with_tags)
     
-    data_dir = join(config.om_root_dir, join(config_train.finetune_run_dir_name, join(split_name, dataset_name)))
+    data_dir = join(config.om_root_dir, join(config.finetune_dir, join(split_name, dataset_name)))
     
     if split_name == 'child':
         _, is_tags = child_models.get_best_child_base_model_path()

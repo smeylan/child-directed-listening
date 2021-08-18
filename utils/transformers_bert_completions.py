@@ -700,6 +700,8 @@ def get_posteriors(prior_data, levdists, initial_vocab, bert_token_ids=None, bet
         
         if examples_mode:
             
+            print('Entered examples mode!!!!!!!!!!!!!!')
+            
             num_highest_to_keep = 10 
             highest_prior_indices = np.argsort(prior_data['priors'][i, :])[::-1]
             highest_prior_words = np.array(initial_vocab)[highest_prior_indices][0:num_highest_to_keep]

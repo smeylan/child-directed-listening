@@ -43,7 +43,7 @@ def assemble_scores_no_order():
 
 
 
-def successes_and_failures_across_time_per_model(age, success_ids, yyy_ids, model, all_tokens_phono, beta_value):
+def successes_and_failures_across_time_per_model(age, success_ids, yyy_ids, model, all_tokens_phono, beta_value, examples_mode):
     """
     model = a dict of a model like that in the yyy analysis 
     vocab is only invoked for unigram, which correspond to original yyy analysis.
@@ -75,11 +75,11 @@ def successes_and_failures_across_time_per_model(age, success_ids, yyy_ids, mode
 
     if model['type'] == 'BERT':
         posteriors_for_age_interval = transformers_bert_completions.get_posteriors(priors_for_age_interval, 
-            edit_distances_for_age_interval, initial_vocab, beta_value = beta_value, examples_mode = False)
+            edit_distances_for_age_interval, initial_vocab, beta_value = beta_value, examples_mode = examples_mode)
     elif model['type'] == 'unigram':
         # special unigram hack
         this_bert_token_ids = unigram.get_sample_bert_token_ids('models_across_time')
-        posteriors_for_age_interval = transformers_bert_completions.get_posteriors(priors_for_age_interval, edit_distances_for_age_interval, initial_vocab, this_bert_token_ids, beta_value = beta_value, examples_mode = False)
+        posteriors_for_age_interval = transformers_bert_completions.get_posteriors(priors_for_age_interval, edit_distances_for_age_interval, initial_vocab, this_bert_token_ids, beta_value = beta_value, examples_mode = examples_mode)
 
 
     posteriors_for_age_interval['scores']['model'] = model['title']

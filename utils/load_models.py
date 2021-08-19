@@ -2,6 +2,7 @@ import os
 from os.path import join, exists
 
 import pandas as pd
+import numpy as np
 import transformers 
 
 from transformers import BertTokenizer, BertForMaskedLM
@@ -277,7 +278,10 @@ def get_initial_vocab_info(initial_tokenizer = None):
         cmu_2syl_inchildes.word)
     
     cmu_in_initial_vocab = cmu_2syl_inchildes.loc[cmu_2syl_inchildes.word.isin(initial_vocab)]
-
+    
+    is_same = np.all(np.array(sorted(cmu_in_initial_vocab['word'])) == sorted(initial_vocab))
+    assert is_same, "Assumption for unigram limiting failed. initial_vocab was used as having the same element as cmu_in_initial_vocab."
+    
     return initial_vocab, cmu_in_initial_vocab
 
 

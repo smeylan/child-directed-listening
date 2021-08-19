@@ -456,44 +456,6 @@ def compare_successes_failures(all_tokens, selected_success_utts, selected_yyy_u
     return(rdict)
 
 
-
-def construct_limited_unigram_vocab(raw_vocab):
-    
-    _, cmu_in_initial_vocab = load_models.get_initial_vocab_info()
-    cmu_limited_set = set(cmu_in_initial_vocab['word'])
-    this_vocab_set = set(raw_vocab)
-    
-    assert cmu_limited_set.issubset(this_vocab_set)
-    
-    limited_vocab = cmu_limited_set & this_vocab_set
-    vocab = np.array(list(limited_vocab))
-    
-    return vocab
-
-def construct_limited_unigram(raw_vocab, child_count_path):
-    
-    vocab = construct_limited_unigram_vocab(raw_vocab)
-    
-    # The original code here
-    unigram_model = pd.DataFrame({'word':vocab})
-    
-    if child_count_path is not None: 
-        childes_counts_raw = pd.read_csv(child_count_path) 
-        unigram_model = unigram_model.merge(childes_counts_raw, how='left')
-        unigram_model = unigram_model.fillna(0) 
-        unigram_model['count'] = unigram_model['count'] + .01 #additive smoothing
-        
-        unigram_model['prob'] = unigram_model['count'] / np.sum(unigram_model['count'])
-    
-    else:
-        # build a flat prior: assign all words equal probability
-        unigram_model['prob'] = 1/unigram_model.shape[0]    
-    # end original code
-    
-    assert unigram_model.shape[0] == vocab.shape[0]
-    return unigram_model
-
-
 def compare_successes_failures_unigram_model(all_tokens, selected_success_utts, selected_yyy_utts, tokenizer, softmax_mask,  child_counts_path, vocab, context_width_in_utts, use_speaker_labels):
     '''
         Get prior probaiblities, completions, and scores from a unigram model (limiting to the vocab) or flat prior for a list of utterance ids for communicative successes and a list of utterance ids for communicative failures 
@@ -514,7 +476,19 @@ def compare_successes_failures_unigram_model(all_tokens, selected_success_utts, 
             scores: a datframe of length n containing concatenated entropy scores, ranks, surprisals. Failures are stacked on top of successes and are identified by a bert_token_id
     '''    
     
-    unigram_model = construct_limited_unigram(vocab, child_counts_path)
+    unigram_model = pd.DataFrame({'word':vocab})
+    
+    if child_counts_path is not None: 
+        childes_counts = pd.read_csv(child_counts_path)    
+        unigram_model = unigram_model.merge(childes_counts, how='left')
+        unigram_model = unigram_model.fillna(0) 
+        unigram_model['count'] = unigram_model['count'] + .01 #additive smoothing
+        
+        unigram_model['prob'] = unigram_model['count'] / np.sum(unigram_model['count'])
+    
+    else:
+        # build a flat prior: assign all words equal probability
+        unigram_model['prob'] = 1/unigram_model.shape[0]        
     
     # for successes, get the probability of all words        
     # Only score the success tokens
@@ -523,7 +497,7 @@ def compare_successes_failures_unigram_model(all_tokens, selected_success_utts, 
     
     # Always override tags specification to False
     success_utt_contents = success_utt_contents.loc[~success_utt_contents.token.isin(['[chi]', '[cgv]'])]
-
+    
     success_scores = success_utt_contents[['token','bert_token_id']].merge(unigram_model, left_on='token', right_on='word', how='left')
     
     # entropy will be the same for all success and failure tokens
@@ -717,9 +691,6 @@ def get_posteriors(prior_data, levdists, initial_vocab, bert_token_ids=None, bet
                    'highest_posterior_words'] = ' '.join(highest_posterior_words)
             prior_data['scores'].loc[prior_data['scores'].sample_index == i, 
                    'highest_posterior_probabilities'] = ' '.join([str(x) for x in normalized[i, highest_posterior_indices]])
-        
-
-    convert_mem_save = ['posterior_surprisal', 'prior_surprisal', 'kl_flat_to_prior', 'kl_flat_to_posterior', 'edit_distance']
     
     return(prior_data)
 

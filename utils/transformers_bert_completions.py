@@ -618,8 +618,8 @@ def get_posteriors(prior_data, levdists, initial_vocab, bert_token_ids=None, bet
         examples_mode: Whether or not to maintain data related to highest probability words -- used for Examples notebooks, disabled for memory savings.
     '''
 
-    if beta_value is None: assert False # Note to self to make it a non-default argument. Temporary before I figure out some stuff
-    
+    if beta_value is None: assert False
+   
     if bert_token_ids is not None:
         btis = set(bert_token_ids)   
         prior_data['scores']['keep'] = prior_data['scores']['bert_token_id'].isin(btis)
@@ -639,6 +639,7 @@ def get_posteriors(prior_data, levdists, initial_vocab, bert_token_ids=None, bet
     row_sums = np.sum(unnormalized,1)
     
     normalized =  (unnormalized / row_sums[:, np.newaxis])
+    
     
     # add entropies
     posterior_entropies = np.apply_along_axis(scipy.stats.entropy, 1, normalized) 

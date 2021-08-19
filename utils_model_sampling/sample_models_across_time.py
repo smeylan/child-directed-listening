@@ -85,4 +85,7 @@ def successes_and_failures_across_time_per_model(age, success_ids, yyy_ids, mode
     posteriors_for_age_interval['scores']['model'] = model['title']
     posteriors_for_age_interval['scores']['age'] = age
     
-    return copy.deepcopy(posteriors_for_age_interval['scores'])
+    # Below: temporary only
+    return copy.deepcopy(posteriors_for_age_interval['scores']), posteriors_for_age_interval
+    # Below: the real line
+    #return copy.deepcopy(posteriors_for_age_interval['scores'])

@@ -9,6 +9,9 @@ def make_folders(paths):
         if not exists(p):
             os.makedirs(p)
 
+for_reproducible = False # Configure to true for generating data for a reproducibility check
+reproducibility_modifier = '_for_rep' if for_reproducible else ''
+
 root_dir = os.getcwd()
 # root_dir = '/om2/user/wongn/child-directed-listening' # uncomment this for OM running
 
@@ -25,11 +28,11 @@ val_ratio = 0.2 # For the CHILDES split.
 
 child_val_eval_num = 3
 
-finetune_dir_name = 'finetune'
+finetune_dir_name = f'finetune{reproducibility_modifier}'
 finetune_dir = join(root_dir, finetune_dir_name)
 
 # Beta and across time evaluations
-prov_dir = join(root_dir, 'prov') # Location of data for evaluations (in yyy)
+prov_dir = join(root_dir, f'prov{reproducibility_modifier}') # Location of data for evaluations (in yyy)
 
 prov_csv_dir = join(root_dir, 'prov_csv')
 cmu_path = join(root_dir, 'phon/cmu_in_childes.pkl') # The location of the cmu dictionary

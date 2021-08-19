@@ -11,8 +11,8 @@
 #SBATCH -t 1:00:00
 #SBATCH --mem=13G
 #SBATCH --constraint=high-capacity
-#SBATCH --output=/om2/user/wongn/child-directed-listening/experiments/no_versioning/scores/n=500/val/all/all/%j_non_child_beta_time_model=flat_unigram_tags=False_context=0.out
+#SBATCH --output=/om2/user/wongn/child-directed-listening/experiments/no_versioning/scores/n=500/val/all/all/%j_non_child_beta_time_model=data_unigram_tags=False_context=0.out
 mkdir -p /om2/user/wongn/child-directed-listening/experiments/no_versioning/scores/n=500/val/all/all
 
 module load openmind/singularity/3.2.0
-singularity exec --nv -B /om,/om2/user/wongn /om2/user/wongn/vagrant/trans-pytorch-gpu python3 run_beta_search.py --split all --dataset all --context_width 0 --use_tags False --model_type flat_unigram; singularity exec --nv -B /om,/om2/user/wongn /om2/user/wongn/vagrant/trans-pytorch-gpu  python3 run_models_across_time.py --split all --dataset all --context_width 0 --use_tags False --model_type flat_unigram
+singularity exec --nv -B /om,/om2/user/wongn /om2/user/wongn/vagrant/trans-pytorch-gpu python3 run_beta_search.py --split all --dataset all --context_width 0 --use_tags False --model_type data_unigram; singularity exec --nv -B /om,/om2/user/wongn /om2/user/wongn/vagrant/trans-pytorch-gpu  python3 run_models_across_time.py --split all --dataset all --context_width 0 --use_tags False --model_type data_unigram

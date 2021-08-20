@@ -15,9 +15,10 @@ jupyter nbconvert --execute 'data_splitting_checks.ipynb' --to notebook
 # tmux new-session -s rsync_prov
 #rsync -a --progress ./prov wongn@openmind.mit.edu:~/child_repo_split
 
-# tmux new-session -s rsync_prov_csv
-# rsync -a --progress ./prov_csv wongn@openmind.mit.edu:~/child_repo_split;
-
-# # tmux new-session -s rsync_csv
+# tmux new-session -s rsync_csv
 # rsync -a --progress ./csv wongn@openmind.mit.edu:~/child_repo_split
+
+# tmux new-session -s rsync_phon
+# rsync -a --progress ./phon wongn@openmind.mit.edu:~/child_repo_split
+
 

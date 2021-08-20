@@ -3,7 +3,7 @@ import copy
 
 from utils import load_splits, load_models, transformers_bert_completions
 from utils_model_sampling import beta_utils
-from utils_child import child_models
+from utils_child import child_models, child_split_gen
 
 import config
 
@@ -12,6 +12,7 @@ from os.path import join, exists
 
 import random
 import pandas as pd 
+
 
 def load_cross_data(child_name):
     
@@ -32,17 +33,14 @@ def load_success_yyy_utts(data_type, child_name, cross_data, display_all = False
     
     if cross_data is None:
         cross_data = load_cross_data(child_name)
-    
-    # For now: Possibly non-reproducible sampling from the right phase (intermediate results), or, seed the data and see if it results in a reproducible split.
-    
-    utt_pool = list(set(cross_data[cross_data.partition == data_type].utterance_id))
-    random.shuffle(utt_pool)
-    utt_ids = utt_pool
-    
-    if not display_all:
-        if config.subsample_mode:
-            utt_ids = utt_ids[:min(len(utt_ids), config.n_subsample)]
-     
+        
+    if config.subsample_mode:
+        this_attr = child_split_gen.get_subsample_key(config.n_used_score_subsample)
+        data_to_extract = cross_data[child_split_gen[this_attr]]
+    else:
+        data_to_extract = cross_data
+       
+    utt_ids = sorted(list(set(data_to_extract.utterance_id)))
     return pd.DataFrame.from_records({'utterance_id' : utt_ids})
         
 
@@ -83,7 +81,6 @@ def score_cross_prior(data_child, prior_child):
     # Load the prior
     model = child_models.get_child_model_dict(prior_child)
     
-    # Use id, not utterance id, because this is Providence second query data.
     cross_priors = transformers_bert_completions.compare_successes_failures(this_cross_data, success_utts, yyy_utts, **model['kwargs'])
     
     # Calculate distances -- depending on how implementation is done hopefully can abstract this out.

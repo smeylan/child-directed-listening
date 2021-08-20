@@ -73,6 +73,11 @@ def find_splits_across_ages(raw_pool):
 def augment_with_all_subsamples(df, phase):
 
     for ideal_n in config.subsamples:
+        
+        # To allow it to pass the checks
+        # + confirm all sample-able utterances receive either a yes or no sampling
+    
+        df.loc[df['phase_child_sample'].isna(), get_subsample_key(ideal_n)] = False
         df = augment_with_subsamples(df, phase, ideal_n)
     
     return df
@@ -89,22 +94,24 @@ def augment_with_subsamples(df, phase, ideal_n):
     n_avail = utt_pool.shape[0]
     n = min(n_avail, ideal_n)
     
-    print(n_avail, n, phase)
-    
     to_subsample = set(np.random.choice(utt_pool, size = (n,), replace = False))
     
-    this_attr = f'phase_child_sample_n={ideal_n}'
+    this_attr = get_subsample_key(ideal_n)
     
     df.loc[((df.utterance_id.isin(to_subsample)) & (df.phase_child_sample == phase)), this_attr] = True
     df.loc[((~df.utterance_id.isin(to_subsample)) & (df.phase_child_sample == phase)), this_attr] = False
     
     return df
 
+def get_subsample_key(this_n):
+    return f'phase_child_sample_n={this_n}'
+    
+
 def split_child_subsampling(all_phono):
     
     for phase in ['train', 'val', 'eval']:
         all_phono = augment_with_all_subsamples(all_phono, phase)
-        
+    
     return all_phono
 
         

@@ -9,7 +9,7 @@ import config
 #########################
 
 
-version_name = 'no_search_retrain_default' # Separate from exp determiner, because you may want to generate separate training files than scoring on Chompsky
+version_name = 'no_versioning' # Separate from exp determiner, because you may want to generate separate training files than scoring on Chompsky
 
 exp_dir = join(join(config.root_dir, 'experiments'), version_name)
 model_dir = join(exp_dir, 'models')

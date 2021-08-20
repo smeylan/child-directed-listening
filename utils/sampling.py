@@ -9,32 +9,6 @@ import numpy as np
 np.random.seed(config.SEED)
 
 import pandas as pd
-
-
-def augment_with_all_subsamples(df):
-
-    for n in config.subsamples:
-        df = augment_with_subsamples(df, n)
-        
-    for n in config.subsamples:
-        assert sum(df[f'n={n}']) == n
-        
-    return df
-        
-
-def augment_with_subsamples(df, n):
-    """
-    Intended for use with utterance lists,
-        such as for samples across time or beta optimization
-    """
-    
-    # Need to randomly sample indices from the total to mark as true
-    to_subsample = np.random.choice(np.arange(df.shape[0]), size = (n,), replace = False)
-    
-    df[f'n={n}'] = False
-    df[f'n={n}'][to_subsample] = True
-    
-    return df
     
 def get_n(task):
    
@@ -73,9 +47,7 @@ def sample_pool_ids(this_pool, this_n):
     n = min(num_samples, this_n)
     
     sample_ids = np.random.choice(this_pool, size = n, replace=False)
-    raw_sample = pd.DataFrame.from_records({'utterance_id' : sample_ids.tolist()})
-    
-    sample = augment_with_all_subsamples(raw_sample)
+    sample = pd.DataFrame.from_records({'utterance_id' : sample_ids.tolist()})
     
     return sample
     

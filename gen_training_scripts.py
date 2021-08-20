@@ -33,7 +33,7 @@ def get_training_alloc(split_name):
         time_alloc_hrs = time
     else:
         mem_alloc_gb = 9 
-        time_alloc_hrs = 6
+        time_alloc_hrs = 6 if not config.dev_mode else (0, 20, 0)
     
     return time_alloc_hrs, mem_alloc_gb
     
@@ -79,6 +79,12 @@ def get_run_mlm_command(split_name, dataset_name, this_data_dir, this_model_dir,
         f"--{key} {this_args_dict[key]}"
         for key in this_args_list
     ]
+    
+    if config.dev_mode:
+        trainer_args += [
+            f"--max_train_samples 10",
+            f"--max_eval_samples 10",
+        ]
 
     main_command = f"singularity exec --nv -B /om,/om2/user/{om2_user} /om2/user/{om2_user}/vagrant/trans-pytorch-gpu"
     this_python_command = f' python3 run_mlm.py {" ".join(data_args + trainer_args)}'

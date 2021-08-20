@@ -329,6 +329,14 @@ def main():
             "You are instantiating a new tokenizer from scratch. This is not supported by this script."
             "You can do it from another script, save it, and load it from here, using --tokenizer_name."
         )
+        
+    # I added the add_tokens and the print statements here.
+    print('Adding the speaker tags to the tokenizers')
+    tokenizer.add_tokens(['[chi]','[cgv]'])
+    
+    print('Result of tokenizing tags')
+    print(tokenizer.convert_ids_to_tokens(tokenizer.encode("[CHI] i'm not going to do anything.")))
+    print(tokenizer.convert_ids_to_tokens(tokenizer.encode('[CGV] back on the table if you wanna finish it.')))
 
     if model_args.model_name_or_path:
         model = AutoModelForMaskedLM.from_pretrained(

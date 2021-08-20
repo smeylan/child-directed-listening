@@ -1,5 +1,3 @@
-# Calls all OM-related scripts at once.
-
 #!/bin/bash
 
 chmod u+x ./tier_2a_non_child_scores_finetune_and_child_train.sh

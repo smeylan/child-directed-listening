@@ -9,8 +9,7 @@ import numpy as np
 np.random.seed(config.SEED)
 
 import pandas as pd
-
-
+    
 def get_n(task):
    
     assert task in ['beta', 'models_across_time'], "Invalid task name for sample successes -- use either 'beta' or 'models_across_time'."
@@ -49,6 +48,7 @@ def sample_pool_ids(this_pool, this_n):
     
     sample_ids = np.random.choice(this_pool, size = n, replace=False)
     sample = pd.DataFrame.from_records({'utterance_id' : sample_ids.tolist()})
+    
     return sample
     
     

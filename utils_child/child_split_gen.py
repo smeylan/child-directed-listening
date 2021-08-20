@@ -68,4 +68,43 @@ def find_splits_across_ages(raw_pool):
     
     return phase_idxs
 
+
+
+def augment_with_all_subsamples(df, phase):
+
+    for ideal_n in config.subsamples:
+        df = augment_with_subsamples(df, phase, ideal_n)
+    
+    return df
+        
+
+def augment_with_subsamples(df, phase, ideal_n):
+    """
+    Intended for use with utterance lists that aren't already randomly sampled before saving,
+        i.e. child scores for cross scoring.
+    """
+    
+    utt_pool = np.unique(df[df.phase_child_sample == phase].utterance_id)
+    
+    n_avail = utt_pool.shape[0]
+    n = min(n_avail, ideal_n)
+    
+    print(n_avail, n, phase)
+    
+    to_subsample = set(np.random.choice(utt_pool, size = (n,), replace = False))
+    
+    this_attr = f'phase_child_sample_n={ideal_n}'
+    
+    df.loc[((df.utterance_id.isin(to_subsample)) & (df.phase_child_sample == phase)), this_attr] = True
+    df.loc[((~df.utterance_id.isin(to_subsample)) & (df.phase_child_sample == phase)), this_attr] = False
+    
+    return df
+
+def split_child_subsampling(all_phono):
+    
+    for phase in ['train', 'val', 'eval']:
+        all_phono = augment_with_all_subsamples(all_phono, phase)
+        
+    return all_phono
+
         

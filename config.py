@@ -13,9 +13,9 @@ for_reproducible = False # Configure to true for generating data for a reproduci
 reproducibility_modifier = '_for_rep' if for_reproducible else ''
 
 root_dir = os.getcwd()
-# root_dir = '/om2/user/wongn/child-directed-listening' # uncomment this for OM running
 
-om_root_dir = '/om2/user/wongn/child-directed-listening'
+# Script generation is moved to Chompsky
+om_root_dir = '/om2/user/wongn/child-directed-listening' if 'chompsky' in root_dir else root_dir
 
 ### --- Data splitting arguments
 

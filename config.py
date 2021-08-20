@@ -24,6 +24,8 @@ SEED = 0
 n_beta = 5000
 n_across_time = 5000 # Note this is the base pool sample, not necessarily the sample size used.
 
+assert n_beta == n_across_time, "The codebase generally assumes this for convenience."
+
 subsamples = [2, 500, 1000] # 2, 500 are for development purposes
 
 val_ratio = 0.2 # For the CHILDES split.
@@ -61,7 +63,7 @@ if dev_mode:
 elif subsample_mode:
     n_subsample = n_iter_sample
 else:
-    n_subsample = None
+    n_subsample = n_beta
     
 n_used_score_subsample = n_subsample # Used for loading the scores in the analyses.
 

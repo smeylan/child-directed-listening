@@ -49,7 +49,7 @@ make_folders([finetune_dir, prov_dir, prov_csv_dir])
 ### --- End data splitting arguments
 
 regenerate = True # Whether to regenerate data or long-running computations
-dev_mode = True # Whether or not to truncate number of samples, etc. (for development purposes)
+dev_mode = False # Whether or not to truncate number of samples, etc. (for development purposes)
 
 # These will override n_beta, n_across_time for faster iteration
 subsample_mode = True

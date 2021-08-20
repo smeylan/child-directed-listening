@@ -66,6 +66,15 @@ def get_isolated_training_commands(split_name, dataset_name, with_tags, om2_user
 def get_run_mlm_command(split_name, dataset_name, this_data_dir, this_model_dir, tags_data_str, om2_user):
     
     this_args_dict = config_train.child_args if split_name == 'child' else config_train.non_child_args
+    
+    if split_name == 'child':
+        _, is_tags = child_models.get_best_child_base_model_path()
+        base_model = models_get_split_folder('all', 'all', is_tags)
+    else:
+        base_model = 'bert-base-uncased'
+        
+    this_args_dict['model_name_or_path'] = base_model
+    
     this_args_list = sorted(list(this_args_dict.keys())) # readability
     
     data_args = [
@@ -74,7 +83,7 @@ def get_run_mlm_command(split_name, dataset_name, this_data_dir, this_model_dir,
             f"--cache_dir ~/.cache/$SLURM_JOB_ID",
             f"--output_dir {this_model_dir}",
         ]
-
+    
     trainer_args = [
         f"--{key} {this_args_dict[key]}"
         for key in this_args_list
@@ -99,13 +108,6 @@ def get_non_header_commands(split_name, dataset_name, with_tags, om2_user = 'won
     model_dir = models_get_split_folder(split_name, dataset_name, with_tags)
     
     data_dir = join(config.om_root_dir, join(config.finetune_dir, join(split_name, dataset_name)))
-    
-    if split_name == 'child':
-        _, is_tags = child_models.get_best_child_base_model_path()
-        base_model = models_get_split_folder('all', 'all', is_tags)
-    else:
-        base_model = 'bert-base-uncased'
-    
         
     commands = []
    

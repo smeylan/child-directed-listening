@@ -1,4 +1,6 @@
 
+rm *.nbconvert.ipynb
+
 jupyter nbconvert --execute 'Process CMU dictionary.ipynb' --to notebook
 jupyter nbconvert --execute 'Generalized Phonological Comparison' --to notebook
 jupyter nbconvert --execute 'Providence - Retrieve data.ipynb' --to notebook & jupyter nbconvert --execute 'Get non-Providence CHILDES finetuning data.ipynb' --to notebook

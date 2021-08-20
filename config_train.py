@@ -61,8 +61,6 @@ interval_steps = 500
 
 base_args = {
     
-    'model_name_or_path' : 'bert-base-uncased',
-    
     # Boolean arguments: basically pass in the argument --do_train, which signifies True
     'do_train' : '', 
     'do_eval': '',

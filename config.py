@@ -24,6 +24,8 @@ SEED = 0
 n_beta = 5000
 n_across_time = 5000 # Note this is the base pool sample, not necessarily the sample size used.
 
+subsamples = [2, 500, 1000] # 2, 500 are for development purposes
+
 val_ratio = 0.2 # For the CHILDES split.
 
 child_val_eval_num = 3

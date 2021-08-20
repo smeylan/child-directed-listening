@@ -1,6 +1,5 @@
 # Code for loading the training data that has been split.
 
-
 import os
 from os.path import join, exists
  
@@ -15,6 +14,7 @@ import config
 from collections import defaultdict
 
 import numpy as np
+
 
 def get_ages_sample_paths(which_type, phase):
     
@@ -37,9 +37,9 @@ def get_ages_sample_paths(which_type, phase):
         age2path[age] = path
     
     return age2path
+
     
-    
-def apply_if_subsample(data):
+def apply_if_subsample(data, path = None):
     """
     Applies subsampling logic for either development purposes or using a smaller sample than n = 500.
     Because the utterances were originally randomly sampled, taking a prefix of a random sample should also be a random sample.
@@ -51,7 +51,9 @@ def apply_if_subsample(data):
     trunc_to_ideal = config.n_beta if not trunc_mode else config.n_subsample
     trunc_to =  min(trunc_to_ideal, data.shape[0])
     
-    return data.iloc[0:trunc_to]
+    trunc_data = data.iloc[0:trunc_to]
+            
+    return trunc_data
     
     
 def get_age_success_sample_paths(phase = config.eval_phase):

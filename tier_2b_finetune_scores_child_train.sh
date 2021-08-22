@@ -17,3 +17,9 @@ singularity exec --nv -B /om,/om2/user/wongn /om2/user/wongn/vagrant/trans-pytor
 
 chmod u+x ./submit_child_train.sh & chmod u+x ./submit_child_cross.sh; 
 ./submit_child_train.sh; ./submit_child_cross.sh
+
+
+
+# Then the following on Chompsky:
+# tmux attach-session -t experiments
+# rsync -a --progress wongn@openmind.mit.edu:~/child_repo_split/experiments ./experiments

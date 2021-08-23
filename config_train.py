@@ -8,14 +8,13 @@ import config
 #### CHILD ARGUMENTS ####
 #########################
 
-
 version_name = 'no_versioning' # Separate from exp determiner, because you may want to generate separate training files than scoring on Chompsky
 
 exp_dir = join(join(config.root_dir, 'experiments'), version_name)
 model_dir = join(exp_dir, 'models')
 
 child_lr = 5e-5
-child_interval = 10
+child_interval = 100 if not config.dev_mode else 10
 child_epochs = 10
 
 child_args = {
@@ -57,7 +56,7 @@ non_child_args = {
 ### Base arguments
 
 batch_size = 8 # Maximal for linebyline = False, 9 GB GPU.
-interval_steps = 500 
+interval_steps = 500 if not config.dev_mode else 10
 
 base_args = {
     

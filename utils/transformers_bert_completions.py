@@ -239,7 +239,7 @@ def get_stats_for_failure(all_tokens, selected_utt_id, bertMaskedLM, tokenizer, 
     # Prevent overly long sequences that will break BERT
     if utt_df.shape[0] > (512 - 2): # If there's no room to fit CLS and end token into BERT. 
         utt_df = data_cleaning.cut_context_df(utt_df)
-    
+           
     if utt_df.shape[0] > 0:
         t2 = time.time()        
         return(get_completions_for_mask(utt_df, None, bertMaskedLM, tokenizer, softmax_mask))
@@ -273,7 +273,7 @@ def get_stats_for_success(all_tokens, selected_utt_id, bertMaskedLM, tokenizer, 
     if utt_df.shape[0] == 0:
         return(None)
 
-    if not use_speaker_labels : 
+    if not use_speaker_labels: 
         utt_df = utt_df.loc[~utt_df.token.isin(['[chi]','[cgv]'])]
         
 
@@ -335,6 +335,13 @@ def get_stats_for_success(all_tokens, selected_utt_id, bertMaskedLM, tokenizer, 
         if utt_df_local.shape[0] > (512 - 2): # If there's no room to fit CLS and end token into BERT. 
             utt_df_local = data_cleaning.cut_context_df(utt_df_local)
    
+        print('Success')
+        print('utt df local', utt_df_local)
+        print('mask position', mask_position)
+        print('token at mask position', utt_df.iloc[mask_position].token)
+        print('selected utt id', selected_utt_id)
+        
+        
         this_priors, this_completions, this_stats = get_completions_for_mask(utt_df_local, 
             utt_df.iloc[mask_position].token, bertMaskedLM, tokenizer, softmax_mask) 
         

@@ -1,4 +1,8 @@
 
+rm -r finetune
+rm -r prov
+rm -r prov_csv
+
 rm *.nbconvert.ipynb
 
 jupyter nbconvert --execute 'Process CMU dictionary.ipynb' --to notebook

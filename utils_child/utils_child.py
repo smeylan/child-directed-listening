@@ -22,21 +22,13 @@ def load_cross_data(child_name):
     
     return this_phono
 
-def load_success_yyy_utts(data_type, child_name, cross_data, display_all = False):
+def load_success_yyy_utts(data_type, child_name, display_all = False):
     
-    
-    if (child_name is not None) and (not isinstance(child_name, str)):
-        cross_data = child_name # Didn't specify positional argument.
-        child_name = None
-   
-    assert (child_name is None) ^ (cross_data is None), "Specify one of either child_name or cross_data." 
-    
-    if cross_data is None:
-        cross_data = load_cross_data(child_name)
+    cross_data = load_cross_data(child_name)
         
     if config.subsample_mode:
-        this_attr = child_split_gen.get_subsample_key(config.n_used_score_subsample)
-        data_to_extract = cross_data[(cross_data[this_attr]) & (cross_data.partition == data_type)] 
+        this_attr = child_split_gen.get_subsample_key(config.n_used_score_subsample, data_type, child_name)
+        data_to_extract = cross_data[cross_data[this_attr]]
     else:
         data_to_extract = cross_data
        
@@ -44,12 +36,12 @@ def load_success_yyy_utts(data_type, child_name, cross_data, display_all = False
     return pd.DataFrame.from_records({'utterance_id' : utt_ids})
         
 
-def load_success_utts(child_name = None, cross_data = None, display_all = False):
-    return load_success_yyy_utts('success', child_name, cross_data, display_all)
+def load_success_utts(child_name = None, display_all = False):
+    return load_success_yyy_utts('success', child_name, display_all)
 
 
-def load_yyy_utts(child_name = None, cross_data = None, display_all = False):
-    return load_success_yyy_utts('yyy', child_name, cross_data, display_all)
+def load_yyy_utts(child_name = None, display_all = False):
+    return load_success_yyy_utts('yyy', child_name, display_all)
 
     
 def get_cross_path(data_child_name, prior_child_name):
@@ -73,8 +65,8 @@ def score_cross_prior(data_child, prior_child):
     _, is_tags = child_models.get_best_child_base_model_path()
     
     this_cross_data = load_cross_data(data_child)
-    success_utts = load_success_utts(this_cross_data).utterance_id
-    yyy_utts = load_yyy_utts(this_cross_data).utterance_id
+    success_utts = load_success_utts(data_child).utterance_id
+    yyy_utts = load_yyy_utts(data_child).utterance_id
     
     optim_beta = beta_utils.get_optimal_beta_value('child', prior_child, is_tags, 0, 'childes')
     

@@ -16,11 +16,6 @@ import argparse
 from datetime import datetime
 
 def optimize_beta(split_name, dataset_name, model_dict, model_type):
-    
-    """
-    For now, specify the model separately from the split_name/dataset_name.
-    The reason for this is that there are two versions of the dataset (text-based and huggingface based) so this is to avoid confusion for now.
-    """
  
     beta_sample = beta_utils.get_beta_search_values()
         
@@ -106,11 +101,6 @@ if __name__ == '__main__':
             this_model_args['model_type'],
         )
     else:
-        # Note that model args should already be matched to the parse arguments for child scripts,
-        # because they are auto-generated.
-        # But assert anyway to prevent manual misuse
-        
-        # This hasn't been fully developed yet I think?
         
         this_model_dict = child_models.get_child_model_dict(this_model_args['dataset'])
         

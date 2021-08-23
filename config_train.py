@@ -35,7 +35,7 @@ child_args = {
 #########################
 
 non_child_lr = 5e-5 # Default arguments
-non_child_interval = 500 if not config.dev_mode else 10
+non_child_interval = 500 if not config.dev_mode else 1
 non_child_epochs = 3
 
 non_child_args = {

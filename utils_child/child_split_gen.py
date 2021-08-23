@@ -74,35 +74,38 @@ def augment_with_all_subsamples(df, phase):
 
     for ideal_n in config.subsamples:
         for score_type in ['success', 'yyy']:
-        
-            df.loc[df['phase_child_sample'].isna(), get_subsample_key(ideal_n, score_type)] = False
-            df = augment_with_subsamples(df, phase, ideal_n, score_type)
+            for target_name in sorted(list(set(df.target_child_name.dropna()))):        
+                df.loc[df['phase_child_sample'].isna(), get_subsample_key(ideal_n, score_type, target_name)] = False
+                df = augment_with_subsamples(df, phase, ideal_n, score_type, target_name)
 
     return df
         
 
-def augment_with_subsamples(df, phase, ideal_n, data_type):
+def augment_with_subsamples(df, phase, ideal_n, data_type, name):
     """
     Intended for use with utterance lists that aren't already randomly sampled before saving,
         i.e. child scores for cross scoring.
     """
     
-    utt_pool = np.unique(df[(df.phase_child_sample == phase) & (df.partition == data_type)].utterance_id)
+    print('in augment with subsamples', phase, ideal_n, data_type, name)
+    
+    rel_mask = (df.phase_child_sample == phase) & (df.partition == data_type) & (df.target_child_name == name)
+    utt_pool = np.unique(df[rel_mask].utterance_id)
     
     n_avail = utt_pool.shape[0]
     n = min(n_avail, ideal_n)
     
     to_subsample = set(np.random.choice(utt_pool, size = (n,), replace = False))
     
-    this_attr = get_subsample_key(ideal_n, data_type)
+    this_attr = get_subsample_key(ideal_n, data_type, name)
     
-    df.loc[((df.utterance_id.isin(to_subsample)) & (df.phase_child_sample == phase)), this_attr] = True
-    df.loc[((~df.utterance_id.isin(to_subsample)) & (df.phase_child_sample == phase)), this_attr] = False
+    df.loc[((df.utterance_id.isin(to_subsample)) & rel_mask), this_attr] = True
+    df.loc[((~df.utterance_id.isin(to_subsample)) & rel_mask), this_attr] = False
     
     return df
 
-def get_subsample_key(this_n, this_type):
-    return f'phase_child_sample_n={this_n}_type={this_type}'
+def get_subsample_key(this_n, this_type, this_name):
+    return f'phase_child_sample_n={this_n}_type={this_type}_name={this_name}'
     
 
 def split_child_subsampling(all_phono):

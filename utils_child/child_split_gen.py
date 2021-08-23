@@ -75,7 +75,7 @@ def augment_with_all_subsamples(df, phase):
     for ideal_n in config.subsamples:
         for score_type in ['success', 'yyy']:
             for target_name in sorted(list(set(df.target_child_name.dropna()))):        
-                df.loc[df['phase_child_sample'].isna(), get_subsample_key(ideal_n, score_type, target_name)] = False
+                df.loc[(df['phase_child_sample'].isna()) | (df['target_child_name'] != target_name), get_subsample_key(ideal_n, score_type, target_name)] = False
                 df = augment_with_subsamples(df, phase, ideal_n, score_type, target_name)
 
     return df

@@ -31,6 +31,9 @@ Note that all commands do not have a flexible OpenMind (SLURM) user specified.
 
 Most functions that support scoring computations can be found in `utils/transformers_bert_completions.py`.
 
+Below is an overview of how the token scores are generated:
+![function relationships in transformers retrieval code](figures_info/codebase_diagram.jpg)
+
 The top-level functions and function calls are in the following files:
 
 - `run_models_across_time.py` computes scores of tokens from samples that have been drawn across time. It will eventually call `success_and_failures_across_time_per_model`. This function retrieves prior probabilities from BERT models and unigram models as matrices, computes an edit-distance based likelihood (also a matrix), and does element-wise multiplication and row normalization to get the posteriors.

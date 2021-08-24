@@ -3,7 +3,7 @@ from os.path import join, exists
 import json
 
 class Config:
-    def __init__(self, json_path):
+    def __init__(self):
 
         '''
         Reads the following parameters from the JSON
@@ -35,8 +35,7 @@ class Config:
         subsample_mode: n_beta, n_across_time for faster iteration
 
         '''
-
-        self.json_path = json_path
+        self.json_path = os.environ['CDL_CONFIG_PATH']
         
         # read in the JSON path and set everything
         f = open(json_path,)

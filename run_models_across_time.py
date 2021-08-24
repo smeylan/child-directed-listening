@@ -13,7 +13,7 @@ import config
 from collections import defaultdict
 
 from datetime import datetime
-    
+  
     
 def call_single_across_time_model(sample_dict, all_tokens_phono, model_class, this_split, this_dataset_name, is_tags, context_width, examples_mode):
        
@@ -31,6 +31,11 @@ def call_single_across_time_model(sample_dict, all_tokens_phono, model_class, th
          
     # Load the optimal beta
     optimal_beta = beta_utils.get_optimal_beta_value_with_dict(this_split, this_dataset_name, this_model_dict, model_class)
+    
+    
+    if config.fail_on_beta_edge:
+        not_at_edge = lambda this_beta_sel : (abs(optimal_beta - config.beta_high) < 1e-6) and (abs(optimal_beta - config.beta_low) < 1e-6)
+        assert not_at_edge, f"Terminating, beta value is {optimal_beta} which is too close to the edge."
     
     ages = sorted(list(sample_dict.keys()))
    

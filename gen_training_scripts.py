@@ -7,8 +7,6 @@ import json
 from utils import scripts, split_gen
 from utils_child import child_models
 
-from utils_model_analysis import hyperparams
-
 import config
 import config_train
 

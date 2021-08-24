@@ -32,7 +32,7 @@ def organize_auc_scores_as_grid(auc_df):
 def get_success_scores(is_mean, which_key):
     
     stat_type = 'Mean' if is_mean else 'Standard deviation'
-    metric_type = f'{"prior" if "prior" in which_key else "posterior"} surprisal'
+    metric_type = f'{"prior" if "prior" in which_key else "posterior"} probability'
     
     this_score_df, this_score_arr = organize_scores(is_success = True, is_mean = is_mean, which_key = which_key)
     this_title = f'{stat_type} {metric_type} for cross-child analysis'
@@ -113,7 +113,7 @@ def load_all_scores():
     
 def process_score_results(data_child, prior_child, which_key, is_mean = True):
     
-    assert which_key in {'posterior_surprisal', 'prior_surprisal'}
+    assert which_key in {'posterior_probability', 'prior_probability'}
     
     score_path = utils_child.get_cross_path(data_child, prior_child)
     scores = pd.read_pickle(score_path)

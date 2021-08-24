@@ -15,8 +15,11 @@ singularity exec --nv -B /om,/om2/user/wongn /om2/user/wongn/vagrant/trans-pytor
 
 # train child models
 
-chmod u+x ./submit_child_train.sh & chmod u+x ./submit_child_cross.sh; 
-./submit_child_train.sh; ./submit_child_cross.sh
+chmod u+x ./submit_non_child_beta_time_finetune.sh & chmod u+x ./submit_child_train.sh & chmod u+x 
+./submit_child_cross.sh;
+
+./submit_non_child_beta_time_finetune.sh & ./submit_child_train.sh
+./submit_child_cross.sh
 
 
 

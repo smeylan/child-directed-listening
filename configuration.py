@@ -38,7 +38,7 @@ class Config:
         self.json_path = os.environ['CDL_CONFIG_PATH']
         
         # read in the JSON path and set everything
-        f = open(json_path,)
+        f = open(self.json_path,)
         data = json.load(f)
         
         #set keys and vals from the JSON

@@ -524,6 +524,7 @@ def compare_successes_failures_unigram_model(all_tokens, selected_success_utts, 
 
     rdict['priors'] = np.vstack(prior_list)
     rdict['scores'] = pd.concat(scores_list) 
+    
     return(rdict)
 
 
@@ -599,6 +600,7 @@ def get_posteriors(prior_data, levdists, initial_vocab, bert_token_ids=None, bet
         # need to subset to bert_token_ods found by other models        
         # also need to limit the scores in some way
 
+    
     likelihoods = np.exp(-1*beta_value*levdists)
     unnormalized = np.multiply(prior_data['priors'], likelihoods)
     

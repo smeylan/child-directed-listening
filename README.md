@@ -55,7 +55,8 @@ For BERT model scoring:
 `python3 run_models_across_time.py --split age --dataset old --context_width 0 --use_tags False --model_type childes`
 
 For unigram scoring:
-` python3 run_models_across_time.py --split all --dataset all --context_width 0 --use_tags False --model_type flat_unigram`
+`python3 run_beta_search.py --split all --dataset all --context_width 0 --use_tags False --model_type flat_unigram`
+`python3 run_models_across_time.py --split all --dataset all --context_width 0 --use_tags False --model_type flat_unigram`
 
 For child scoring:
 `python3 run_child_cross.py --data_child Alex --prior_child Alex`

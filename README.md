@@ -42,3 +42,8 @@ The top-level functions and function calls are in the following files:
 
 - `run_child_cross.py` will call ``score_cross_prior``, which will calculate the scores per token similar to the across time and beta functions described above. However, it will do so by loading a model finetuned on a certain child, and data associated with another child (possibly, but not necessarily, different children).
 
+# Example commands
+
+For child scoring:
+`python3 run_child_cross.py --data_child Alex --prior_child Alex`
+

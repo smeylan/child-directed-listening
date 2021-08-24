@@ -28,7 +28,7 @@ def load_success_yyy_utts(data_type, child_name, display_all = False):
         
     if config.subsample_mode:
         this_attr = child_split_gen.get_subsample_key(config.n_used_score_subsample, data_type, child_name)
-        data_to_extract = cross_data[cross_data[this_attr]]
+        data_to_extract = cross_data[cross_data[this_attr] == True]
     else:
         data_to_extract = cross_data
        

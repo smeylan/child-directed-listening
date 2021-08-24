@@ -11,6 +11,8 @@ def make_folders(paths):
 
 om_user = 'wongn'
 
+fail_on_beta_edge = False # If activated and if the beta minimum is not found then 
+
 for_reproducible = False # Configure to true for generating data for a reproducibility check
 reproducibility_modifier = '_for_rep' if for_reproducible else ''
 
@@ -93,7 +95,7 @@ child_context_width = 0
 context_list = [0, 20] # How many different context widths to use
 age_split = 30 # Split young <= {age_split} months. (affects data generation only, not sample loading after the split)
 
-beta_low = 2.5
-beta_high = 3.5
+beta_low = 2
+beta_high = 4
 num_values = 10
 

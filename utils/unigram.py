@@ -9,6 +9,7 @@ from os.path import join, exists
 from utils import load_splits, split_gen
 
 import config
+import run_models_across_time
     
 
 def get_sample_bert_token_ids(task, split = 'all', dataset = 'all'):
@@ -19,24 +20,32 @@ def get_sample_bert_token_ids(task, split = 'all', dataset = 'all'):
     Assumes that the order of the bert token ids doesn't matter (read the code to check that this value is used as a set)
     """
     
+    assert task in {'beta', 'models_across_time'}
+    
     tokens = load_splits.load_phono()
     
-    this_sample_successes = load_splits.load_sample_successes(task, split, dataset)
-    
-    if task == 'models_across_time':
-        this_sample_yyy = load_splits.load_sample_yyy(task, split, dataset)
-        select_sample_id = pd.concat([this_sample_successes, this_sample_yyy])
-    else:
+    if task == 'beta':
+        this_sample_successes = load_splits.load_sample_successes(task, split, dataset)
         select_sample_id = this_sample_successes
+    
+    else:
+        all_ages_samples = load_splits.load_sample_model_across_time_args()
+        
+        all_samples = [] 
+        
+        for age in all_ages_samples:
+            for this_type in ['success', 'yyy']:
+                all_samples.append(all_ages_samples[age][this_type])
+        select_sample_id = pd.concat(all_samples)
         
     select_phono = tokens.loc[tokens.utterance_id.isin(select_sample_id.utterance_id)]
     success_mask_bert_ids = select_phono[select_phono['partition'] == 'success'].bert_token_id
     
-    if task == 'models_across_time':
+    if task == 'beta':
+        all_bert_ids = success_mask_bert_ids
+    else:
         failure_mask_bert_ids = select_phono.loc[select_phono.partition == 'yyy','bert_token_id']
         all_bert_ids = pd.concat([failure_mask_bert_ids, success_mask_bert_ids])
-    else:
-        all_bert_ids = success_mask_bert_ids
     
     return all_bert_ids
     

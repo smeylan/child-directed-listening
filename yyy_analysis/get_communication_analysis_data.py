@@ -21,10 +21,6 @@ import config
 def count_transmission_errors(utt_vector, error_codes):
     return(np.sum([x in error_codes for x in  utt_vector]))
 
-
-def get_communication_successes():
-    pass
-    
     
 def get_communication_failures_data(verbose = False):
     

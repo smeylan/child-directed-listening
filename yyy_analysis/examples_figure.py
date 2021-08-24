@@ -9,7 +9,6 @@ def get_example_model_ids():
     # BERT + Context +/- 20 is needed
     # Childes on train data.
 
-    # How to load properly with sample across models?
     which_models = [
         'all/all/no_tags/20_context/childes',
         'all/all/no_tags/20_context/bert',
@@ -28,8 +27,6 @@ def get_scores_across_models(test_idx):
     scores_across_models = []
 
     for model_id in which_models:
-
-        print(model_id)
 
         args_extract = model_id.split('/')
         this_split, this_dataset = args_extract[0], args_extract[1]

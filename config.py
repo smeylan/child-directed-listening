@@ -9,6 +9,8 @@ def make_folders(paths):
         if not exists(p):
             os.makedirs(p)
 
+om_user = 'wongn'
+
 for_reproducible = False # Configure to true for generating data for a reproducibility check
 reproducibility_modifier = '_for_rep' if for_reproducible else ''
 

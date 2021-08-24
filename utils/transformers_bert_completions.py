@@ -384,7 +384,7 @@ def compare_successes_failures(all_tokens, selected_success_utts, selected_yyy_u
 
         Returns: dictionary with two keys:            
             priors: n * m matrix of prior probabilities, where n is the number of communicative failures + communicative successes, and m is the size of the vocab identified by the softmax map. Failures are stacked on top of successes and are identified by a bert_token_id
-            scores: a datframe of length n containing concatenated entropy scores, ranks, surprisals. Failures are stacked on top of successes and are identified by a bert_token_id
+            scores: a datframe of length n containing concatenated entropy scores, ranks, probabilities. Failures are stacked on top of successes and are identified by a bert_token_id
     '''
     
     print('Computing failure scores')
@@ -465,7 +465,7 @@ def compare_successes_failures_unigram_model(all_tokens, selected_success_utts, 
 
         Returns: dictionary with two keys:            
             priors: n * m matrix of prior probabilities, where n is the number of communicative failures + communicative successes, and m is the size of the vocab identified by the softmax map. Failures are stacked on top of successes and are identified by a bert_token_id
-            scores: a datframe of length n containing concatenated entropy scores, ranks, surprisals. Failures are stacked on top of successes and are identified by a bert_token_id
+            scores: a datframe of length n containing concatenated entropy scores, ranks, probabilities. Failures are stacked on top of successes and are identified by a bert_token_id
     '''    
     
     unigram_model = pd.DataFrame({'word':vocab})
@@ -627,8 +627,8 @@ def get_posteriors(prior_data, levdists, initial_vocab, bert_token_ids=None, bet
         prior_data['scores']['position_in_mask'] = np.nan #communicative failure
     prior_data['scores']['kl_flat_to_prior'] = np.nan
     prior_data['scores']['kl_flat_to_posterior'] = np.nan
-    prior_data['scores']['posterior_surprisal'] = np.nan
-    prior_data['scores']['prior_surprisal'] = np.nan
+    prior_data['scores']['posterior_probability'] = np.nan
+    prior_data['scores']['prior_probability'] = np.nan
     prior_data['scores']['edit_distance'] = np.nan
 
     for x in ['highest_posterior_words', 'highest_prior_words', 'highest_posterior_probabilities',
@@ -648,13 +648,13 @@ def get_posteriors(prior_data, levdists, initial_vocab, bert_token_ids=None, bet
             pass # initialized as nan        
         else:
             prior_data['scores'].loc[prior_data['scores'].sample_index == i,
-                'posterior_surprisal'] = normalized[i, \
+                'posterior_probability'] = normalized[i, \
                 int(prior_data['scores'].iloc[i]['position_in_mask'])]
             prior_data['scores'].loc[prior_data['scores'].sample_index == i, 
                 'edit_distance'] = levdists[i, \
                 int(prior_data['scores'].iloc[i]['position_in_mask'])]
             prior_data['scores'].loc[prior_data['scores'].sample_index == i, 
-                'prior_surprisal'] = prior_data['priors'][i, \
+                'prior_probability'] = prior_data['priors'][i, \
                 int(prior_data['scores'].iloc[i]['position_in_mask'])]
             try:
                 prior_data['scores'].loc[prior_data['scores'].sample_index == i, 

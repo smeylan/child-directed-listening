@@ -38,7 +38,7 @@ def get_training_alloc(split_name):
     return time_alloc_hrs, mem_alloc_gb
     
     
-def get_training_header_commands(split_name, dataset_name, with_tags, om2_user = config.om_user, lr = None):
+def get_training_header_commands(split_name, dataset_name, with_tags, om2_user = config.slurm_user, lr = None):
     
     time_alloc_hrs, mem_alloc_gb = get_training_alloc(split_name)
     
@@ -53,7 +53,7 @@ def get_training_header_commands(split_name, dataset_name, with_tags, om2_user =
     return header_commands
     
     
-def get_isolated_training_commands(split_name, dataset_name, with_tags, om2_user = config.om_user):
+def get_isolated_training_commands(split_name, dataset_name, with_tags, om2_user = config.slurm_user):
     
     header_commands = get_training_header_commands(split_name, dataset_name, with_tags, om2_user)
     non_header_commands = get_non_header_commands(split_name, dataset_name, with_tags, om2_user)
@@ -101,7 +101,7 @@ def get_run_mlm_command(split_name, dataset_name, this_data_dir, this_model_dir,
     return f"{main_command}{this_python_command}"
     
 
-def get_non_header_commands(split_name, dataset_name, with_tags, om2_user = config.om_user):
+def get_non_header_commands(split_name, dataset_name, with_tags, om2_user = config.slurm_user):
     
     tags_data_str  = '' if with_tags else '_no_tags' # For loading the proper data
     

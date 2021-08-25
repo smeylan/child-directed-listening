@@ -2,33 +2,21 @@
 from utils import transformers_bert_completions, load_splits, load_models
 from utils_model_sampling import sample_across_models, beta_utils
 
-
-def get_example_model_ids():
     
-    # CDL + Context +/- 20 is needed
-    # BERT + Context +/- 20 is needed
-    # Childes on train data.
-
-    which_models = [
-        'all/all/no_tags/20_context/childes',
-        'all/all/no_tags/20_context/bert',
-        'all/all/no_tags/0_context/data_unigram',
-    ]
-    
-    return which_models
-    
-    
-def get_scores_across_models(test_idx):
-    
-    which_models = get_example_model_ids()
+def get_scores_across_models(test_idx, which_models, is_success):
 
     scores_across_models = []
+    
+    success_utts, yyy_utts = [], []
+    
+    if is_success:
+        success_utts = [test_idx]
+    else:
+        yyy_utts = [test_idx]
 
-    for model_id in which_models:
+    for args_extract in which_models:
 
-        args_extract = model_id.split('/')
-        
-        model_dict = get_model_dict(*args_extract)
+        model_dict = load_models.get_model_dict(*args_extract)
         
         optimal_beta = beta_utils.get_optimal_beta_value(*args_extract)
         

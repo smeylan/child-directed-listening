@@ -86,7 +86,7 @@ def cvt_root_dir(split, dataset, base_dir, name = config_train.version_name):
     return local_path.replace(config.root_dir, config.om_root_dir).replace(config.exp_determiner, config_train.version_name)
     
     
-def write_training_shell_script(split, dataset, is_tags, dir_name, get_command_func, om2_user = config.om_user): 
+def write_training_shell_script(split, dataset, is_tags, dir_name, get_command_func, om2_user = config.slurm_user): 
     
     script_dir = join(config.root_dir, dir_name)
     
@@ -111,7 +111,7 @@ def get_script_name(split, dataset, is_tags):
 # including the bash line at the top
 
     
-def gen_singularity_header(om2_user = config.om_user):
+def gen_singularity_header(om2_user = config.slurm_user):
     
     # still part of the taken code above
     return f"singularity exec --nv -B /om,/om2/user/{om2_user} /om2/user/{om2_user}/vagrant/trans-pytorch-gpu " 

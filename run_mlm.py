@@ -52,10 +52,9 @@ from transformers.trainer_utils import get_last_checkpoint, is_main_process
 from transformers.utils import check_min_version
 
 # added these lines
-#import wandb
-#import json
 import config_train
-import config as config_repository
+import configuration
+config_repository = configuration.Config()
 # end lines
 
 

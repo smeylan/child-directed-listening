@@ -7,7 +7,9 @@ import json
 from utils import scripts, split_gen
 from utils_child import child_models
 
-import config
+import configuration
+config = configuration.Config()
+
 import config_train
 
 from datetime import datetime

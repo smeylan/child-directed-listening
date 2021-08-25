@@ -5,7 +5,9 @@ from utils import load_splits, load_models, split_gen, parsers
 from utils_model_sampling import beta_utils, sample_across_models
 from utils_child import child_models
 
-import config
+import configuration
+config = configuration.Config()
+
 import pandas as pd
 
 import matplotlib.pyplot as plt

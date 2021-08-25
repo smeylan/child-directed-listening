@@ -4,7 +4,8 @@ import pandas as pd
 
 from utils import load_models, transformers_bert_completions, unigram, load_splits
 
-import config
+import configuration
+config = configuration.Config()
 
 def sample_across_models(success_ids, yyy_ids, model, beta_values, examples_mode = False):
     '''

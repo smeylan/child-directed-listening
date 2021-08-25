@@ -5,7 +5,10 @@ import json
 import shutil
 
 from utils import load_models, load_splits
-import config
+
+import configuration
+config = configuration.Config()
+
 
 
 def get_best_child_base_model_path(which_metric = 'perplexity'):

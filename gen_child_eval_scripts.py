@@ -6,7 +6,8 @@ from utils import scripts
 
 import gen_sample_scripts
 
-import config
+import configuration
+config = configuration.Config()
 
 if __name__ == '__main__':
     

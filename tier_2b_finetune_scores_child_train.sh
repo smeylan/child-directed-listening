@@ -5,7 +5,7 @@
 #SBATCH -p cpl
 #SBATCH -t 00:10:00
 #SBATCH --mem=1G
-#SBATCH --output=/om2/user/wongn/child-directed-listening/%j_gen-scripts_2b.out 
+#SBATCH --output=./%j_gen-scripts_2b.out 
 
 module load openmind/singularity/3.2.0
 

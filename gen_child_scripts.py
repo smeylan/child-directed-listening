@@ -3,7 +3,8 @@ import os
 from os.path import join, exists
 
 import gen_training_scripts, gen_sample_scripts
-import config
+import configuration
+config = configuration.Config()
 
 from utils_child import child_models
 from utils import split_gen, scripts

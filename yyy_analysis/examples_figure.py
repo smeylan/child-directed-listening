@@ -19,8 +19,6 @@ def get_example_model_ids():
     
     
 def get_scores_across_models(test_idx):
-
-    all_models = load_models.get_model_dict()
     
     which_models = get_example_model_ids()
 
@@ -29,12 +27,11 @@ def get_scores_across_models(test_idx):
     for model_id in which_models:
 
         args_extract = model_id.split('/')
-        this_split, this_dataset = args_extract[0], args_extract[1]
-        this_model_type = args_extract[-1]
-
-        this_model_dict = all_models[model_id]
-
-        optimal_beta = beta_utils.get_optimal_beta_value(this_split, this_dataset, this_model_dict, this_model_type)
+        
+        model_dict = get_model_dict(*args_extract)
+        
+        optimal_beta = beta_utils.get_optimal_beta_value(*args_extract)
+        
         this_scoring = sample_across_models.sample_across_models([test_idx], 
             success_utts, yyy_utts, all_tokens_phono, models, initial_vocab, cmu_in_initial_vocab, beta_values=[optimal_beta], examples_mode = True)
 

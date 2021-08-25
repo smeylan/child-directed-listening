@@ -71,7 +71,7 @@ class Config:
  
         if self.dev_mode:
             self.n_subsample = self.n_dev_sample
-        elif subsample_mode:
+        elif self.subsample_mode:
             self.n_subsample = self.n_iter_sample
         else:
             self.n_subsample = self.n_beta

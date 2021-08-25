@@ -26,7 +26,7 @@ def get_sample_bert_token_ids(task, split = 'all', dataset = 'all'):
     tokens = load_splits.load_phono()
     
     if task == 'beta':
-        this_sample_successes = load_splits.load_sample_successes(task, split, dataset)
+        this_sample_successes = load_splits.load_sample_successes(split, dataset)
         select_sample_id = this_sample_successes
     
     else:

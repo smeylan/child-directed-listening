@@ -6,15 +6,12 @@ from utils_model_sampling import sample_across_models, beta_utils
 def get_scores_across_models(test_idx, which_models, is_success):
 
     scores_across_models = []
-    
-    success_utts, yyy_utts = [], []
-    
-    all_tokens_phono = load_splits.load_phono()
-    
+    success_ids, yyy_ids = [], []
+   
     if is_success:
-        success_utts = [test_idx]
+        success_ids = [test_idx]
     else:
-        yyy_utts = [test_idx]
+        yyy_ids = [test_idx]
 
     for args_extract in which_models:
 
@@ -22,8 +19,7 @@ def get_scores_across_models(test_idx, which_models, is_success):
         
         optimal_beta = beta_utils.get_optimal_beta_value(*args_extract)
         
-        this_scoring = sample_across_models.sample_across_models([test_idx], 
-            success_utts, yyy_utts, all_tokens_phono, models, initial_vocab, cmu_in_initial_vocab, beta_values=[optimal_beta], examples_mode = True)
+        this_scoring = sample_across_models.sample_across_models(success_ids, yyy_ids, model_dict, [optimal_beta], examples_mode = True)
 
         scores_across_models.append(this_scoring)
 

@@ -60,19 +60,13 @@ def apply_if_subsample(data, path = None):
 def get_age_success_sample_paths(phase = config.eval_phase):
     return sorted(list(get_ages_sample_paths('success', phase).values()))
 
+
 def get_age_yyy_sample_paths(phase = config.eval_phase):
     return sorted(list(get_ages_sample_paths('yyy', phase).values()))
 
-    
-def load_sample_successes(task, split, dataset, age = None, eval_phase = config.eval_phase):
-    this_path = sampling.get_sample_path('success', task, split, dataset, eval_phase, age)
-    this_data = pd.read_csv(this_path)
-    return apply_if_subsample(this_data)
 
-
-def load_sample_yyy(task, split, dataset, age = None, eval_phase = config.eval_phase):
-    
-    this_path = sampling.get_sample_path('yyy', task, split, dataset, eval_phase, age)
+def load_sample_successes(split, dataset, age = None, eval_phase = config.eval_phase):
+    this_path = sampling.get_sample_path('success', 'beta', split, dataset, eval_phase, age)
     this_data = pd.read_csv(this_path)
     return apply_if_subsample(this_data)
 

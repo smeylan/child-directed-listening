@@ -34,7 +34,7 @@ def optimize_beta(split_name, dataset_name, model_dict, model_type):
     # Internally uses GPU if available.
     # speaker tags handled internally in the transformers bert completions file.
     
-    success_utts_sample = load_splits.load_sample_successes('beta', split_name, dataset_name).utterance_id
+    success_utts_sample = load_splits.load_sample_successes(split_name, dataset_name).utterance_id
         
     # Don't use failures for beta search
     this_raw_beta_results = sample_across_models.sample_across_models(success_utts_sample,
@@ -42,8 +42,10 @@ def optimize_beta(split_name, dataset_name, model_dict, model_type):
                                                                       model_dict,
                                                                       beta_sample)
     
-    this_beta_results_surp = this_raw_beta_results.groupby(['beta_value']).posterior_surprisal.agg(lambda x: np.mean(-1 * np.log(x))
+    this_beta_results_surp = this_raw_beta_results.groupby(['beta_value']).posterior_probability.agg(lambda x: np.mean(-1 * np.log(x))
 ).reset_index()
+    
+    this_beta_results_surp = this_beta_results_surp.rename({'posterior_probability' : 'posterior_surprisal'})
     
     # Log the beta results
     beta_results_path = join(this_exp_path, f'beta_search_results_{config.n_beta}.csv')
@@ -115,6 +117,8 @@ if __name__ == '__main__':
     print(f'Computations complete for: {query_model_str}')
     print(f'Started computations at: {start_time}')
     print(f'Finished computations at: {str(datetime.today())}')
+    
+    
     
     
     

@@ -45,7 +45,8 @@ def optimize_beta(split_name, dataset_name, model_dict, model_type):
     this_beta_results_surp = this_raw_beta_results.groupby(['beta_value']).posterior_probability.agg(lambda x: np.mean(-1 * np.log(x))
 ).reset_index()
     
-    this_beta_results_surp = this_beta_results_surp.rename({'posterior_probability' : 'posterior_surprisal'})
+    print(this_beta_results_surp)
+    this_beta_results_surp = this_beta_results_surp.rename(columns = {'posterior_probability' : 'posterior_surprisal'})
     
     # Log the beta results
     beta_results_path = join(this_exp_path, f'beta_search_results_{config.n_beta}.csv')

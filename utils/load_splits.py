@@ -9,7 +9,8 @@ import glob
 import pandas as pd
 import pickle
 
-import config
+import configuration
+config = configuration.Config()
 
 from collections import defaultdict
 

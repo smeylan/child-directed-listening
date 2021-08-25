@@ -5,7 +5,8 @@ from os.path import join, exists
 import numpy as np
 
 from utils import load_models, split_gen
-import config
+import configuration
+config = configuration.Config()
 
 import pandas as pd
 

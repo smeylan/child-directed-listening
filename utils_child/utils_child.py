@@ -5,7 +5,8 @@ from utils import load_splits, load_models, transformers_bert_completions
 from utils_model_sampling import beta_utils
 from utils_child import child_models, child_split_gen
 
-import config
+import configuration
+config = configuration.Config()
 
 import os
 from os.path import join, exists

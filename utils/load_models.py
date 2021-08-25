@@ -10,7 +10,8 @@ from transformers import BertTokenizer, BertForMaskedLM
 from utils import transformers_bert_completions, split_gen, load_splits
 from utils_child import child_models
 
-import config
+import configuration
+config = configuration.Config()
 
 import json
 

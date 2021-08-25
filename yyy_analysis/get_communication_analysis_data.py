@@ -16,7 +16,9 @@ import copy
 from string import punctuation
 
 from utils import load_models
-import config
+
+import configuration
+config = configuration.Config()
 
 def count_transmission_errors(utt_vector, error_codes):
     return(np.sum([x in error_codes for x in  utt_vector]))

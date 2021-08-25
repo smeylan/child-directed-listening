@@ -203,21 +203,6 @@ def main():
         model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[1]))
     else:
         model_args, data_args, training_args = parser.parse_args_into_dataclasses()
-
-        
-    # Added these lines
-    #wandb.init(project=config_train.project_name)
-    
-#     run_info_path = os.path.join(training_args.output_dir, 'wandb_logging_info.json')
-#     with open(run_info_path, 'w') as f:
-#         json.dump({
-#             'project' : config_train.project_name,
-#             'run_id' : wandb.run.id,
-#             'url' : f'https://wandb.ai/{config_train.wandb_user}/{config_train.project_name}/runs/{wandb.run.id}'
-#         }, f)
-    
-#     print(f'Wrote json with wandb run information to: {run_info_path}')
-    # End line additions
     
     
     # Detecting last checkpoint.

@@ -3,7 +3,8 @@ import os
 from os.path import join, exists
 
 from utils import split_gen
-import config
+import configuration
+config = configuration.Config()
 
 import numpy as np
 np.random.seed(config.SEED)

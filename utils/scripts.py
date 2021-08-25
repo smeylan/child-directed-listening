@@ -6,7 +6,9 @@ from os.path import join, exists
 
 from utils import split_gen
 
-import config
+import configuration
+config = configuration.Config()
+
 import config_train
 
 import subprocess

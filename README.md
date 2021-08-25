@@ -8,13 +8,30 @@ Primary analyses are in `Models across time analyses.ipynb`, supported by the fu
 
 # Generating results
 
-Note that this assumes use of a SLURM system.
+Note that this assumes use of a SLURM system for GPU access. Both the local and the remote machine should have Python 3.6. The general organization is shell scripts which call jupyter notebook `nbconvert` to output notebooks where all cells have been run. The notebooks can be inspected, and the scripts generate figures and tables used in the paper.
 
-Start on local machine.
-1. Run `tier_1_data_gen.sh`.
-2. Rsync everything according to the directions in that .sh file.
-On your SLURM machine:
-3. `Run tier_2a_non_child_train_shelf_scores.sh`
+0. Set the following environment variables on both your local machine and on the SLURM machine
+```
+export SLURM_USERNAME="*****@******"  
+export CDL_SLURM_USER="smeylan"  
+export CDL_SLURM_ROOT="~/om2/projects/nicole/child_repo_split/"  
+export CDL_CONFIG_PATH="stephan_configuration.json"  
+export CDL_SINGULARITY_PATH="/om2/user/wongn/vagrant/trans-pytorch-gpu"  
+```
+Above values are examples. Set them as follows:
+
+`SLURM_USERNAME` is username and domain of the SLURM login node.  
+`CDL_SLURM_USER` is the username of the SLURM user  
+`CDL_SLURM_ROOT` is the path relative to your user folder on the SLURM machine where all results will reside  
+`CDL_CONFIG_PATH` is the path to the json configuration file (similar to command line arguments)  
+`CDL_SINGULARITY_PATH` is the path to the Singularity image on the SLURM machine (with Transformers, pytorch, etc.)  
+ 
+2. Set up a virtual environment on the local machine and activate it `virtualenv -p python3.6 cdl_env && source cdl_env/bin/activate`
+3. Install the Python dependencies on the local machine `pip3 install -r requirements.txt`
+4. Register the virtual environment as a kernel with Jupyter: `python -m ipykernel install --user --name=child-listening-env`
+5. From `~/.jupyter/jupyter_nbconvert_config.json` remove the entry `"postprocessor_class": "jupyter_contrib_nbextensions.nbconvert_support.EmbedPostProcessor"`
+6. On your local machine, run `./tier_1_data_gen.sh`. The end of this script starts an rsync job that copies the generated files to the SLURM machine; this may require your password
+8. On your SLURM machine, run `sbatch tier_2a_non_child_train_shelf_scores.sh`. This FIXME -- WHAT DOES THIS DO?
 After the computations have fully completed (not after the .sh completes submitting the jobs, but after you have confirmed that the program executed completely), run `tier_2b_finetune_scores_child_train.sh`.
 4. After the computations have fully completed, run `tier_2c_child_cross.sh`.
 4. Follow the rsync directions in 2c file to rsync the `experiments` folder back to your local machine.

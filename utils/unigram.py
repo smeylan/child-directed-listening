@@ -8,7 +8,8 @@ from os.path import join, exists
 
 from utils import load_splits, split_gen
 
-import config
+import configuration
+config = configuration.Config()
 import run_models_across_time
     
 

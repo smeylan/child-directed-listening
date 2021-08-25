@@ -1,6 +1,8 @@
 # Generate the scripts for a beta search.
 
-import config
+import configuration
+config = configuration.Config()
+
 import argparse
 from utils import parsers, load_models, scripts
 

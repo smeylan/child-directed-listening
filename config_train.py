@@ -2,7 +2,9 @@ import os
 from os.path import join, exists
 from utils import load_models
 
-import config
+import configuration
+
+config = configuration.Config()
 
 #########################
 #### CHILD ARGUMENTS ####
@@ -10,7 +12,7 @@ import config
 
 version_name = 'no_versioning' # Separate from exp determiner, because you may want to generate separate training files than scoring on Chompsky
 
-exp_dir = join(join(config.root_dir, 'experiments'), version_name)
+exp_dir = join(join(config.local_root_dir, 'experiments'), version_name)
 model_dir = join(exp_dir, 'models')
 
 child_lr = 5e-5

@@ -1,6 +1,7 @@
 
 from utils import split_gen, sampling, data_cleaning
-import config
+import configuration
+config = configuration.Config()
 
 from collections import defaultdict
 

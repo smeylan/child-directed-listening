@@ -6,7 +6,8 @@ import pandas as pd
 import numpy as np
 
 from utils import data_cleaning
-import config
+import configuration
+config = configuration.Config()
 
 # 7/23/21: https://www.mikulskibartosz.name/how-to-set-the-global-random_state-in-scikit-learn/
 # Information reference, not for code -- sufficient to seed numpy for sklearn.

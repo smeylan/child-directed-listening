@@ -80,7 +80,7 @@ def write_training_shell_script(split, dataset, is_tags, dir_name, get_command_f
     
     script_name = get_script_name(split, dataset, is_tags)
     
-    with open(join(script_dir, script_name), 'w') as f:
+    with open(join(dir_name, script_name), 'w') as f:
         f.writelines(get_command_func(split, dataset, is_tags, om2_user = om2_user))
         
 

@@ -31,9 +31,9 @@ Above values are examples. Set them as follows:
 4. Register the virtual environment as a kernel with Jupyter: `python -m ipykernel install --user --name=child-listening-env`
 5. From `~/.jupyter/jupyter_nbconvert_config.json` remove the entry `"postprocessor_class": "jupyter_contrib_nbextensions.nbconvert_support.EmbedPostProcessor"`
 6. On your local machine, run `./tier_1_data_gen.sh`. The end of this script starts an rsync job that copies the generated files to the SLURM machine; this may require your password
-8. On your SLURM machine, run `sbatch tier_2a_non_child_train_shelf_scores.sh`. This FIXME -- WHAT DOES THIS DO?
-After the computations have fully completed (not after the .sh completes submitting the jobs, but after you have confirmed that the program executed completely), run `tier_2b_finetune_scores_child_train.sh`.
-4. After the computations have fully completed, run `tier_2c_child_cross.sh`.
+8. On your SLURM machine, run `sbatch tier_2a_non_child_train_shelf_scores.sh`. This will submit jobs to finetune models on non-child specific data and run token scoring for models that don't require finetuning (off-the-shelf BERT models, unigrams).
+After the computations have fully completed (not after the .sh completes submitting the jobs, but after you have confirmed that the program executed completely), run `sbatch tier_2b_finetune_scores_child_train.sh`.
+4. After the computations have fully completed, run `sbatch tier_2c_child_cross.sh`.
 4. Follow the rsync directions in 2c file to rsync the `experiments` folder back to your local machine.
 5. When the relevant notebooks are complete, run `tier_3_analysis.sh`.
 6. Locate your analyses in the following notebooks:

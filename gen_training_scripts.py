@@ -16,11 +16,11 @@ from datetime import datetime
 
 import gen_sample_scripts
 
-def models_get_split_folder(split_type, dataset_type, with_tags, base_dir = config.om_root_dir):
+def models_get_split_folder(split_type, dataset_type, with_tags):
     
     tags_str = 'with_tags' if with_tags else 'no_tags' # For naming the model folder
     
-    base_dir = join(base_dir, f'experiments/{config_train.version_name}/models') 
+    base_dir = f'experiments/{config_train.version_name}/models'
     return join(base_dir, join(join(split_type, dataset_type), tags_str))
 
 
@@ -107,7 +107,7 @@ def get_non_header_commands(split_name, dataset_name, with_tags, om2_user = conf
     
     model_dir = models_get_split_folder(split_name, dataset_name, with_tags)
     
-    data_dir = join(config.om_root_dir, join(config.finetune_dir, join(split_name, dataset_name)))
+    data_dir = join(config.finetune_dir, join(split_name, dataset_name))
         
     commands = []
    

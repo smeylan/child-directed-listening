@@ -5,7 +5,7 @@
 #SBATCH -p cpl
 #SBATCH -t 00:10:00
 #SBATCH --mem=1G
-#SBATCH --output=${CDL_SLURM_ROOT}/%j_gen-scripts_2a.out 
+#SBATCH --output=./%j_gen-scripts_2a.out 
 
 export TOKENIZERS_PARALLELISM=true # Possibly only needed for wandb, but adding to avoid warning in case.
 

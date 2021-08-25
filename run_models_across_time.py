@@ -8,7 +8,8 @@ from utils_model_sampling import beta_utils, sample_models_across_time
 import numpy as np
 
 import pandas as pd
-import config
+import configuration
+config = configuration.Config()
 
 from collections import defaultdict
 

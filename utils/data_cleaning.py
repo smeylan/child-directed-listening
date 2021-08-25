@@ -5,7 +5,8 @@ from os.path import join, exists
 import pandas as pd
 import numpy as np
 
-import config
+import configuration
+config = configuration.Config()
 
 import math
 import re

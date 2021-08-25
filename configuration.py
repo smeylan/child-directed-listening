@@ -35,7 +35,9 @@ class Config:
         subsample_mode: n_beta, n_across_time for faster iteration
 
         '''
-        self.json_path = os.environ['CDL_CONFIG_PATH']
+
+        # read in the environment variables        
+        self.json_path = 'config.json'
         
         # read in the JSON path and set everything
         f = open(self.json_path,)

@@ -9,6 +9,8 @@ def get_scores_across_models(test_idx, which_models, is_success):
     
     success_utts, yyy_utts = [], []
     
+    all_tokens_phono = load_splits.load_phono()
+    
     if is_success:
         success_utts = [test_idx]
     else:

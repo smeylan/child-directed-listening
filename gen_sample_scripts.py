@@ -45,14 +45,12 @@ if __name__ == '__main__':
     task_files = ['run_beta_search.py', 'run_models_across_time.py']
      
     
-    sh_script_loc_base = join(config.root_dir, f'scripts_{label}')
+    sh_script_loc_base = f'scripts_{label}'
 
     partitions = {
         'finetune' : load_models.gen_finetune_model_args,
         'shelf' : load_models.gen_shelf_model_args,
     }
-    
-    print('Generating sample scripts again!')
     
     take_split_dataset = lambda arg_set : arg_set[:2]
     partitions_for_submit_script = {

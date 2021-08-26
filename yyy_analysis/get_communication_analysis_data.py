@@ -63,11 +63,14 @@ def get_communication_failures_data(verbose = False):
     
     failures_per_utt = xxxs_per_utt.merge(yyys_per_utt)
 
+    # Cells 11 and 13 are used for the double line graph
+    # Cell 11
     yyy_utts = failures_per_utt.loc[(failures_per_utt.num_xxx == 0) &  (failures_per_utt.num_yyy == 1)]
     
     if config.verbose:
         print(yyy_utts.shape)
         
+    # Cell 13
     success_utts = failures_per_utt.loc[(failures_per_utt.num_xxx == 0) &  (failures_per_utt.num_yyy == 0)]
     
     if config.verbose:
@@ -88,5 +91,5 @@ def get_communication_failures_data(verbose = False):
     
     if config.verbose: print(chi_phono.shape)
     
-    return chi_phono
+    return chi_phono, success_utts, yyy_utts
 

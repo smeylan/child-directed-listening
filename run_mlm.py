@@ -509,6 +509,8 @@ def main():
                 kwargs["dataset"] = data_args.dataset_name
 
         trainer.push_to_hub(**kwargs)
+        
+    logger.info('Training and evaluation complete')
 
 
 def _mp_fn(index):

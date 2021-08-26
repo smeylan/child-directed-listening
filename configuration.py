@@ -56,7 +56,7 @@ class Config:
     def set_defaults(self):
         # compute defaults
 
-        if not self.local_root_dir:
+        if not hasattr(self, 'local_root_dir'):
             self.local_root_dir = os.getcwd()
         
         self.reproducibility_modifier = '_for_rep' if self.for_reproducible else ''

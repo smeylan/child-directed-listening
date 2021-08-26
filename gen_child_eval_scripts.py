@@ -11,7 +11,7 @@ config = configuration.Config()
 
 if __name__ == '__main__':
     
-    sh_loc = join(config.root_dir, 'scripts_child_cross')
+    sh_loc = 'scripts_child_cross'
     
     if not exists(sh_loc):
         os.makedirs(sh_loc)

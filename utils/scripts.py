@@ -26,7 +26,7 @@ def get_slurm_folder(split, dataset, task):
     }
     
     assert task in base_paths.keys()
-    return cvt_root_dir(split, dataset, base_paths[task])
+    return split_gen.get_split_folder(split, dataset, base_paths[task])
     
     
 def get_slurm_folders_by_args(args, task):
@@ -71,31 +71,16 @@ def gen_submit_script(dir_name, arg_set, task):
     subprocess.call(f'chmod u+x {sh_path}', shell = True)
     
     return text
-
-
-def cvt_root_dir(split, dataset, base_dir, name = config_train.version_name):
-    
-    # Convert to the OM root dir while using the Chompsky equivalents to specify folders
-    # like scores_dir, etc.
-    
-    local_path = split_gen.get_split_folder(split, dataset, base_dir)
-    
-    if config.om_root_dir == config.root_dir:
-        return local_path
-    
-    return local_path.replace(config.root_dir, config.om_root_dir).replace(config.exp_determiner, config_train.version_name)
     
     
-def write_training_shell_script(split, dataset, is_tags, dir_name, get_command_func, om2_user = config.om_user): 
+def write_training_shell_script(split, dataset, is_tags, dir_name, get_command_func, om2_user = config.slurm_user): 
     
-    script_dir = join(config.root_dir, dir_name)
-    
-    if not exists(script_dir):
-        os.makedirs(script_dir)
+    if not exists(dir_name):
+        os.makedirs(dir_name)
     
     script_name = get_script_name(split, dataset, is_tags)
     
-    with open(join(script_dir, script_name), 'w') as f:
+    with open(join(dir_name, script_name), 'w') as f:
         f.writelines(get_command_func(split, dataset, is_tags, om2_user = om2_user))
         
 
@@ -111,7 +96,7 @@ def get_script_name(split, dataset, is_tags):
 # including the bash line at the top
 
     
-def gen_singularity_header(om2_user = config.om_user):
+def gen_singularity_header(om2_user = config.slurm_user):
     
     # still part of the taken code above
     return f"singularity exec --nv -B /om,/om2/user/{om2_user} /om2/user/{om2_user}/vagrant/trans-pytorch-gpu " 

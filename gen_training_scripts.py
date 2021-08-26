@@ -16,11 +16,11 @@ from datetime import datetime
 
 import gen_sample_scripts
 
-def models_get_split_folder(split_type, dataset_type, with_tags, base_dir = config.om_root_dir):
+def models_get_split_folder(split_type, dataset_type, with_tags):
     
     tags_str = 'with_tags' if with_tags else 'no_tags' # For naming the model folder
     
-    base_dir = join(base_dir, f'experiments/{config_train.version_name}/models') 
+    base_dir = f'experiments/{config_train.version_name}/models'
     return join(base_dir, join(join(split_type, dataset_type), tags_str))
 
 
@@ -38,7 +38,7 @@ def get_training_alloc(split_name):
     return time_alloc_hrs, mem_alloc_gb
     
     
-def get_training_header_commands(split_name, dataset_name, with_tags, om2_user = config.om_user, lr = None):
+def get_training_header_commands(split_name, dataset_name, with_tags, om2_user = config.slurm_user, lr = None):
     
     time_alloc_hrs, mem_alloc_gb = get_training_alloc(split_name)
     
@@ -53,7 +53,7 @@ def get_training_header_commands(split_name, dataset_name, with_tags, om2_user =
     return header_commands
     
     
-def get_isolated_training_commands(split_name, dataset_name, with_tags, om2_user = config.om_user):
+def get_isolated_training_commands(split_name, dataset_name, with_tags, om2_user = config.slurm_user):
     
     header_commands = get_training_header_commands(split_name, dataset_name, with_tags, om2_user)
     non_header_commands = get_non_header_commands(split_name, dataset_name, with_tags, om2_user)
@@ -101,13 +101,13 @@ def get_run_mlm_command(split_name, dataset_name, this_data_dir, this_model_dir,
     return f"{main_command}{this_python_command}"
     
 
-def get_non_header_commands(split_name, dataset_name, with_tags, om2_user = config.om_user):
+def get_non_header_commands(split_name, dataset_name, with_tags, om2_user = config.slurm_user):
     
     tags_data_str  = '' if with_tags else '_no_tags' # For loading the proper data
     
     model_dir = models_get_split_folder(split_name, dataset_name, with_tags)
     
-    data_dir = join(config.om_root_dir, join(config.finetune_dir, join(split_name, dataset_name)))
+    data_dir = join(config.finetune_dir, join(split_name, dataset_name))
         
     commands = []
    

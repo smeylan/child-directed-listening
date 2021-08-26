@@ -12,7 +12,7 @@
     "child_val_eval_num" : 3,
     "childes_model_args" : [["all", "all"], ["age", "young"],["age", "old"]],
     "regenerate" : 1,
-    "dev_mode" : 1,
+    "dev_mode" : 0,
     "subsample_mode" : 1,
     "n_iter_sample" : 500,
     "n_dev_sample" : 2,

@@ -12,7 +12,7 @@ from utils import split_gen, scripts
     
 def gen_child_commands(name, is_tags):
     
-    your_model_path = scripts.cvt_root_dir('child', name, config.model_dir)
+    your_model_path = split_gen.get_split_folder('child', name, config.model_dir)
     
     # ---------- begin new code
     

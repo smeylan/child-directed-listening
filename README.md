@@ -10,11 +10,12 @@ Primary analyses are in `Models across time analyses.ipynb`, supported by the fu
 
 Note that this assumes use of a SLURM system for GPU access. Both the local and the remote machine should have Python 3.6. The general organization is shell scripts which call jupyter notebook `nbconvert` to output notebooks where all cells have been run. The notebooks can be inspected, and the scripts generate figures and tables used in the paper.
 
-0. Set the following environment variables on both your local machine and on the SLURM machine
+0. Clone this repository to your local machine and to your SLURM machine. Note the directory on the SLURM machine as this will be `CDL_SLURM_ROOT`
+0. Set the following environment variables on **both** your local machine and on the SLURM machine
 ```
 export SLURM_USERNAME="*****@******"  
 export CDL_SLURM_USER="smeylan"  
-export CDL_SLURM_ROOT="~/om2/projects/nicole/child_repo_split/"  
+export CDL_SLURM_ROOT="~/om2/python/child-directed-listening"  
 export CDL_CONFIG_PATH="stephan_configuration.json"  
 export CDL_SINGULARITY_PATH="/om2/user/wongn/vagrant/trans-pytorch-gpu"  
 ```
@@ -22,18 +23,18 @@ Above values are examples. Set them as follows:
 
 `SLURM_USERNAME` is username and domain of the SLURM login node.  
 `CDL_SLURM_USER` is the username of the SLURM user  
-`CDL_SLURM_ROOT` is the path relative to your user folder on the SLURM machine where all results will reside  
+`CDL_SLURM_ROOT` is the path on the SLURM machine where all results will reside  
 `CDL_CONFIG_PATH` is the path to the json configuration file (similar to command line arguments)  
 `CDL_SINGULARITY_PATH` is the path to the Singularity image on the SLURM machine (with Transformers, pytorch, etc.)  
  
-2. Set up a virtual environment on the local machine and activate it `virtualenv -p python3.6 cdl_env && source cdl_env/bin/activate`
+2. Set up a virtual environment in the project repo on the local machine and activate it `virtualenv -p python3.6 cdl_env && source cdl_env/bin/activate`. Note that the SLURM machine does not need a vritual environment, as it will be using a Singularity image
 3. Install the Python dependencies on the local machine `pip3 install -r requirements.txt`
-4. Register the virtual environment as a kernel with Jupyter: `python -m ipykernel install --user --name=child-listening-env`
-5. From `~/.jupyter/jupyter_nbconvert_config.json` remove the entry `"postprocessor_class": "jupyter_contrib_nbextensions.nbconvert_support.EmbedPostProcessor"`
-6. On your local machine, run `./tier_1_data_gen.sh`. The end of this script starts an rsync job that copies the generated files to the SLURM machine; this may require your password
-8. On your SLURM machine, run `sbatch tier_2a_non_child_train_shelf_scores.sh`. This FIXME -- WHAT DOES THIS DO?
-After the computations have fully completed (not after the .sh completes submitting the jobs, but after you have confirmed that the program executed completely), run `tier_2b_finetune_scores_child_train.sh`.
-4. After the computations have fully completed, run `tier_2c_child_cross.sh`.
+4. Register the virtual environment as a kernel with Jupyter on the local machine: `python -m ipykernel install --user --name=child-listening-env`
+5. From `~/.jupyter/jupyter_nbconvert_config.json` remove the entry `"postprocessor_class": "jupyter_contrib_nbextensions.nbconvert_support.EmbedPostProcessor"` 
+6. On your local machine, run `./tier_1_data_gen.sh`. The end of this script starts an rsync job that copies the generated files to the SLURM machine (into the directory `CDL_SLURM_ROOT`); this may require your password
+8. On your SLURM machine, run `sbatch tier_2a_non_child_train_shelf_scores.sh`. This will generate job scripts and submit jobs to finetune models on non-child specific data and run token scoring for models that don't require finetuning (that is, off-the-shelf BERT models, unigrams).
+After the computations have fully completed (not after the .sh completes submitting the jobs, but after you have confirmed that the program executed completely), run `sbatch tier_2b_finetune_scores_child_train.sh`.
+4. After the computations have fully completed, run `sbatch tier_2c_child_cross.sh`.
 4. Follow the rsync directions in 2c file to rsync the `experiments` folder back to your local machine.
 5. When the relevant notebooks are complete, run `tier_3_analysis.sh`.
 6. Locate your analyses in the following notebooks:

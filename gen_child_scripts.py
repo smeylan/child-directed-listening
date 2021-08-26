@@ -54,7 +54,7 @@ if __name__ == '__main__':
     
     task_name = 'child_train'
     
-    sh_train_loc = join(config.root_dir, f'scripts_{task_name}')
+    sh_train_loc = f'scripts_{task_name}'
     
     child_arg_list = [('child', name) for name in child_names]
     scripts.gen_submit_script(task_name, child_arg_list, 'child_train')

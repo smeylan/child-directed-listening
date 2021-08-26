@@ -13,7 +13,7 @@ module load openmind/singularity/3.2.0
 rm -r scripts_child_train
 rm -r scripts_child_cross
 
-singularity exec --nv -B /om,/om2/user/wongn /om2/user/wongn/vagrant/trans-pytorch-gpu python3 gen_child_scripts.py
+singularity exec --nv -B /om,/om2/user/${CDL_SLURM_USER} ${CDL_SINGULARITY_PATH} python3 gen_child_scripts.py
 
 # train child models
 

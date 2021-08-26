@@ -15,7 +15,3 @@ singularity exec --nv -B /om,/om2/user/${CDL_SLURM_USER} ${CDL_SINGULARITY_PATH}
 chmod u+x ./submit_child_cross.sh
 
 ./submit_child_cross.sh
-
-# Then the following on Chompsky:
-# tmux attach-session -t experiments
-# rsync -a --progress wongn@openmind.mit.edu:~/child_repo_split/experiments ./experiments

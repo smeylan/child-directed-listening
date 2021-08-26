@@ -42,7 +42,7 @@ def sample_across_models(success_ids, yyy_ids, model, beta_values, examples_mode
         priors_for_age_interval = transformers_bert_completions.compare_successes_failures_unigram_model(
             all_tokens_phono, success_ids, 
             yyy_ids, **model['kwargs'])
-
+      
     edit_distances_for_age_interval = transformers_bert_completions.get_edit_distance_matrix(all_tokens_phono, 
         priors_for_age_interval, initial_vocab, cmu_in_initial_vocab)         
 
@@ -59,7 +59,7 @@ def sample_across_models(success_ids, yyy_ids, model, beta_values, examples_mode
 
         elif model['type'] == 'unigram':
             # special unigram hack
-            this_bert_token_ids = unigram.get_sample_bert_token_ids('beta')
+            this_bert_token_ids = unigram.get_sample_bert_token_ids()
             
             posteriors_for_age_interval = transformers_bert_completions.get_posteriors(priors_for_age_interval, edit_distances_for_age_interval, 
                 initial_vocab, this_bert_token_ids, beta_value, examples_mode = examples_mode)

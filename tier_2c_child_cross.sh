@@ -8,7 +8,9 @@
 
 module load openmind/singularity/3.2.0
 
-singularity exec --nv -B /om,/om2/user/wongn /om2/user/wongn/vagrant/trans-pytorch-gpu python3 gen_child_eval_scripts.py
+rm -r scripts_child_cross
+
+singularity exec --nv -B /om,/om2/user/${CDL_SLURM_USER} ${CDL_SINGULARITY_PATH} python3 gen_child_eval_scripts.py
 
 chmod u+x ./submit_child_cross.sh
 

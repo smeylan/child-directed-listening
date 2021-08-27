@@ -26,6 +26,7 @@ def assemble_scores_no_order():
     score_store = []
     
     for split, dataset, tags, context, model_type in this_load_args:
+
        
         this_beta_folder = beta_utils.load_beta_folder(split, dataset, tags, context, model_type)
 
@@ -36,6 +37,15 @@ def assemble_scores_no_order():
             print(this_data_path)
             
             data_df = pd.read_pickle(this_data_path)
+            
+            ## TEMPORARY ONLY -- REMOVE THIS SECTION ###
+
+#             print('REMOVE THIS TEMPORARY SECTION IN SAMPLE_MODELS_ACROSS_TIME, only used for loading temp scores n = 2')
+#             if 'posterior_surprisal' in data_df.columns:
+#                 data_df = data_df.rename(columns={'posterior_surprisal' : 'posterior_probability',
+#                                                 'prior_surprisal' : 'prior_probability'})
+            
+            ## END TEMPORARY -- NEED TO REMOVE THIS SECTION BEFORE n = 500 ###
             
             score_store.append(data_df)
                       

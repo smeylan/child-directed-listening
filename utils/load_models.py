@@ -231,8 +231,6 @@ def get_model_dict(split, dataset, with_tags, context, model_type):
     # If it's a pretrained BERT model with no finetuning, it has /shelf added to its model id
     # If it's a unigram model, it's just: split name/dataset name/unigram_{unigram type}
     
-    print(config.scores_dir)
-    
     if model_type == 'childes': 
         model_dict = get_finetune_dict(split, dataset, with_tags, context)
     elif model_type == 'adult':
@@ -246,7 +244,6 @@ def get_model_dict(split, dataset, with_tags, context, model_type):
     
     # 7/9/21: So childes doesn't need to re-add the tokens, and it works fine with the tokens, manually checked via prints
     if model_type != 'childes':
-        #print('Adding the speaker tokens to this model dict')
         model_dict['kwargs']['tokenizer'].add_tokens(['[chi]','[cgv]'])
 
     # Always add tokens to the new models.

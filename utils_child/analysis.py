@@ -118,6 +118,14 @@ def process_score_results(data_child, prior_child, which_key, is_mean = True):
     score_path = utils_child.get_cross_path(data_child, prior_child)
     scores = pd.read_pickle(score_path)
     
+    ##################### TEMP CODE (only needed for my old copy of n = 2)
+    
+    if 'posterior_surprisal' in scores.columns:
+        scores = scores.rename(columns={'posterior_surprisal' : 'posterior_probability',
+                                          'prior_surprisal' : 'prior_probability'})
+    
+    ### ########## END TEMP CODE 
+    
     scores = scores[scores.set == ('success')]
     
     # Match the R analyses "sem" function.

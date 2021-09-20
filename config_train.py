@@ -10,7 +10,7 @@ config = configuration.Config()
 #### CHILD ARGUMENTS ####
 #########################
 
-version_name = 'no_versioning' # Separate from exp determiner, because you may want to generate separate training files than scoring on Chompsky
+version_name = config.training_version_name # Separate from exp determiner, because you may want to generate separate training files than scoring on Chompsky
 
 exp_dir = join(join(config.local_root_dir, 'experiments'), version_name)
 model_dir = join(exp_dir, 'models')

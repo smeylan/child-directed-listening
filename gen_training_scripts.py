@@ -33,7 +33,7 @@ def get_training_alloc(split_name):
         time_alloc_hrs = time
     else:
         mem_alloc_gb = 9 
-        time_alloc_hrs = 6 if not config.dev_mode else (0, 20, 0)
+        time_alloc_hrs = 16 if not config.dev_mode else (0, 30, 0)
     
     return time_alloc_hrs, mem_alloc_gb
     

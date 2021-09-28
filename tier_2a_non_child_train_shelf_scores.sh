@@ -23,4 +23,3 @@ singularity exec --nv -B /om,/om2/user/${CDL_SLURM_USER} ${CDL_SINGULARITY_PATH}
 
 ./submit_non_child_train.sh
 
-# If in development: At this point, rsync models/scores to Chompsky

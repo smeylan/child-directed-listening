@@ -93,7 +93,7 @@ def determine_split_idxs(unsorted_cleaned_data, split_on, val_ratio = None, val_
     # Note: always put at least one transcript in val, because other train data will be joined to train
     # for child finetuning data
     
-    sample_num = val_num if val_ratio is None else max(1, int(val_ratio * len(split_attr_inventory)))
+    sample_num = val_num if val_ratio is None else max(1, int(float(val_ratio) * len(split_attr_inventory)))
     
     train_idx, validation_idx = sklearn.model_selection.train_test_split(split_attr_inventory, test_size = sample_num)
     

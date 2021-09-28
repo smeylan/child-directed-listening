@@ -25,7 +25,7 @@
     "age_split" : 30,
     "context_list" : [0, 20],
     "beta_low" : 2.5,
-    "beta_high" : 3.5,
-    "num_values" : 10
+    "beta_high" : 4.5,
+    "num_values" : 20
 }
 

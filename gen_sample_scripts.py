@@ -24,7 +24,7 @@ def time_and_mem_alloc():
     
     is_subsample = (config.n_subsample <= 500) # Always use n_subsample, just depends if 500 or 1000
     
-    this_time_alloc = (0, 10, 0) if config.dev_mode else ((1, 0, 0) if is_subsample else (2, 30, 0))
+    this_time_alloc = (0, 10, 0) if config.dev_mode else ((1, 0, 0) if is_subsample else (12, 0, 0))
     this_mem_amount = 10 if config.dev_mode else (13 if is_subsample else 35)
     
     return this_time_alloc, this_mem_amount

@@ -17,6 +17,10 @@ singularity exec --nv -B /om,/om2/user/${CDL_SLURM_USER} ${CDL_SINGULARITY_PATH}
 
 # train non-child models + score shelf models 
 
-./submit_non_child_beta_time_shelf.sh & ./submit_non_child_train.sh
+./submit_non_child_beta_time_shelf.sh 
+
+# score shelf models
+
+./submit_non_child_train.sh
 
 # If in development: At this point, rsync models/scores to Chompsky

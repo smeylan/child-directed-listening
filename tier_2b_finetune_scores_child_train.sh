@@ -10,8 +10,8 @@ module load openmind/singularity/3.2.0
 
 # gen scripts for children train
 
-rm -r scripts_child_train
-rm -r scripts_child_cross
+rm -rf scripts_child_train
+rm -rf scripts_child_cross
 
 singularity exec --nv -B /om,/om2/user/${CDL_SLURM_USER} ${CDL_SINGULARITY_PATH} python3 gen_child_scripts.py
 

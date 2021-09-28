@@ -19,6 +19,7 @@
     "dist_type" : "levdist",
     "eval_phase" : "val",
     "exp_determiner" : "full_scale",
+    "training_version_name": "full_scale",
     "child_context_width" : 0,
     "verbose" : 1,
     "age_split" : 30,

@@ -6,15 +6,30 @@ import os
 import copy
 import pandas as pd
 import numpy as np
+import configuration
+config = configuration.Config()
 
 def vectorized_compute_all_likelihoods_for_w_over_paths(d_fsa, w_fsas, ws):    
     '''return a vector with entries corresponding to the total path weights from this d_fsa to each word in ws'''
     return([get_likelihood_for_fsas_over_paths(d_fsa, w_fsas, w) for w in ws])
 
 def compute_all_likelihoods_for_w_over_paths_one(list_of_tuples):
-    '''wrapper to compute likelihoods for a list of n (d_fsa, w_fsa, w) tuples'''
-    test = [vectorized_compute_all_likelihoods_for_w_over_paths(x[0], x[1], x[2]) for x in list_of_tuples]
-    return(np.vstack(test))
+    '''wrapper to compute likelihoods for a list of n (d, d_fsa, w_fsa, w, cache_path) tuples. Check if d.npy is in cache_path first'''
+
+    # if cache_path + d exists, read that in and return that   
+    distances = []
+
+    for x in list_of_tuples:    
+        distances_cache_path = os.path.join(x[4], x[3]+'.npy') 
+
+        if os.path.exists(distances_cache_path):            
+            dist_matrix = np.load(distances_cache_path)              
+        else:
+            dist_matrix = vectorized_compute_all_likelihoods_for_w_over_paths(x[0], x[1], x[2])
+            np.save(distances_cache_path, dist_matrix) # write it out in numpy
+        
+        distances.append(dist_matrix)
+    return(np.vstack(distances))
 
 def get_weight_for_path(arc, shortest_paths): 
     '''get the weight of a single arc by iterating in Python'''
@@ -253,16 +268,21 @@ def get_wfst_distance_matrix(all_tokens_phono, prior_data, initial_vocab,  cmu_2
         w_fsas[w['ipa_short']] = w_in.arcsort(sort_type="ilabel")
         ws.append(w['ipa_short'])
 
-    #[ ] !!! check if there are repeats in d_fsas -- the pairwise computation is expensive
-    
-    #[X] translate all observed words (data) into FSAs (d_fsas)
-    d_fsas = [string_to_fsa(d, superset_chi_sym).arcsort(sort_type="olabel") for d in ipa.actual_phonology_no_dia]
-     
+    fst_cache_path = config.fst_cache_path
+    if not os.path.exists(fst_cache_path):
+        os.mkdir(fst_cache_path)
         
-    # make the splits on the dfsas    
-    serial_inputs = [(x, w_fsas, ws) for x in d_fsas]
-    d_fsa_inputs = split(serial_inputs, num_cores)    
-    distances = Parallel(n_jobs=num_cores)(delayed(compute_all_likelihoods_for_w_over_paths_one)(d_fsa_input) for d_fsa_input in d_fsa_inputs)
+    #[X] translate all observed words (data) into FSAs (d_fsas)
+    serial_inputs = [(string_to_fsa(d, superset_chi_sym).arcsort(sort_type="olabel"), w_fsas, ws, d, fst_cache_path) for d in ipa.actual_phonology_no_dia]
+     
+    # make the splits on the dfsas        
+    if len(serial_inputs) >= num_cores: #avoid stupid weirdness if we have to deal with empty assignments for the workers
+        d_fsa_inputs = list(split(serial_inputs, num_cores))
+        distances = Parallel(n_jobs=num_cores)(delayed(compute_all_likelihoods_for_w_over_paths_one)(d_fsa_input) for d_fsa_input in d_fsa_inputs)
+    else:
+        d_fsa_inputs = [serial_inputs]
+        distances = [compute_all_likelihoods_for_w_over_paths_one(d_fsa_input) for d_fsa_input in d_fsa_inputs]
+    
     # print('Procesing '+str(len(d_fsas))+' d_fsas')
     # distances = []    
     # for d_fsa in d_fsas:        

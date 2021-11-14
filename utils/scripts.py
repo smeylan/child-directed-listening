@@ -99,7 +99,7 @@ def get_script_name(split, dataset, is_tags):
 def gen_singularity_header(om2_user = config.slurm_user):
     
     # still part of the taken code above
-    return f"singularity exec --nv -B /om,/om2/user/{om2_user} /om2/user/{om2_user}/vagrant/trans-pytorch-gpu " 
+    return f"singularity exec --nv -B /om,/om2/user/{om2_user} /om2/user/{om2_user}/vagrant/ubuntu20.simg " 
     
 def format_time(args):
     
@@ -110,7 +110,7 @@ def format_time(args):
     return (args[0],) + new_args
   
 
-def gen_command_header(mem_alloc_gb, time_alloc_hrs, slurm_folder, slurm_name, two_gpus = False):
+def gen_command_header(mem_alloc_gb, time_alloc_hrs, n_tasks, cpus_per_task, slurm_folder, slurm_name, two_gpus = False):
     
     if isinstance(time_alloc_hrs, int):
         time_alloc_hrs_str = f'{time_alloc_hrs}:00:00'
@@ -133,6 +133,10 @@ def gen_command_header(mem_alloc_gb, time_alloc_hrs, slurm_folder, slurm_name, t
     commands.append(f"#SBATCH -t {time_alloc_hrs_str}\n")
     commands.append(f"#SBATCH --mem={mem_alloc_gb}G\n")
     commands.append("#SBATCH --constraint=high-capacity\n")
+
+    commands.append(f"#SBATCH --ntasks={n_tasks}\n")
+    commands.append(f"#SBATCH --cpus-per-task={cpus_per_task}\n")
+
     commands.append(slurm_organization_command)
     
     commands.append(f"mkdir -p {slurm_folder}\n")

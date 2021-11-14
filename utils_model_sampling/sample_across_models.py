@@ -54,22 +54,9 @@ def sample_across_models(success_ids, yyy_ids, model, beta_values, lambda_values
     #pickle.dump(cmu_in_initial_vocab, file_con)
     #file_con.close()
 
-    # Run over wfst based likelihoods
-    if os.path.exists('pkl/wfst_distances_for_age_interval.pkl'):
-        print('Loading an existing WFST pickle')
-        with open('pkl/wfst_distances_for_age_interval.pkl', 'rb') as file_id:
-            wfst_distances_for_age_interval = pickle.load(file_id)    
-    else:
-        print('Recomputing WFST distance matrix')
-        wfst_distances_for_age_interval = wfst.get_wfst_distance_matrix(all_tokens_phono, priors_for_age_interval, initial_vocab,  cmu_in_initial_vocab, config.fst_path, config.fst_sym_path)
-
-    # pickle the above for testing
-    # the above is *probabilities* -- is this what I actually want, or something else?
-    # import pickle
-    # file_ref = open('pkl/wfst_distances_for_age_interval.pkl','wb')
-    # pickle.dump(wfst_distances_for_age_interval, file_ref)
-    # file_ref.close()
-
+    
+    print('Computing WFST path lengths...')
+    wfst_distances_for_age_interval = wfst.get_wfst_distance_matrix(all_tokens_phono, priors_for_age_interval, initial_vocab,  cmu_in_initial_vocab, config.fst_path, config.fst_sym_path)
     wfst_distances_for_age_interval = -1 * np.log(wfst_distances_for_age_interval + 10**-20) # convert this back to log space
     
     for idx, lambda_value in enumerate(lambda_values):
@@ -85,8 +72,7 @@ def sample_across_models(success_ids, yyy_ids, model, beta_values, lambda_values
             # special unigram hack
             this_bert_token_ids = unigram.get_sample_bert_token_ids()
             
-            posteriors_for_age_interval = transformers_bert_completions.get_posteriors(priors_for_age_interval, wfst_distances_for_age_interval, 
-                initial_vocab, this_bert_token_ids, lambda_value, examples_mode = examples_mode)
+            posteriors_for_age_interval = transformers_bert_completions.get_posteriors(priors_for_age_interval, wfst_distances_for_age_interval, initial_vocab, this_bert_token_ids, lambda_value, examples_mode = examples_mode)
             print('If possible compare the bert_token_id in sample_across_models to the bert_token_id in one of the other scores sets from bert.')
             
         posteriors_for_age_interval['scores']['lambda_value'] = lambda_value
@@ -99,8 +85,7 @@ def sample_across_models(success_ids, yyy_ids, model, beta_values, lambda_values
         score_store_single_model.append(this_score)    
 
 
-    # Run over edit-distance based likelihoods
-
+    print('Computing edit distances...')
     edit_distances_for_age_interval = transformers_bert_completions.get_edit_distance_matrix(all_tokens_phono, priors_for_age_interval, initial_vocab, cmu_in_initial_vocab)
     
     for idx, beta_value in enumerate(beta_values):

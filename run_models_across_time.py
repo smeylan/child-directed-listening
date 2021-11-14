@@ -69,13 +69,13 @@ def call_single_across_time_model(sample_dict, all_tokens_phono, model_class, th
         
         if (this_success_pool.shape[0] == 0) and (this_yyy_pool.shape[0] == 0): continue
          
-        best_beta_scores = sample_models_across_time.successes_and_failures_across_time_per_model(age, this_success_pool.utterance_id, this_yyy_pool.utterance_id, beta_model_dict, all_tokens_phono, optimal_beta, examples_mode)
+        best_beta_scores = sample_models_across_time.successes_and_failures_across_time_per_model(age, this_success_pool.utterance_id, this_yyy_pool.utterance_id, beta_model_dict, all_tokens_phono, optimal_beta, examples_mode, 'levdist')
         beta_tags = beta_model_dict['kwargs']['use_speaker_labels']
         beta_context_width = beta_model_dict['kwargs']['context_width_in_utts']
         beta_score_folder = hyperparameter_utils.load_hyperparameter_folder(this_split, this_dataset_name, beta_tags, beta_context_width, model_class)
         best_beta_scores.to_pickle(join(beta_score_folder, f'levdist_run_models_across_time_{age_str}.pkl'))
     
-        best_lambda_scores = sample_models_across_time.successes_and_failures_across_time_per_model(age, this_success_pool.utterance_id, this_yyy_pool.utterance_id, lambda_model_dict, all_tokens_phono, optimal_lambda, examples_mode)
+        best_lambda_scores = sample_models_across_time.successes_and_failures_across_time_per_model(age, this_success_pool.utterance_id, this_yyy_pool.utterance_id, lambda_model_dict, all_tokens_phono, optimal_lambda, examples_mode, 'wfst')
         lambda_tags = lambda_model_dict['kwargs']['use_speaker_labels']
         lambda_context_width = lambda_model_dict['kwargs']['context_width_in_utts']
         lambda_score_folder = hyperparameter_utils.load_hyperparameter_folder(this_split, this_dataset_name, lambda_tags, lambda_context_width, model_class)

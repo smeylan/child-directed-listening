@@ -44,7 +44,7 @@ def optimize_beta_and_lambda(split_name, dataset_name, model_dict, model_type):
                                                                       beta_sample, lambda_sample)
     
     this_raw_beta_results = this_raw_beta_lambda_results.loc[this_raw_beta_lambda_results.likelihood_type == 'levdist']
-    this_raw_lambda_results =this_raw_beta_lambda_results.loc[this_raw_beta_lambda_results.likelihood_type == 'wfst']
+    this_raw_lambda_results = this_raw_beta_lambda_results.loc[this_raw_beta_lambda_results.likelihood_type == 'wfst']
 
 
     

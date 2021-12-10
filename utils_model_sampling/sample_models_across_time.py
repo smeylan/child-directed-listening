@@ -16,28 +16,32 @@ import glob
 import configuration
 config = configuration.Config()
 
+import pickle5 as pickle
+
 
 def assemble_scores_no_order(hyperparameter_set):
     """
     Assumes order of the the model vs age loop doesn't matter.
     """
     
-    # is_subset is for development purposes
+    # hyperparameter_set: wfst or levdist
     
     this_load_args = load_models.gen_all_model_args()
     
     score_store = []
     
     for split, dataset, tags, context, model_type in this_load_args:
-
        
         this_hyperparameter_folder = hyperparameter_utils.load_hyperparameter_folder(split, dataset, tags, context, model_type)
 
-        age_paths = glob.glob(join(this_hyperparameter_folder, hyperparameter_set+'_run_models_across_time_*.pkl'))
+        search_string = join(this_hyperparameter_folder, hyperparameter_set+'_run_models_across_time_*.pkl')
+        age_paths = glob.glob(search_string)
         
         for this_data_path in age_paths:
             
-            data_df = pd.read_pickle(this_data_path)
+            #data_df = pd.read_pickle(this_data_path)
+            with open(this_data_path, "rb") as fh:
+                data_df = pickle.load(fh)
             
             score_store.append(data_df)
                       

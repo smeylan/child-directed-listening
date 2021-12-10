@@ -25,28 +25,24 @@ def models_get_split_folder(split_type, dataset_type, with_tags):
 
 
 def get_training_alloc(split_name):
+        
+    time, mem, n_tasks, cpus_per_task = gen_sample_scripts.time_and_mem_alloc()
+    if split_name != 'child':
+        time = 24 if not config.dev_mode else (0, 30, 0)                
     
-    if split_name == 'child':
-        # Need to run beta simultaneously
-        time, mem = gen_sample_scripts.time_and_mem_alloc()
-        mem_alloc_gb = mem
-        time_alloc_hrs = time
-    else:
-        mem_alloc_gb = 9 
-        time_alloc_hrs = 16 if not config.dev_mode else (0, 30, 0)
-    
-    return time_alloc_hrs, mem_alloc_gb
+    return mem, time, n_tasks, cpus_per_task
     
     
 def get_training_header_commands(split_name, dataset_name, with_tags, om2_user = config.slurm_user, lr = None):
     
-    time_alloc_hrs, mem_alloc_gb = get_training_alloc(split_name)
+    time_alloc_hrs, mem_alloc_gb, n_tasks, cpus_per_task = get_training_alloc(split_name)
     
     model_dir = models_get_split_folder(split_name, dataset_name, with_tags)
     
     print('Use of cvt root dir will not be compatible with eventual updating datetime in gen_training_scripts')
     
     header_commands = scripts.gen_command_header(mem_alloc_gb = mem_alloc_gb, time_alloc_hrs = time_alloc_hrs,
+                                        n_tasks = n_tasks, cpus_per_task = cpus_per_task,
                                           slurm_folder = scripts.get_slurm_folder(split_name, dataset_name, task = 'non_child_train'),
                                           slurm_name = f'training_tags={with_tags}{f"_{lr}" if lr is not None else ""}', 
                                           two_gpus = (dataset_name in {'young', 'all'}))
@@ -95,7 +91,7 @@ def get_run_mlm_command(split_name, dataset_name, this_data_dir, this_model_dir,
             f"--max_eval_samples 10",
         ]
 
-    main_command = f"singularity exec --nv -B /om,/om2/user/{om2_user} /om2/user/{om2_user}/vagrant/trans-pytorch-gpu"
+    main_command = f"singularity exec --nv -B /om,/om2/user/{om2_user} /om2/user/{om2_user}/vagrant/ubuntu20.simg"
     this_python_command = f' python3 run_mlm.py {" ".join(data_args + trainer_args)}'
 
     return f"{main_command}{this_python_command}"

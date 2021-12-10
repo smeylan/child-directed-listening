@@ -13,7 +13,7 @@ def get_one_python_command(task_file, split, dataset, use_tags, context_width, m
     
     model_id = load_models.get_model_id(
         split, dataset, use_tags, context_width, model_type
-    ).replace('/', '>')
+    ).replace('/', '_')
     
     command = f"python3 {task_file} --split {split} --dataset {dataset} --context_width {context_width} --use_tags {use_tags} --model_type {model_type}"
 
@@ -26,8 +26,10 @@ def time_and_mem_alloc():
     
     this_time_alloc = (0, 10, 0) if config.dev_mode else ((1, 0, 0) if is_subsample else (12, 0, 0))
     this_mem_amount = 10 if config.dev_mode else (13 if is_subsample else 35)
+    this_n_tasks = 1
+    this_cpus_per_task = 16 
     
-    return this_time_alloc, this_mem_amount
+    return this_time_alloc, this_mem_amount, this_n_tasks, this_cpus_per_task
     
 
 def write_commands(sh_script_loc, task_name, model_id, commands):

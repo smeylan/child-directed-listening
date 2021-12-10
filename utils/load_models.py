@@ -319,6 +319,12 @@ def get_model_from_path(model_path, with_tags):
     
     return {'modelLM' : model, 'tokenizer' : tokenizer, 'softmax_mask' : softmax_mask, 'use_speaker_labels' : with_tags }
  
+def phone_remap(x):    
+    return(x.replace("ː","").replace('ʌ','ə')
+.replace('ɪ','ə').replace('ɔ','ɑ').replace('a','ɑ').replace('o','oʊ').replace('˞','').replace('ʰ',
+    ''). replace('r','ɹ')).replace('\\^','').replace('\\ ̃','').replace(' ̩','').replace('^',''
+).replace('ʙ','b').replace('(','').replace(')','').replace('.','').replace('ch','ʧ'
+).replace('c','k').replace('g','ɡ').replace('y','j').replace('ʁ','ɹ')
     
 
 def get_cmu_dict_info():
@@ -330,6 +336,10 @@ def get_cmu_dict_info():
     # because the lists are not used in the code.
     
     cmu_2syl_inchildes = cmu_in_childes.loc[cmu_in_childes.num_vowels <=2]
+    
+    # edit any phones that are in CMU that aren't in Providence
+    cmu_2syl_inchildes.ipa_short = [phone_remap(x) for x in cmu_2syl_inchildes.ipa_short]
+
     return cmu_2syl_inchildes 
 
 

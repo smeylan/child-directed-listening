@@ -571,9 +571,9 @@ def find_in_vocab(x, initial_vocab):
     except:
         return(np.nan)
 
-def get_posteriors(prior_data, levdists, initial_vocab, bert_token_ids=None, beta_value=None, examples_mode = False):
+def get_posteriors(prior_data, levdists, initial_vocab, bert_token_ids=None, scaling_value=None, examples_mode = False):
     '''
-        Get the posterior probability of candidate words by combining the priors with a likelihood dependent on levenshtein distances and a free parameter beta
+        Get the posterior probability of candidate words by combining the priors with a likelihood dependent on levenshtein distances and a free parameter `scaling_value`
 
         Args:
         prior_data: prior data of the format put out by  compare_successes_failures
@@ -581,11 +581,11 @@ def get_posteriors(prior_data, levdists, initial_vocab, bert_token_ids=None, bet
         initial_vocab: natural language vocabulary
         bert_token_ids: set of bert_token_ids to limit the contents of prior_data and levdists. This handles the fact that a few utterances are not retrievalbe through BERT but 
         are retrievable through the unigram model query (it is necessary to exclude such forms) 
-        beta_value: free parameter in the likelihood; see the paper. Higher values assign lower probabilities to larger edit distances
+        scaling_value: free parameter in the likelihood; see the paper. Higher values assign lower probabilities to larger edit distances
         examples_mode: Whether or not to maintain data related to highest probability words -- used for Examples notebooks, disabled for memory savings.
     '''
 
-    if beta_value is None: assert False
+    if scaling_value is None: assert False
    
     if bert_token_ids is not None:
         btis = set(bert_token_ids)   
@@ -601,7 +601,7 @@ def get_posteriors(prior_data, levdists, initial_vocab, bert_token_ids=None, bet
         # also need to limit the scores in some way
 
     
-    likelihoods = np.exp(-1*beta_value*levdists)
+    likelihoods = np.exp(-1*scaling_value*levdists)
     unnormalized = np.multiply(prior_data['priors'], likelihoods)
     
     row_sums = np.sum(unnormalized,1)
@@ -691,7 +691,7 @@ def get_posteriors(prior_data, levdists, initial_vocab, bert_token_ids=None, bet
 
 def get_edit_distance_matrix(all_tokens_phono, prior_data, initial_vocab,  cmu_2syl_inchildes):    
     '''
-    Get an edit distance matrix for matrix-based computation of the prior
+    Get an edit distance matrix for matrix-based computation of the posterior
 
     all_tokens_phono: corpus in tokenized from, with phonological transcriptions
     prior_data: priors of the form output by `compare_successes_failures_*`

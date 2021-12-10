@@ -1,6 +1,5 @@
 {
-    "slurm_user" : "smeylan",
-    "fail_on_beta_edge" : 0,
+    "slurm_user" : "smeylan",    
     "for_reproducible" : 0,
     "slurm_root_dir" : "~/om2/projects/nicole/child_repo_split/",
     "local_root_dir" : "",
@@ -26,6 +25,13 @@
     "context_list" : [0, 20],
     "beta_low" : 2.5,
     "beta_high" : 4.5,
-    "num_values" : 20
+    "beta_num_values" : 20,
+    "fail_on_beta_edge" : 1,
+    "lambda_low" : 0,
+    "lambda_high" : 2,
+    "lambda_num_values" : 20,    
+    "fail_on_lambda_edge" : 1,
+    "fst_path":"fst/chi-1.txt",
+    "fst_sym_path":"fst/chi_phones.sym"
 }
 

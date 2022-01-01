@@ -88,7 +88,7 @@ def successes_and_failures_across_time_per_model(age, success_ids, yyy_ids, mode
     elif model['type'] == 'unigram':
         # special unigram hack
         this_bert_token_ids = unigram.get_sample_bert_token_ids()
-        likelihood_matrix = transformers_bert_completions.get_posteriors(priors_for_age_interval, likelihood_matrix, initial_vocab, this_bert_token_ids, scaling_value = beta_value, examples_mode = examples_mode)
+        posteriors_for_age_interval = transformers_bert_completions.get_posteriors(priors_for_age_interval, likelihood_matrix, initial_vocab, this_bert_token_ids, scaling_value = beta_value, examples_mode = examples_mode)
 
     posteriors_for_age_interval['scores']['model'] = model['title']
     posteriors_for_age_interval['scores']['age'] = age

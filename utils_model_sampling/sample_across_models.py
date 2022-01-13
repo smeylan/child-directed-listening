@@ -56,8 +56,11 @@ def sample_across_models(success_ids, yyy_ids, model, beta_values, lambda_values
 
     
     print('Computing WFST path lengths...')
-    wfst_distances_for_age_interval = wfst.get_wfst_distance_matrix(all_tokens_phono, priors_for_age_interval, initial_vocab,  cmu_in_initial_vocab, config.fst_path, config.fst_sym_path)
-    wfst_distances_for_age_interval = -1 * np.log(wfst_distances_for_age_interval + 10**-20) # convert this back to log space
+    wfst_distances_for_age_interval_unreduced = wfst.get_wfst_distance_matrix(all_tokens_phono, priors_for_age_interval, initial_vocab,  cmu_in_initial_vocab, config.fst_path, config.fst_sym_path)    
+    wfst_distances_for_age_interval_unreduced = -1 * np.log(wfst_distances_for_age_interval + 10**-20) # convert this back to log space
+
+    #for each word, find the citation pronunciation that is most likely to generate the observed data 
+    wfst_distances_for_age_interval = wfst.reduce_duplicates(wfst_distances_for_age_interval_unreduced, cmu_in_initial_vocab)
     
     for idx, lambda_value in enumerate(lambda_values):
         
@@ -86,7 +89,11 @@ def sample_across_models(success_ids, yyy_ids, model, beta_values, lambda_values
 
 
     print('Computing edit distances...')
-    edit_distances_for_age_interval = transformers_bert_completions.get_edit_distance_matrix(all_tokens_phono, priors_for_age_interval, initial_vocab, cmu_in_initial_vocab)
+    edit_distances_for_age_interval_unreduced = transformers_bert_completions.get_edit_distance_matrix(all_tokens_phono, priors_for_age_interval, initial_vocab, cmu_in_initial_vocab)
+
+    #for each word, find the citation pronunciation that is most likely to generate the observed data     
+    edit_distances_for_age_interval = wfst.reduce_duplicates(edit_distances_for_age_interval_unreduced, cmu_in_initial_vocab)
+
     
     for idx, beta_value in enumerate(beta_values):
         

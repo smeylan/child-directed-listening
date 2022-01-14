@@ -278,9 +278,6 @@ def get_initial_vocab_info(initial_tokenizer = None):
     
     cmu_in_initial_vocab = cmu_2syl_inchildes.loc[cmu_2syl_inchildes.word.isin(initial_vocab)]
     
-    is_same = np.all(np.array(sorted(cmu_in_initial_vocab['word'])) == sorted(initial_vocab))
-    assert is_same, "Assumption for unigram limiting failed. initial_vocab was used as having the same element as cmu_in_initial_vocab."
-    
     return initial_vocab, cmu_in_initial_vocab
 
 
@@ -335,11 +332,10 @@ def get_cmu_dict_info():
     # Based on skimming the code this shouldn't affect the functionality
     # because the lists are not used in the code.
     
-    cmu_2syl_inchildes = cmu_in_childes.loc[cmu_in_childes.num_vowels <=2]
+    #cmu_2syl_inchildes = cmu_in_childes.loc[cmu_in_childes.num_vowels <=2]
     
     # edit any phones that are in CMU that aren't in Providence
-    cmu_2syl_inchildes.ipa_short = [phone_remap(x) for x in cmu_2syl_inchildes.ipa_short]
-
-    return cmu_2syl_inchildes 
-
+    #cmu_2syl_inchildes.ipa_short = [phone_remap(x) for x in cmu_2syl_inchildes.ipa_short]
+    
+    return cmu_in_childes 
 

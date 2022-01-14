@@ -183,13 +183,12 @@ def clean_glosses(data):
     
     data.gloss = [fix_gloss(x) for x in data.gloss]
     
-    if config.verbose: print(data['type'].value_counts())
+    # if config.verbose: print(data['type'].value_counts())
     
     # Cell 237
     data['punct'] = [punct_for_type[x] if x in punct_for_type else fill_punct_val
                         for x in data.type ]
-    
-    if config.verbose: print('Cell 238', data.iloc[0])
+    # if config.verbose: print('Cell 238', data.iloc[0])
         
     # Cell 267
     

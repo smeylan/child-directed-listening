@@ -362,9 +362,12 @@ def get_softmax_mask(tokenizer, token_list):
     vocab_size = len(tokenizer.get_vocab())
     words = np.array(tokenizer.convert_ids_to_tokens(range(vocab_size)))
     mask = np.ones([vocab_size])
+    # omit word parts
     mask[np.array(['##' in x for x in words])] = 0
-    mask[np.array([any(p in x for p in punctuation) for x in words])] = 0
+    # omit punctuation
+    mask[np.array([any(p in x for p in punctuation) for x in words])] = 0    
     token_list = set(token_list)
+    # omit anything that isn't in the list of vocabulary items
     mask[~np.array([x in token_list for x in words])] = 0
     return(np.argwhere(mask)[:,0], words[np.argwhere(mask)][:,0])
 

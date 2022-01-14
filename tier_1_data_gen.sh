@@ -1,15 +1,17 @@
-# Remove files with cached results
+# Remove any directories with cached results
 rm -rf finetune
 rm -rf prov
 rm -rf prov_csv
 rm -rf figures
 
-mkdir -p figures # For generalized phonological comparison -- need to check if the last figure works
+# Re-create the figures directory
+mkdir -p figures
 
+# Remove any previously processed notebooks
 rm *.nbconvert.ipynb
 
-# Run notebboks that generate the data splits
-jupyter nbconvert --execute 'Process CMU dictionary.ipynb' --to notebook
+# Run notebooks that prepare the data and generate the data splits
+jupyter nbconvert --execute 'Create Vocabulary and Pronunciations.ipynb' --to notebook
 jupyter nbconvert --execute 'Generalized Phonological Comparison' --to notebook
 jupyter nbconvert --execute 'Providence - Retrieve data.ipynb' --to notebook
 jupyter nbconvert --execute 'Providence - Splits.ipynb' --to notebook

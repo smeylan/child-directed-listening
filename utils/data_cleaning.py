@@ -39,6 +39,7 @@ def get_cv_map_dict():
     phone_map_df.head()
 
     cv_map = dict(zip(phone_map_df['ipa'], phone_map_df['c_or_v']))
+    cv_map['a'] = 'v'
     cv_map['o'] = 'v' 
     cv_map['ɜ'] = 'v'
     cv_map['e'] = 'v'
@@ -46,7 +47,7 @@ def get_cv_map_dict():
     cv_map['ɾ'] = 'c'
     cv_map['ɲ'] = 'c'
     cv_map['x'] = 'c'
-    cv_map['ɱ'] = 'c'
+    cv_map['ɱ'] = 'c'    
     cv_map['ɣ'] = 'c'
     
     # Added this from model phonology clean

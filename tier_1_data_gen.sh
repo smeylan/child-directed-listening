@@ -16,7 +16,10 @@ jupyter nbconvert --execute 'Generalized Phonological Comparison' --to notebook
 jupyter nbconvert --execute 'Providence - Retrieve data.ipynb' --to notebook
 jupyter nbconvert --execute 'Providence - Splits.ipynb' --to notebook
 jupyter nbconvert --execute 'Get non-Providence CHILDES finetuning data.ipynb' --to notebook
+jupyter nbconvert --execute 'Output Citation vs. Observed Phonology Pairs.ipynb' --to notebook
 jupyter nbconvert --execute 'data_splitting_checks.ipynb' --to notebook
+train_fst.sh
+
 
 # Then, rsync the resulting files to the SLURM cluster
-rsync -az --progress ./finetune ./prov ./csv ./phon ${SLURM_USERNAME}:${CDL_SLURM_ROOT}
+rsync -az --progress ./finetune ./prov ./prov_csv ./csv ./phon ./fst ${SLURM_USERNAME}:${CDL_SLURM_ROOT}

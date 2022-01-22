@@ -20,12 +20,14 @@ def gen_child_commands(name, is_tags):
     
     slurm_folder = scripts.get_slurm_folder('child', name, 'child_train')
     
-    time_alloc_hrs, mem_alloc_gb = gen_training_scripts.get_training_alloc('child')
+    mem_alloc_gb, time_alloc_hrs,  n_tasks, cpus_per_task = gen_training_scripts.get_training_alloc('child')
     
     header_commands = scripts.gen_command_header(mem_alloc_gb = mem_alloc_gb, time_alloc_hrs = time_alloc_hrs,
-                                          slurm_folder = slurm_folder,
-                                          slurm_name = f'training_beta_tags={is_tags}', 
-                                          two_gpus = False)
+        n_tasks = n_tasks,
+        cpus_per_task = cpus_per_task,
+        slurm_folder = slurm_folder,
+        slurm_name = f'training_beta_tags={is_tags}', 
+        two_gpus = False)
     
     this_model_dir = '/'.join(gen_training_scripts.models_get_split_folder('child', name, is_tags).split('/')[:-1])
     

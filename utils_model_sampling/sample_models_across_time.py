@@ -79,11 +79,14 @@ def successes_and_failures_across_time_per_model(age, success_ids, yyy_ids, mode
 
     # run the best model    
     if likelihood_type == 'wfst':
-        likelihood_matrix = wfst.get_wfst_distance_matrix(all_tokens_phono, priors_for_age_interval, initial_vocab,  cmu_in_initial_vocab, config.fst_path, config.fst_sym_path)
-        likelihood_matrix = -1 * np.log(likelihood_matrix + 10**-20)
+        likelihood_matrix, ipa = wfst.get_wfst_distance_matrix(all_tokens_phono, priors_for_age_interval, initial_vocab,  cmu_in_initial_vocab, config.fst_path, config.fst_sym_path)
+        likelihood_matrix = -1 * np.log(likelihood_matrix + 10**-20) # yielding a surprisal
     elif likelihood_type == 'levdist':
         likelihood_matrix = transformers_bert_completions.get_edit_distance_matrix(all_tokens_phono, 
             priors_for_age_interval, initial_vocab, cmu_in_initial_vocab)            
+
+    # likelihood_matrix has all pronunciation variants     
+    likelihood_matrix = wfst.reduce_duplicates(likelihood_matrix, cmu_in_initial_vocab, 'min')
 
 
     if model['type'] == 'BERT':

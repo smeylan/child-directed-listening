@@ -1,3 +1,4 @@
+import pandas as pd
 
 from utils_child import child_parser, child_models, utils_child
 from utils import split_gen, load_models
@@ -20,7 +21,9 @@ if __name__ == '__main__':
    
     this_model_dict = child_models.get_child_model_dict(prior_child)
     
-    scores, beta_used = utils_child.score_cross_prior(data_child, prior_child)
+    levdist_scores, beta_used = utils_child.score_cross_prior(data_child, prior_child, 'levdist')
+    wfst_scores, lambda_used = utils_child.score_cross_prior(data_child, prior_child, 'wfst')
+    scores =  pd.concat([levdist_scores, wfst_scores])
     
     score_path = utils_child.get_cross_path(data_child, prior_child)
     

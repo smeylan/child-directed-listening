@@ -30,9 +30,9 @@ if __name__ == '__main__':
             
             with open(join(sh_loc, f'run_cross_{data_child}_{prior_child}.sh'), 'w') as f:
                 
-                time, mem = gen_sample_scripts.time_and_mem_alloc()
+                time, mem, n_tasks, cpus_per_task= gen_sample_scripts.time_and_mem_alloc()
                 
-                headers = scripts.gen_command_header(mem_alloc_gb = mem, time_alloc_hrs = time,
+                headers = scripts.gen_command_header(mem_alloc_gb = mem, time_alloc_hrs = time, n_tasks = n_tasks, cpus_per_task = cpus_per_task,
                                                      slurm_folder = slurm_folder,
                                                      slurm_name = f'data_{data_child}_prior_{prior_child}') + [scripts.gen_singularity_header()]
                 

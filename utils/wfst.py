@@ -294,7 +294,7 @@ def get_wfst_distance_matrix(all_tokens_phono, prior_data, initial_vocab,  cmu_2
     
     return(np.vstack(distances), ipa)   
 
-def reduce_duplicates(wfst_dists, cmu_in_initial_vocab):
+def reduce_duplicates(wfst_dists, cmu_in_initial_vocab, max_or_min):
     '''
     Take a (d x w) distance matrix that includes multiple pronunciations for the same word, and return a distance matrix that takes the highest-probability true pronunciation for every observation d.
     `wfst_dists`: distance matrix that includes multiple pronunciations for the same word
@@ -316,10 +316,18 @@ def reduce_duplicates(wfst_dists, cmu_in_initial_vocab):
             current_group_for_word = np.hstack((current_group_for_word, dists_vector))
         else: # a new word
             # take the max of the previous word's columns before starting the new word's columns group
-            wfst_dists_by_word_list.append(current_group_for_word.max(axis=1))
+            if max_or_min == 'max':
+                wfst_dists_by_word_list.append(current_group_for_word.max(axis=1))
+            elif max_or_min == 'min':
+                wfst_dists_by_word_list.append(current_group_for_word.min(axis=1))
+
             current_group_for_word = np.reshape(wfst_dists[:,index],(wfst_dists[:,index].size, 1))
             current_word = row['word']
-    wfst_dists_by_word_list.append(current_group_for_word.max(axis=1))
+    
+    if max_or_min == 'max':
+        wfst_dists_by_word_list.append(current_group_for_word.max(axis=1))
+    elif max_or_min == 'min':
+        wfst_dists_by_word_list.append(current_group_for_word.min(axis=1))
     
     wfst_dists_by_word = np.stack(wfst_dists_by_word_list, axis=1)
     return wfst_dists_by_word

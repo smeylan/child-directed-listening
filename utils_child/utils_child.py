@@ -1,8 +1,8 @@
 
 import copy
 
-from utils import load_splits, load_models, transformers_bert_completions
-from utils_model_sampling import beta_utils
+from utils import load_splits, load_models, transformers_bert_completions, wfst
+from utils_model_sampling import hyperparameter_utils
 from utils_child import child_models, child_split_gen
 
 import configuration
@@ -13,6 +13,7 @@ from os.path import join, exists
 
 import random
 import pandas as pd 
+import numpy as np
 
 
 def load_cross_data(child_name):
@@ -55,7 +56,7 @@ def get_cross_path(data_child_name, prior_child_name):
     this_path = join(this_folder, f'data_{data_child_name}_prior_{prior_child_name}.pkl')
     return this_path
     
-def score_cross_prior(data_child, prior_child):
+def score_cross_prior(data_child, prior_child, likelihood_type):
     
     """
     Calculate one child's posterior distr. on their data
@@ -69,7 +70,11 @@ def score_cross_prior(data_child, prior_child):
     success_utts = load_success_utts(data_child).utterance_id
     yyy_utts = load_yyy_utts(data_child).utterance_id
     
-    optim_beta = beta_utils.get_optimal_beta_value('child', prior_child, is_tags, 0, 'childes')
+    if likelihood_type == 'wfst':
+        optim_hyperparam_val = hyperparameter_utils.get_optimal_hyperparameter_value('child', prior_child, is_tags, 0, 'childes', 'beta')
+
+    elif likelihood_type == 'levdist':
+        optim_hyperparam_val = hyperparameter_utils.get_optimal_hyperparameter_value('child', prior_child, is_tags, 0, 'childes', 'beta')
     
     # Load the prior
     model = child_models.get_child_model_dict(prior_child)
@@ -78,21 +83,34 @@ def score_cross_prior(data_child, prior_child):
     
     # Calculate distances -- depending on how implementation is done hopefully can abstract this out.
     
-    dists = None
+    if likelihood_type == 'wfst': 
+        likelihood_matrix, ipa = wfst.get_wfst_distance_matrix(this_cross_data, cross_priors, initial_vocab,  cmu_in_initial_vocab, config.fst_path, config.fst_sym_path)
+        likelihood_matrix = -1 * np.log(likelihood_matrix + 10**-20)
     
-    if config.dist_type == 'levdist':
-        dists = transformers_bert_completions.get_edit_distance_matrix(this_cross_data, 
+    elif likelihood_type == 'levdist':
+        likelihood_matrix = transformers_bert_completions.get_edit_distance_matrix(this_cross_data, 
             cross_priors, initial_vocab, cmu_in_initial_vocab)
     else:
         assert False, "Invalid dist specified in config file. Choose from: {levdist}"
+
+
+    # in either case, reduce the dimensionality of the likelihood matrix to find the best pronunciation in each case
+    likelihood_matrix = wfst.reduce_duplicates(likelihood_matrix, cmu_in_initial_vocab, 'min')
     
-    posteriors = transformers_bert_completions.get_posteriors(cross_priors, 
-                    dists, initial_vocab, None, optim_beta)
+    if likelihood_type == 'wfst': 
+        posteriors = transformers_bert_completions.get_posteriors(cross_priors, 
+                    likelihood_matrix, initial_vocab, None, optim_hyperparam_val)
+
+    elif likelihood_type == 'levdist':
+        posteriors = transformers_bert_completions.get_posteriors(cross_priors, 
+                    likelihood_matrix, initial_vocab, None, optim_hyperparam_val)        
     
-    posteriors['scores']['beta_value'] = optim_beta
+    
+    posteriors['scores']['optim_hyperparam_val'] = optim_hyperparam_val
+    posteriors['scores']['likelihood_type'] = likelihood_type
     posteriors['scores']['model'] = model['title']
-        
     scores = copy.deepcopy(posteriors['scores'])
     
-    return scores, optim_beta
+    return scores, optim_hyperparam_val
+
     

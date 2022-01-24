@@ -272,13 +272,14 @@ def get_initial_vocab_info(initial_tokenizer = None):
         initial_tokenizer = get_primary_tokenizer() # default argument
         
     cmu_2syl_inchildes = get_cmu_dict_info()
+    cmu_2syl_inchildes_reduced = np.unique(cmu_2syl_inchildes.word)
     
     inital_vocab_mask, initial_vocab = transformers_bert_completions.get_softmax_mask(initial_tokenizer,
-        cmu_2syl_inchildes.word)
+        cmu_2syl_inchildes_reduced)
     
-    cmu_in_initial_vocab = cmu_2syl_inchildes.loc[cmu_2syl_inchildes.word.isin(initial_vocab)]
+    #cmu_in_initial_vocab = cmu_2syl_inchildes.loc[cmu_2syl_inchildes.word.isin(initial_vocab)]
     
-    return initial_vocab, cmu_in_initial_vocab
+    return initial_vocab, cmu_2syl_inchildes
 
 
 def get_model_path(split, dataset, with_tags):

@@ -51,4 +51,6 @@ cp ../../../../sweep .
 
 # copy the resulting FST and symbol files back into the main codebase so that they can be called by existing code
 cp  chi_phones.sym ../../../../../fst/
+fstprint checkpoints/chi-1.fst checkpoints/chi-1.txt
 cp checkpoints/chi-1.fst ../../../../../fst/
+cp checkpoints/chi-1.txt ../../../../../fst/

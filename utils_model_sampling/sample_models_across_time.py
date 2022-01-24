@@ -86,7 +86,7 @@ def successes_and_failures_across_time_per_model(age, success_ids, yyy_ids, mode
             priors_for_age_interval, initial_vocab, cmu_in_initial_vocab)            
 
     # likelihood_matrix has all pronunciation variants     
-    likelihood_matrix = wfst.reduce_duplicates(likelihood_matrix, cmu_in_initial_vocab, 'min')
+    likelihood_matrix = wfst.reduce_duplicates(likelihood_matrix, cmu_in_initial_vocab, initial_vocab, 'min')
 
 
     if model['type'] == 'BERT':

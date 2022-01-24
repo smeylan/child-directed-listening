@@ -237,9 +237,7 @@ def get_wfst_distance_matrix(all_tokens_phono, prior_data, initial_vocab,  cmu_2
     ipa = pd.DataFrame({'bert_token_id':bert_token_ids}).merge(all_tokens_phono[['bert_token_id',
         'actual_phonology_no_dia']])
 
-    iv = pd.DataFrame({'word':initial_vocab})
-    iv = iv.merge(cmu_2syl_inchildes, how='left')
-    
+    iv = cmu_2syl_inchildes
     
     # [X] Load the transducer, create a covering symbol set, and change the transducer to the data symbol set
     fit_model = pd.read_csv(path_to_baum_welch_transducer, sep='\t', header=None)
@@ -294,40 +292,27 @@ def get_wfst_distance_matrix(all_tokens_phono, prior_data, initial_vocab,  cmu_2
     
     return(np.vstack(distances), ipa)   
 
-def reduce_duplicates(wfst_dists, cmu_in_initial_vocab, max_or_min):
+def reduce_duplicates(wfst_dists, cmu_2syl_inchildes, initial_vocab, max_or_min):
     '''
-    Take a (d x w) distance matrix that includes multiple pronunciations for the same word, and return a distance matrix that takes the highest-probability true pronunciation for every observation d.
-    `wfst_dists`: distance matrix that includes multiple pronunciations for the same word
-    `cmu_in_initial_vocab`: DataFrame with `word` column, where words include duplicates for multiple pronunciations, and words are in the same order corresponding to `wfst_dists`
-    '''
-    # wfst_dists, but take the min across columns representing the same word
-    wfst_dists_by_word_list = []
+    Take a (d x w) distance matrix that includes multiple pronunciations for the same word as separate columns, and return a distance matrix that takes the highest-probability (or lowest distance) true pronunciation for every observation d.
+    `wfst_dists`: matrix that includes multiple pronunciations for the same word as separate columns
+    `cmu_2syl_inchildes`: DataFrame with `word` column, where words include duplicates for multiple pronunciations, and words are in the same order corresponding to `wfst_dists`
+    
+    outputs a matrix `wfst_dists_by_word` where each row corresponds to a production and each column correpsonds to a word in initial_vocab
 
-    ordered_cmu_words = cmu_in_initial_vocab.reset_index(drop=True)
-    current_group_for_word = np.empty((wfst_dists.shape[0],1))  # wfst_dists columns corresponding to the current word
-    current_word = ""
-    for index, row in ordered_cmu_words.iterrows():
-        # check if the current word is different from the previous word
-        if index == 0:
-            current_word = row['word']
-            current_group_for_word = np.reshape(wfst_dists[:,index],(wfst_dists[:,index].size, 1))
-        elif row['word'] == current_word:
-            dists_vector = np.reshape(wfst_dists[:,index],(wfst_dists[:,index].size, 1))
-            current_group_for_word = np.hstack((current_group_for_word, dists_vector))
-        else: # a new word
-            # take the max of the previous word's columns before starting the new word's columns group
+    '''
+    
+    wfst_dists_by_word = np.zeros([wfst_dists.shape[0], len(initial_vocab)])  
+
+    for target_production_index in range(wfst_dists.shape[0]):
+        for vocab_index in range(len(initial_vocab)):
+        
+            cmu_2syl_indices = np.argwhere(cmu_2syl_inchildes.word.values == initial_vocab[vocab_index]).flatten()
             if max_or_min == 'max':
-                wfst_dists_by_word_list.append(current_group_for_word.max(axis=1))
+                dist = np.max(wfst_dists[target_production_index,cmu_2syl_indices])
             elif max_or_min == 'min':
-                wfst_dists_by_word_list.append(current_group_for_word.min(axis=1))
+                dist = np.min(wfst_dists[target_production_index,cmu_2syl_indices])
+        
+            wfst_dists_by_word[target_production_index, vocab_index] = dist
 
-            current_group_for_word = np.reshape(wfst_dists[:,index],(wfst_dists[:,index].size, 1))
-            current_word = row['word']
-    
-    if max_or_min == 'max':
-        wfst_dists_by_word_list.append(current_group_for_word.max(axis=1))
-    elif max_or_min == 'min':
-        wfst_dists_by_word_list.append(current_group_for_word.min(axis=1))
-    
-    wfst_dists_by_word = np.stack(wfst_dists_by_word_list, axis=1)
     return wfst_dists_by_word

@@ -32,7 +32,7 @@ def sample_across_models(success_ids, yyy_ids, model, beta_values, lambda_values
      
     all_tokens_phono = load_splits.load_phono()
     
-    initial_vocab, cmu_in_initial_vocab = load_models.get_initial_vocab_info()
+    initial_vocab, cmu_2syl_inchildes = load_models.get_initial_vocab_info()
 
     print('Running model '+model['title']+'...')
 
@@ -49,19 +49,15 @@ def sample_across_models(success_ids, yyy_ids, model, beta_values, lambda_values
       
     score_store_single_model = []
 
-    # save any of the args that go into distance computation here so that we can work on this separately
-    #file_con = open('pkl/cmu_in_initial_vocab.obj', 'wb')
-    #pickle.dump(cmu_in_initial_vocab, file_con)
-    #file_con.close()
-
     
     print('Computing WFST path lengths...')
-    wfst_distances_for_age_interval_unreduced, ipa = wfst.get_wfst_distance_matrix(all_tokens_phono, priors_for_age_interval, initial_vocab,  cmu_in_initial_vocab, config.fst_path, config.fst_sym_path)    
+    wfst_distances_for_age_interval_unreduced, ipa = wfst.get_wfst_distance_matrix(all_tokens_phono, priors_for_age_interval, initial_vocab,  cmu_2syl_inchildes, config.fst_path, config.fst_sym_path)    
     wfst_distances_for_age_interval_unreduced = -1 * np.log(wfst_distances_for_age_interval_unreduced + 10**-20) # convert this back to log space
 
     #for each word, find the citation pronunciation that is most likely to generate the observed data 
-    wfst_distances_for_age_interval = wfst.reduce_duplicates(wfst_distances_for_age_interval_unreduced, cmu_in_initial_vocab, 'min') # min for smallest surprisal
+    wfst_distances_for_age_interval = wfst.reduce_duplicates(wfst_distances_for_age_interval_unreduced, cmu_2syl_inchildes, initial_vocab, 'min') # min for smallest surprisal
     
+
     for idx, lambda_value in enumerate(lambda_values):
         
         print(f'Processing lambda value {idx + 1} of {config.lambda_num_values}')
@@ -89,10 +85,10 @@ def sample_across_models(success_ids, yyy_ids, model, beta_values, lambda_values
 
 
     print('Computing edit distances...')
-    edit_distances_for_age_interval_unreduced = transformers_bert_completions.get_edit_distance_matrix(all_tokens_phono, priors_for_age_interval, initial_vocab, cmu_in_initial_vocab)
+    edit_distances_for_age_interval_unreduced = transformers_bert_completions.get_edit_distance_matrix(all_tokens_phono, priors_for_age_interval, cmu_2syl_inchildes)
 
-    #for each word, find the citation pronunciation that is most likely to generate the observed data     
-    edit_distances_for_age_interval = wfst.reduce_duplicates(edit_distances_for_age_interval_unreduced, cmu_in_initial_vocab, 'min')
+    #for each word, find the citation pronunciation that is most likely to generate the observed data. Look for the one with the *smallest* edit distance     
+    edit_distances_for_age_interval = wfst.reduce_duplicates(edit_distances_for_age_interval_unreduced, cmu_2syl_inchildes, initial_vocab, 'min')
 
     
     for idx, beta_value in enumerate(beta_values):

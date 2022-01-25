@@ -603,8 +603,7 @@ def get_posteriors(prior_data, levdists, initial_vocab, bert_token_ids=None, sca
         # need to subset to bert_token_ods found by other models        
         # also need to limit the scores in some way
 
-    
-    print('In get_posteriors')
+
     likelihoods = np.exp(-1*scaling_value*levdists)
     unnormalized = np.multiply(prior_data['priors'], likelihoods)
     

@@ -276,10 +276,10 @@ def get_initial_vocab_info(initial_tokenizer = None):
     
     inital_vocab_mask, initial_vocab = transformers_bert_completions.get_softmax_mask(initial_tokenizer,
         cmu_2syl_inchildes_reduced)
-    
-    #cmu_in_initial_vocab = cmu_2syl_inchildes.loc[cmu_2syl_inchildes.word.isin(initial_vocab)]
-    
-    return initial_vocab, cmu_2syl_inchildes
+        
+    # get the indiices in cmu_2syl for each unique word type in initial_vocab
+    cmu_indices_for_initial_vocab = [np.argwhere(cmu_2syl_inchildes.word.values == x).flatten() for x in initial_vocab]
+    return initial_vocab, cmu_2syl_inchildes, cmu_indices_for_initial_vocab
 
 
 def get_model_path(split, dataset, with_tags):

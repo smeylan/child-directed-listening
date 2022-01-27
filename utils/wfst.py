@@ -9,6 +9,7 @@ import pandas as pd
 import numpy as np
 import configuration
 config = configuration.Config()
+import time
 
 def vectorized_compute_all_likelihoods_for_w_over_paths(d_fsa, w_fsas, ws):    
     '''return a vector with entries corresponding to the total path weights from this d_fsa to each word in ws'''
@@ -292,7 +293,7 @@ def get_wfst_distance_matrix(all_tokens_phono, prior_data, initial_vocab,  cmu_2
     
     return(np.vstack(distances), ipa)   
 
-def reduce_duplicates(wfst_dists, cmu_2syl_inchildes, initial_vocab, max_or_min):
+def reduce_duplicates(wfst_dists, cmu_2syl_inchildes, initial_vocab, max_or_min, cmu_indices_for_initial_vocab):
     '''
     Take a (d x w) distance matrix that includes multiple pronunciations for the same word as separate columns, and return a distance matrix that takes the highest-probability (or lowest distance) true pronunciation for every observation d.
     `wfst_dists`: matrix that includes multiple pronunciations for the same word as separate columns
@@ -301,18 +302,35 @@ def reduce_duplicates(wfst_dists, cmu_2syl_inchildes, initial_vocab, max_or_min)
     outputs a matrix `wfst_dists_by_word` where each row corresponds to a production and each column correpsonds to a word in initial_vocab
 
     '''
-    
-    wfst_dists_by_word = np.zeros([wfst_dists.shape[0], len(initial_vocab)])  
+    implementation = 2
+    if implementation == 1:
+        wfst_dists_by_word = np.zeros([wfst_dists.shape[0], len(initial_vocab)])  
 
-    for target_production_index in range(wfst_dists.shape[0]):
-        for vocab_index in range(len(initial_vocab)):
-        
-            cmu_2syl_indices = np.argwhere(cmu_2syl_inchildes.word.values == initial_vocab[vocab_index]).flatten()
-            if max_or_min == 'max':
-                dist = np.max(wfst_dists[target_production_index,cmu_2syl_indices])
-            elif max_or_min == 'min':
-                dist = np.min(wfst_dists[target_production_index,cmu_2syl_indices])
-        
-            wfst_dists_by_word[target_production_index, vocab_index] = dist
+        for target_production_index in range(wfst_dists.shape[0]):
+            for vocab_index in range(len(initial_vocab)):
+            
+                #find indices where 
+                cmu_2syl_indices = np.argwhere(cmu_2syl_inchildes.word.values == initial_vocab[vocab_index]).flatten()
+                if max_or_min == 'max':
+                    dist = np.max(wfst_dists[target_production_index,cmu_2syl_indices])
+                elif max_or_min == 'min':
+                    dist = np.min(wfst_dists[target_production_index,cmu_2syl_indices])
+            
+                wfst_dists_by_word[target_production_index, vocab_index] = dist
+
+    elif implementation == 2:
+        wfst_dists_by_word = np.zeros([wfst_dists.shape[0], len(initial_vocab)])  
+
+        for target_production_index in range(wfst_dists.shape[0]):
+            for vocab_index in range(len(initial_vocab)):
+            
+                #find indices where 
+                cmu_2syl_indices = cmu_indices_for_initial_vocab[vocab_index]
+                if max_or_min == 'max':
+                    dist = np.max(wfst_dists[target_production_index,cmu_2syl_indices])
+                elif max_or_min == 'min':
+                    dist = np.min(wfst_dists[target_production_index,cmu_2syl_indices])
+            
+                wfst_dists_by_word[target_production_index, vocab_index] = dist
 
     return wfst_dists_by_word

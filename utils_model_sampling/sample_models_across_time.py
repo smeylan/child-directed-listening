@@ -58,7 +58,7 @@ def successes_and_failures_across_time_per_model(age, success_ids, yyy_ids, mode
     Unlike original code assume that utts = the sample of utts_with_ages, not the whole dataframe
     """
     
-    initial_vocab, cmu_in_initial_vocab = load_models.get_initial_vocab_info()
+    initial_vocab, cmu_in_initial_vocab, cmu_indices_for_initial_vocab  = load_models.get_initial_vocab_info()
     
     print('Running model '+model['title']+f'... at age {age}')
     
@@ -83,10 +83,10 @@ def successes_and_failures_across_time_per_model(age, success_ids, yyy_ids, mode
         likelihood_matrix = -1 * np.log(likelihood_matrix + 10**-20) # yielding a surprisal
     elif likelihood_type == 'levdist':
         likelihood_matrix = transformers_bert_completions.get_edit_distance_matrix(all_tokens_phono, 
-            priors_for_age_interval, initial_vocab, cmu_in_initial_vocab)            
+            priors_for_age_interval, cmu_in_initial_vocab)            
 
     # likelihood_matrix has all pronunciation variants     
-    likelihood_matrix = wfst.reduce_duplicates(likelihood_matrix, cmu_in_initial_vocab, initial_vocab, 'min')
+    likelihood_matrix = wfst.reduce_duplicates(likelihood_matrix, cmu_in_initial_vocab, initial_vocab, 'min', cmu_indices_for_initial_vocab)
 
 
     if model['type'] == 'BERT':

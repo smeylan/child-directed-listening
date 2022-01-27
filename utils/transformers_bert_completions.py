@@ -66,12 +66,15 @@ def bert_completions(text, model, tokenizer, softmax_mask):
         tokens_tensor = tokens_tensor.cuda()
         segments_tensors = segments_tensors.cuda()
         model = model.cuda()
+        print('Using CUDA')
+  else:
+        print('Not using CUDA')
+    
 
   # Predict all tokens
   with torch.no_grad():
       predictions = model(tokens_tensor, segments_tensors)['logits']
    
-  # 7/1/21: https://stackoverflow.com/questions/48152674/how-to-check-if-pytorch-is-using-the-gpu
   if torch.cuda.is_available():
       predictions = predictions.detach().cpu()
   
@@ -82,17 +85,16 @@ def bert_completions(text, model, tokenizer, softmax_mask):
 
   # 7/9/21 assume predictions is the logit
    
-  probs = softmax(predictions[0][masked_index].data.numpy()[softmax_mask])  
-  #probs = softmax(predictions[0, masked_index].data.numpy()[softmax_mask])   # Original line
+  prior_probs = softmax(predictions[0][masked_index].data.numpy()[softmax_mask])  
    
   # the size is the size of the vocabulary -> the softmax array itself.
   words = np.array(tokenizer.convert_ids_to_tokens(range(predictions.size()[2])))[softmax_mask]
   
-  word_predictions  = pd.DataFrame({'prob': probs, 'word':words})
+  word_predictions  = pd.DataFrame({'prior_prob': prior_probs, 'word':words})
     
-  word_predictions = word_predictions.sort_values(by='prob', ascending=False)    
-  word_predictions['rank'] = range(word_predictions.shape[0])
-  return(probs, word_predictions)
+  word_predictions = word_predictions.sort_values(by='prior_prob', ascending=False)    
+  word_predictions['prior_rank'] = range(word_predictions.shape[0])
+  return(prior_probs, word_predictions)
   
   
 def compare_completions(context, bertMaskedLM, tokenizer, softmax_mask, candidates = None):
@@ -139,13 +141,13 @@ def get_completions_for_mask(utt_df, true_word, bertMaskedLM, tokenizer, softmax
         
     if true_word in completions['word'].tolist():
         true_completion = completions.loc[completions['word'] == true_word].iloc[0]
-        rank = true_completion['rank']
-        prob =  true_completion['prob']
+        prior_rank = true_completion['prior_rank']
+        prior_prob =  true_completion['prior_prob']
     else:
-        rank = np.nan
-        prob = np.nan    
+        prior_rank = np.nan
+        prior_prob = np.nan    
     
-    entropy = scipy.stats.entropy(completions.prob, base=2)
+    entropy = scipy.stats.entropy(completions.prior_prob, base=2)
     
     
     # 7/29/21: https://stackoverflow.com/questions/21291259/convert-floats-to-ints-in-pandas (casting)
@@ -155,7 +157,7 @@ def get_completions_for_mask(utt_df, true_word, bertMaskedLM, tokenizer, softmax
     
     # 7/29/21: https://jakevdp.github.io/PythonDataScienceHandbook/02.01-understanding-data-types.html For information on sizes of integers etc.
     
-    return_df = pd.DataFrame({'rank':[rank], 'prob': [prob], 'entropy':[entropy], 'num_tokens_in_context':[utt_df.shape[0]-1],
+    return_df = pd.DataFrame({'prior_rank':[prior_rank], 'prior_prob': [prior_prob], 'entropy':[entropy], 'num_tokens_in_context':[utt_df.shape[0]-1],
     'bert_token_id' : utt_df.loc[utt_df.token == '[MASK]'].bert_token_id}).astype({'num_tokens_in_context' : 'int32'})
     
     return(priors, completions , return_df)
@@ -471,7 +473,7 @@ def compare_successes_failures_unigram_model(all_tokens, selected_success_utts, 
             scores: a datframe of length n containing concatenated entropy scores, ranks, probabilities. Failures are stacked on top of successes and are identified by a bert_token_id
     '''    
     
-    unigram_model = pd.DataFrame({'word':vocab})
+    unigram_model = pd.DataFrame({'word':vocab}) # because we start with the vocab, probability mass is just over the vocab
     
     if child_counts_path is not None: 
         childes_counts = pd.read_csv(child_counts_path)    
@@ -479,11 +481,12 @@ def compare_successes_failures_unigram_model(all_tokens, selected_success_utts, 
         unigram_model = unigram_model.fillna(0) 
         unigram_model['count'] = unigram_model['count'] + .01 #additive smoothing
         
-        unigram_model['prob'] = unigram_model['count'] / np.sum(unigram_model['count'])
+        unigram_model['prior_prob'] = unigram_model['count'] / np.sum(unigram_model['count'])
+        unigram_model = unigram_model.sort_values(by='prior_prob', ascending=False)
     
     else:
         # build a flat prior: assign all words equal probability
-        unigram_model['prob'] = 1/unigram_model.shape[0]        
+        unigram_model['prior_prob'] = 1/unigram_model.shape[0]        
     
     # for successes, get the probability of all words        
     # Only score the success tokens
@@ -494,21 +497,31 @@ def compare_successes_failures_unigram_model(all_tokens, selected_success_utts, 
     success_utt_contents = success_utt_contents.loc[~success_utt_contents.token.isin(['[chi]', '[cgv]'])]
     
     success_scores = success_utt_contents[['token','bert_token_id']].merge(unigram_model, left_on='token', right_on='word', how='left')
+    # this gets the probability of the true word, but not the rank -- that would need to be calculated separately
+
+    # test this stuff below
+    if child_counts_path is not None:
+        # but the unigram model != the initial_vocab list, so we can't take the rank directly
+        success_scores['prior_rank'] = [np.where(unigram_model.word == x)[0][0] for x in success_scores.word]
+    else:
+        success_scores['prior_rank'] = int(len(vocab) / 2)
+    # need to get the rank of the token in the unigram_model table
+    # if childes_counts_path is null (ie unigram), then get take 1/2 of the value
     
-    # entropy will be the same for all success and failure tokens
-    constant_entropy = scipy.stats.entropy(unigram_model['prob'])
-    success_scores['entropy'] = constant_entropy
+
+    # entropy will be the same for all success and failure tokens under the unigram and flat models
+    constant_entropy = scipy.stats.entropy(unigram_model['prior_prob'])
+    success_scores['prior_entropy'] = constant_entropy
     success_scores['set'] = 'success'
     
     # need to retrieve the failures in the same way so I can limit by bert_token_id
     failure_scores = all_tokens.loc[(all_tokens.utterance_id.isin(selected_yyy_utts)) &
       (all_tokens.partition == 'yyy') ][['token','bert_token_id']]
 
-    failure_scores['entropy'] = constant_entropy
+    failure_scores['prior_entropy'] = constant_entropy
     failure_scores['set'] = 'failure'
 
-    prior_vec = unigram_model['prob'].to_numpy()
-    # where is 1017609.0 or 1369403.0
+    prior_vec = unigram_model['prior_prob'].to_numpy()
     
     rdict = {}
     prior_list =[]
@@ -615,7 +628,23 @@ def get_posteriors(prior_data, levdists, initial_vocab, bert_token_ids=None, sca
     # add entropies
     posterior_entropies = np.apply_along_axis(scipy.stats.entropy, 1, normalized) 
     prior_data['scores']['posterior_entropy'] = posterior_entropies
+
+
+    # compute the posterior ranks
+    token_ids = np.array([np.argwhere(initial_vocab == x)[0] for x in prior_data['scores']['token']]).flatten()
     
+    def get_posterior_word_ranks(prob_vec):
+        return(np.argsort(prob_vec)[::-1])
+    posterior_ranks = np.apply_along_axis(get_posterior_word_ranks, 1, normalized) 
+
+    
+    posterior_rank = np.zeros(posterior_ranks.shape[0])
+    for i in range(posterior_ranks.shape[0]):
+        posterior_rank[i] = np.argwhere(posterior_ranks[i,:] == token_ids[i])
+
+    # posterior rank is an operation on normalized
+    # each position in  posterior_word_ranks indicates the word's rank
+    prior_data['scores']['posterior_rank'] = posterior_rank    
     
     prior_entropies = np.apply_along_axis(scipy.stats.entropy, 1, prior_data['priors']) 
     prior_data['scores']['prior_entropy'] = prior_entropies

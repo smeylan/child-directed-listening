@@ -1,8 +1,7 @@
-
 import copy
 import pandas as pd
 
-from utils import load_models, transformers_bert_completions, unigram, load_splits
+from utils import load_models, transformers_bert_completions, load_splits
 from utils import wfst
 
 import configuration
@@ -11,7 +10,7 @@ import os
 import pickle
 import numpy as np
 
-def sample_across_models(success_ids, yyy_ids, model, beta_values, lambda_values, examples_mode = False):
+def sample_across_models(success_ids, yyy_ids, model, beta_values, lambda_values, examples_mode = False, all_tokens_phono=None):
     '''
         Top-level method to sample all models for a set of communicative successes and failures. Allows for adjusting the beta value
         
@@ -30,9 +29,10 @@ def sample_across_models(success_ids, yyy_ids, model, beta_values, lambda_values
     
     # Note: utterance_ids can't be a Dataframe or an empty sample will result
      
-    all_tokens_phono = load_splits.load_phono()
-    
-    initial_vocab, cmu_2syl_inchildes = load_models.get_initial_vocab_info()
+    if all_tokens_phono is None:
+        all_tokens_phono = load_splits.load_phono()
+    this_bert_token_ids = all_tokens_phono.loc[all_tokens_phono.partition.isin(('success','yyy'))].bert_token_id
+    initial_vocab, cmu_2syl_inchildes, cmu_indices_for_initial_vocab = load_models.get_initial_vocab_info()
 
     print('Running model '+model['title']+'...')
 
@@ -55,7 +55,7 @@ def sample_across_models(success_ids, yyy_ids, model, beta_values, lambda_values
     wfst_distances_for_age_interval_unreduced = -1 * np.log(wfst_distances_for_age_interval_unreduced + 10**-20) # convert this back to log space
 
     #for each word, find the citation pronunciation that is most likely to generate the observed data 
-    wfst_distances_for_age_interval = wfst.reduce_duplicates(wfst_distances_for_age_interval_unreduced, cmu_2syl_inchildes, initial_vocab, 'min') # min for smallest surprisal
+    wfst_distances_for_age_interval = wfst.reduce_duplicates(wfst_distances_for_age_interval_unreduced, cmu_2syl_inchildes, initial_vocab, 'min', cmu_indices_for_initial_vocab) # min for smallest surprisal
     
 
     for idx, lambda_value in enumerate(lambda_values):
@@ -68,9 +68,6 @@ def sample_across_models(success_ids, yyy_ids, model, beta_values, lambda_values
                 wfst_distances_for_age_interval, initial_vocab, None, lambda_value, examples_mode = examples_mode)
 
         elif model['type'] == 'unigram':
-            # special unigram hack
-            this_bert_token_ids = unigram.get_sample_bert_token_ids()
-            
             posteriors_for_age_interval = transformers_bert_completions.get_posteriors(priors_for_age_interval, wfst_distances_for_age_interval, initial_vocab, this_bert_token_ids, lambda_value, examples_mode = examples_mode)
             print('If possible compare the bert_token_id in sample_across_models to the bert_token_id in one of the other scores sets from bert.')
             
@@ -88,7 +85,7 @@ def sample_across_models(success_ids, yyy_ids, model, beta_values, lambda_values
     edit_distances_for_age_interval_unreduced = transformers_bert_completions.get_edit_distance_matrix(all_tokens_phono, priors_for_age_interval, cmu_2syl_inchildes)
 
     #for each word, find the citation pronunciation that is most likely to generate the observed data. Look for the one with the *smallest* edit distance     
-    edit_distances_for_age_interval = wfst.reduce_duplicates(edit_distances_for_age_interval_unreduced, cmu_2syl_inchildes, initial_vocab, 'min')
+    edit_distances_for_age_interval = wfst.reduce_duplicates(edit_distances_for_age_interval_unreduced, cmu_2syl_inchildes, initial_vocab, 'min', cmu_indices_for_initial_vocab)
 
     
     for idx, beta_value in enumerate(beta_values):
@@ -102,7 +99,6 @@ def sample_across_models(success_ids, yyy_ids, model, beta_values, lambda_values
 
         elif model['type'] == 'unigram':
             # special unigram hack
-            this_bert_token_ids = unigram.get_sample_bert_token_ids()
             
             posteriors_for_age_interval = transformers_bert_completions.get_posteriors(priors_for_age_interval, edit_distances_for_age_interval, 
                 initial_vocab, this_bert_token_ids, beta_value, examples_mode = examples_mode)

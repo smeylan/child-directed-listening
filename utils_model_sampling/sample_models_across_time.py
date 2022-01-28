@@ -3,7 +3,7 @@ import os
 from os.path import join, exists
 
 import copy
-from utils import load_models, transformers_bert_completions, unigram, load_splits, wfst
+from utils import load_models, transformers_bert_completions, load_splits, wfst
 from utils_model_sampling import hyperparameter_utils
 
 from collections import defaultdict
@@ -94,7 +94,9 @@ def successes_and_failures_across_time_per_model(age, success_ids, yyy_ids, mode
             likelihood_matrix, initial_vocab, scaling_value = beta_value, examples_mode = examples_mode)
     elif model['type'] == 'unigram':
         # special unigram hack
-        this_bert_token_ids = unigram.get_sample_bert_token_ids()
+        this_bert_token_ids = all_tokens_phono.loc[all_tokens_phono.partition.isin(('success','yyy'))].bert_token_id
+
+        #this_bert_token_ids = unigram.get_sample_bert_token_ids()
         posteriors_for_age_interval = transformers_bert_completions.get_posteriors(priors_for_age_interval, likelihood_matrix, initial_vocab, this_bert_token_ids, scaling_value = beta_value, examples_mode = examples_mode)
 
     posteriors_for_age_interval['scores']['model'] = model['title']

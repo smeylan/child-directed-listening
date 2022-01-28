@@ -63,7 +63,7 @@ def score_cross_prior(data_child, prior_child, likelihood_type):
         with the prior of another child.
     """
     
-    initial_vocab, cmu_in_initial_vocab = load_models.get_initial_vocab_info()
+    initial_vocab, cmu_in_initial_vocab, cmu_indices_for_initial_vocab = load_models.get_initial_vocab_info()
     _, is_tags = child_models.get_best_child_base_model_path()
     
     this_cross_data = load_cross_data(data_child)
@@ -71,10 +71,23 @@ def score_cross_prior(data_child, prior_child, likelihood_type):
     yyy_utts = load_yyy_utts(data_child).utterance_id
     
     if likelihood_type == 'wfst':
-        optim_hyperparam_val = hyperparameter_utils.get_optimal_hyperparameter_value('child', prior_child, is_tags, 0, 'childes', 'beta')
+        optim_hyperparam_val = hyperparameter_utils.get_optimal_hyperparameter_value('child', prior_child, is_tags, 0, 'childes', 'lambda')
 
+        if config.fail_on_lambda_edge:
+            not_at_edge = lambda this_lambda_sel : (abs(optim_hyperparam_val - config.lambda_high) < 1e-6) and (abs(optimal_lambda - config.lambda_low) < 1e-6)
+            assert not_at_edge, f"Terminating, lambda value is {optimal_beta} which is too close to the edge."
+                    
     elif likelihood_type == 'levdist':
         optim_hyperparam_val = hyperparameter_utils.get_optimal_hyperparameter_value('child', prior_child, is_tags, 0, 'childes', 'beta')
+        if config.fail_on_beta_edge:
+            not_at_edge = lambda this_beta_sel : (abs(optim_hyperparam_val - config.beta_high) < 1e-6) and (abs(optimal_beta - config.beta_low) < 1e-6)
+            assert not_at_edge, f"Terminating, beta value is {optimal_beta} which is too close to the edge."
+
+
+
+    if config.fail_on_lambda_edge:
+        not_at_edge = lambda this_lambda_sel : (abs(optimal_lambda - config.lambda_high) < 1e-6) and (abs(optimal_lambda - config.lambda_low) < 1e-6)
+        assert not_at_edge, f"Terminating, lambda value is {optimal_beta} which is too close to the edge."
     
     # Load the prior
     model = child_models.get_child_model_dict(prior_child)
@@ -89,13 +102,13 @@ def score_cross_prior(data_child, prior_child, likelihood_type):
     
     elif likelihood_type == 'levdist':
         likelihood_matrix = transformers_bert_completions.get_edit_distance_matrix(this_cross_data, 
-            cross_priors, initial_vocab, cmu_in_initial_vocab)
+            cross_priors, cmu_in_initial_vocab)
     else:
         assert False, "Invalid dist specified in config file. Choose from: {levdist}"
 
 
     # in either case, reduce the dimensionality of the likelihood matrix to find the best pronunciation in each case
-    likelihood_matrix = wfst.reduce_duplicates(likelihood_matrix, cmu_in_initial_vocab, 'min')
+    likelihood_matrix = wfst.reduce_duplicates(likelihood_matrix, cmu_in_initial_vocab, initial_vocab, 'min', cmu_indices_for_initial_vocab)
     
     if likelihood_type == 'wfst': 
         posteriors = transformers_bert_completions.get_posteriors(cross_priors, 

@@ -27,15 +27,15 @@ def time_and_mem_alloc():
     this_time_alloc = (0, 10, 0) if config.dev_mode else ((1, 0, 0) if is_subsample else (12, 0, 0))
     this_mem_amount = 10 if config.dev_mode else (13 if is_subsample else 35)
     this_n_tasks = 1
-    this_cpus_per_task = 16 
+    this_cpus_per_task = 24 
     
     return this_time_alloc, this_mem_amount, this_n_tasks, this_cpus_per_task
     
 
 def write_commands(sh_script_loc, task_name, model_id, commands):
-    
     with open(join(sh_script_loc, f'{task_name}_{model_id}.sh'), 'w') as f:
         f.writelines(commands)
+    print('Wrote out to '+sh_script_loc)
     return sh_script_loc
             
             
@@ -75,7 +75,7 @@ if __name__ == '__main__':
         # TODO: Adapt this to have variable running times -- especially for data unigram and BERT.
         # "subsampling amount if else non-subsampling amount"
         
-        this_time_alloc, this_mem_amount = time_and_mem_alloc()
+        this_time_alloc, this_mem_amount, this_n_tasks, this_cpus_per_task = time_and_mem_alloc()
         
         for arg_set in model_args():
             
@@ -86,9 +86,11 @@ if __name__ == '__main__':
 
             header = scripts.gen_command_header(mem_alloc_gb = this_mem_amount,
                                                 time_alloc_hrs = this_time_alloc,
+                                                n_tasks = this_n_tasks,
+                                                cpus_per_task = this_cpus_per_task,
                                                 slurm_folder = slurm_folder,
                                                 slurm_name = f'{label}_model={model_type}_tags={tags}_context={context}',
-                                                two_gpus = False)
+                                                two_gpus = False)            
 
             for task_name, task_file in zip(task_names, task_files):
                 model_id, py_commands[task_name] = get_one_python_command(task_file, *arg_set)
@@ -99,6 +101,7 @@ if __name__ == '__main__':
             # end cite
             
             all_commands = header + [full_py_command]
+
 
             write_commands(sh_script_loc, task_name, model_id, all_commands)
 

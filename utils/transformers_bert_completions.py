@@ -7,7 +7,7 @@ import time
 from string import punctuation
 import Levenshtein
 
-from utils import unigram, data_cleaning, load_models
+from utils import data_cleaning, load_models
 
 def softmax(x, axis=None):
     '''
@@ -631,7 +631,14 @@ def get_posteriors(prior_data, levdists, initial_vocab, bert_token_ids=None, sca
 
 
     # compute the posterior ranks
-    token_ids = np.array([np.argwhere(initial_vocab == x)[0] for x in prior_data['scores']['token']]).flatten()
+    def find_word_in_vocab(x):
+        location = np.argwhere(initial_vocab == x)
+        if len(location) == 1:
+            return(location[0])
+        else:
+            return(np.nan) # token is not present in vocab, cannot rank
+
+    token_ids = np.array([find_word_in_vocab(x) for x in prior_data['scores']['token']]).flatten()
     
     def get_posterior_word_ranks(prob_vec):
         return(np.argsort(prob_vec)[::-1])
@@ -640,7 +647,10 @@ def get_posteriors(prior_data, levdists, initial_vocab, bert_token_ids=None, sca
     
     posterior_rank = np.zeros(posterior_ranks.shape[0])
     for i in range(posterior_ranks.shape[0]):
-        posterior_rank[i] = np.argwhere(posterior_ranks[i,:] == token_ids[i])
+        if np.isnan(token_ids[i]):
+            posterior_rank[i] = np.nan
+        else:
+            posterior_rank[i] = np.argwhere(posterior_ranks[i,:] == token_ids[i])
 
     # posterior rank is an operation on normalized
     # each position in  posterior_word_ranks indicates the word's rank

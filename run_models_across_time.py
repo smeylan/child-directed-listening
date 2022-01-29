@@ -39,7 +39,7 @@ def call_single_across_time_model(sample_dict, all_tokens_phono, model_class, th
     )
          
     # Load the optimal beta and lambda
-    optimal_lambda_value = [hyperparameter_utils.get_optimal_hyperparameter_value(*args_extract, 'lambda')]        
+    optimal_lambda_value = [hyperparameter_utils.get_optimal_hyperparameter_value_with_dict(this_split, this_dataset_name, lambda_model_dict, model_class, 'lambda')]
     if config.fail_on_lambda_edge:
         if optimal_lambda_value[0] >= config.lambda_high:
             raise ValueError('Lambda value is too high; examine the range for WFST scaling.')
@@ -47,7 +47,7 @@ def call_single_across_time_model(sample_dict, all_tokens_phono, model_class, th
             raise ValueError('Lambda value is too low; examine the range for WFST Distance scaling.')
 
     
-    optimal_beta_value = [hyperparameter_utils.get_optimal_hyperparameter_value(*args_extract, 'beta')]
+    optimal_beta_value = [hyperparameter_utils.get_optimal_hyperparameter_value_with_dict(this_split, this_dataset_name, beta_model_dict, model_class, 'beta')]
     if config.fail_on_beta_edge:
         if optimal_beta_value[0] >= config.beta_high:
             raise ValueError('Beta value is too high; examine the range for Levenshtein Distance scaling.')
@@ -72,13 +72,13 @@ def call_single_across_time_model(sample_dict, all_tokens_phono, model_class, th
         
         if (this_success_pool.shape[0] == 0) and (this_yyy_pool.shape[0] == 0): continue
          
-        best_beta_scores = sample_models_across_time.successes_and_failures_across_time_per_model(age, this_success_pool.utterance_id, this_yyy_pool.utterance_id, beta_model_dict, all_tokens_phono, optimal_beta_value, examples_mode, 'levdist')
+        best_beta_scores = sample_models_across_time.successes_and_failures_across_time_per_model(age, this_success_pool.utterance_id, this_yyy_pool.utterance_id, beta_model_dict, all_tokens_phono, optimal_beta_value[0], examples_mode, 'levdist')
         beta_tags = beta_model_dict['kwargs']['use_speaker_labels']
         beta_context_width = beta_model_dict['kwargs']['context_width_in_utts']
         beta_score_folder = hyperparameter_utils.load_hyperparameter_folder(this_split, this_dataset_name, beta_tags, beta_context_width, model_class)
         best_beta_scores.to_pickle(join(beta_score_folder, f'levdist_run_models_across_time_{age_str}.pkl'))
     
-        best_lambda_scores = sample_models_across_time.successes_and_failures_across_time_per_model(age, this_success_pool.utterance_id, this_yyy_pool.utterance_id, lambda_model_dict, all_tokens_phono, optimal_lambda_value, examples_mode, 'wfst')
+        best_lambda_scores = sample_models_across_time.successes_and_failures_across_time_per_model(age, this_success_pool.utterance_id, this_yyy_pool.utterance_id, lambda_model_dict, all_tokens_phono, optimal_lambda_value[0], examples_mode, 'wfst')
         lambda_tags = lambda_model_dict['kwargs']['use_speaker_labels']
         lambda_context_width = lambda_model_dict['kwargs']['context_width_in_utts']
         lambda_score_folder = hyperparameter_utils.load_hyperparameter_folder(this_split, this_dataset_name, lambda_tags, lambda_context_width, model_class)

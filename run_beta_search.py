@@ -24,7 +24,7 @@ def optimize_beta_and_lambda(split_name, dataset_name, model_dict, model_type):
         
     # initial_vocab determines the softmax mask used by BERT, leave it as mask for all evaluations/training
     
-    initial_vocab, cmu_in_initial_vocab = load_models.get_initial_vocab_info()
+    initial_vocab, cmu_in_initial_vocab, cmu_indices_for_initial_vocab  = load_models.get_initial_vocab_info()
     
     this_exp_path = hyperparameter_utils.load_hyperparameter_folder(split_name, dataset_name, model_dict['kwargs']['use_speaker_labels'], model_dict['kwargs']['context_width_in_utts'], model_type)
     

@@ -1,4 +1,3 @@
-
 import glob
 
 import os
@@ -42,7 +41,7 @@ def get_slurm_folders_by_args(args, task):
     
 def gen_submit_script(dir_name, arg_set, task):
     
-    text = ['#!/bin/bash']
+    text = ['#!/bin/bash -e']
     
     mkdir_which = get_slurm_folders_by_args(arg_set, task)
     mkdir_commands = [f"mkdir -p {p}" for p in mkdir_which]
@@ -122,7 +121,7 @@ def gen_command_header(mem_alloc_gb, time_alloc_hrs, n_tasks, cpus_per_task, slu
     slurm_organization_command = f"#SBATCH --output={slurm_folder}/%j.out\n" if slurm_name is None else f"#SBATCH --output={slurm_folder}/%j_{slurm_name}.out\n"
     
     commands = []
-    commands.append("#!/bin/bash\n")
+    commands.append("#!/bin/bash -e\n")
     
     # Citation text for every script
     commands.append("\n# For the command text\n# 6/24/21: https://github.mit.edu/MGHPCC/OpenMind/wiki/How-to-use-Singularity-container%3F\n# and https://github.mit.edu/MGHPCC/OpenMind/issues/3392\n# including the bash line at the top, and all but the python3 commands\n")

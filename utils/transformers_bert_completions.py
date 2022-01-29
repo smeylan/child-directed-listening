@@ -61,22 +61,23 @@ def bert_completions(text, model, tokenizer, softmax_mask):
   segments_tensors = torch.tensor([segments_ids])
 
   # 7/1/21: https://stackoverflow.com/questions/48152674/how-to-check-if-pytorch-is-using-the-gpu
+  #torch.cuda.is_available = lambda : False
   
   if torch.cuda.is_available():
         tokens_tensor = tokens_tensor.cuda()
         segments_tensors = segments_tensors.cuda()
         model = model.cuda()
-        print('Using CUDA')
+        #print('Using CUDA')
   else:
-        print('Not using CUDA')
+        pass
+        #print('Not using CUDA')
     
-
   # Predict all tokens
   with torch.no_grad():
       predictions = model(tokens_tensor, segments_tensors)['logits']
    
   if torch.cuda.is_available():
-      predictions = predictions.detach().cpu()
+    predictions = predictions.detach().cpu()
   
   # 7/9/21: I think tuple indexing is no longer supported.
   # From development session:
@@ -482,12 +483,14 @@ def compare_successes_failures_unigram_model(all_tokens, selected_success_utts, 
         unigram_model['count'] = unigram_model['count'] + .01 #additive smoothing
         
         unigram_model['prior_prob'] = unigram_model['count'] / np.sum(unigram_model['count'])
+        unigram_model_ordered_by_initial_vocab = copy.copy(unigram_model)
         unigram_model = unigram_model.sort_values(by='prior_prob', ascending=False)
     
     else:
         # build a flat prior: assign all words equal probability
         unigram_model['prior_prob'] = 1/unigram_model.shape[0]        
-    
+        unigram_model_ordered_by_initial_vocab = copy.copy(unigram_model)
+
     # for successes, get the probability of all words        
     # Only score the success tokens
     success_utt_contents = all_tokens.loc[(all_tokens.utterance_id.isin(selected_success_utts))
@@ -521,7 +524,7 @@ def compare_successes_failures_unigram_model(all_tokens, selected_success_utts, 
     failure_scores['prior_entropy'] = constant_entropy
     failure_scores['set'] = 'failure'
 
-    prior_vec = unigram_model['prior_prob'].to_numpy()
+    prior_vec = unigram_model_ordered_by_initial_vocab['prior_prob'].to_numpy()
     
     rdict = {}
     prior_list =[]
@@ -629,8 +632,6 @@ def get_posteriors(prior_data, levdists, initial_vocab, bert_token_ids=None, sca
     posterior_entropies = np.apply_along_axis(scipy.stats.entropy, 1, normalized) 
     prior_data['scores']['posterior_entropy'] = posterior_entropies
 
-
-    # compute the posterior ranks
     def find_word_in_vocab(x):
         location = np.argwhere(initial_vocab == x)
         if len(location) == 1:
@@ -638,23 +639,26 @@ def get_posteriors(prior_data, levdists, initial_vocab, bert_token_ids=None, sca
         else:
             return(np.nan) # token is not present in vocab, cannot rank
 
-    token_ids = np.array([find_word_in_vocab(x) for x in prior_data['scores']['token']]).flatten()
+    if 'token' in prior_data['scores'].columns: # posterior rank is only defined for communicative successes
+        token_ids = np.array([find_word_in_vocab(x) for x in prior_data['scores']['token']]).flatten()
     
-    def get_posterior_word_ranks(prob_vec):
-        return(np.argsort(prob_vec)[::-1])
-    posterior_ranks = np.apply_along_axis(get_posterior_word_ranks, 1, normalized) 
+        def get_posterior_word_ranks(prob_vec):
+            return(np.argsort(prob_vec)[::-1])
+        posterior_ranks = np.apply_along_axis(get_posterior_word_ranks, 1, normalized) 
 
-    
-    posterior_rank = np.zeros(posterior_ranks.shape[0])
-    for i in range(posterior_ranks.shape[0]):
-        if np.isnan(token_ids[i]):
-            posterior_rank[i] = np.nan
-        else:
-            posterior_rank[i] = np.argwhere(posterior_ranks[i,:] == token_ids[i])
+        
+        posterior_rank = np.zeros(posterior_ranks.shape[0])
+        for i in range(posterior_ranks.shape[0]):
+            if np.isnan(token_ids[i]):
+                posterior_rank[i] = np.nan
+            else:
+                posterior_rank[i] = np.argwhere(posterior_ranks[i,:] == token_ids[i])            
 
-    # posterior rank is an operation on normalized
-    # each position in  posterior_word_ranks indicates the word's rank
-    prior_data['scores']['posterior_rank'] = posterior_rank    
+        # posterior rank is an operation on normalized
+        # each position in  posterior_word_ranks indicates the word's rank
+        prior_data['scores']['posterior_rank'] = posterior_rank    
+    else:
+        prior_data['scores']['posterior_rank'] = np.nan    
     
     prior_entropies = np.apply_along_axis(scipy.stats.entropy, 1, prior_data['priors']) 
     prior_data['scores']['prior_entropy'] = prior_entropies

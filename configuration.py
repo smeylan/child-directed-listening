@@ -7,33 +7,79 @@ class Config:
 
         '''
         Reads the following parameters from the JSON
+
+        slurm_user : user on the SLURM cluster, e.g. OpenMind, formerly OpenMind
+
+        for_reproducible: ??? {0,1} Configure to true for generating data for a reproducibility check
+
+        slurm_root_dir : ??? can't find with grep
+
+        local_root_dir : ???? can't find with grep
+
+        n_beta : number of success samples used to evaluate scores of Levenshtein distance scaling parameter
         
-        slurm_user: user on the SLURM cluster, e.g. OpenMind, formerly OpenMind
-
-        fail_on_beta_edge: if true, then fails if grid sampling shows that the best beta is at the edge of the tested interval
-
-        for_reproducible: {0,1} Configure to true for generating data for a reproducibility check
+        n_lambda :  number of success samples used to evaluate scores of the WFST path length parameter       
 
         n_across_time: Note this is the base pool sample, not necessarily the sample size used.
 
-        regenerate: {0,1} Whether to regenerate data or long-running computations 
+        subsamples : ??? Providence - splits
+        
+        val_ratio : ??? "Proportion of CHILDES to use for Validation" .2", ???
+    
+        child_val_eval_num : 3, ???
 
-        dev_mode: {0,1} Whether or not to truncate number of samples, etc. (for development purposes)
+        childes_model_args : names of childes model subtypes to train ([["all", "all"], ["age", "young"],["age", "old"]])
 
+    
+        regenerate : specifies if CHILDES data is regenerated in Providence - Retrieve data.ipynb
+
+        dev_mode: ??? "Whether or not to truncate number of samples, etc. (for development purposes)" Used in config_train.py, gen_training_scripts, gen_sample scripts. Seems to decrease the scale of training and test 
+
+        subsample_mode: ??? n_beta, n_across_time for faster iteration. How does this relate
+
+        n_iter_sample : number of samples in a normal (non-dev) run 
+
+        n_dev_sample : number of samples in a dev run 
+
+        dist_type : ??? type of the distance function to use for the likeklioof function, now we compute both sp we can drop it
+
+        eval_phase: {'val', 'eval'} -- ??? what to compute the scores on. Switch to eval at the end?
+
+        exp_determiner: Name of the model run in which to place all results in experiments/
+
+        training_version_name : Name of the model run, in case you want to use different trained models for scoring. This allows an experiment folder to have scores but no trained models. Doesn't appear to be in use
+
+        child_context_width: ??? ow many different context widths to use
+    
         verbose: {0,1}, useful for debugging or data generation.
 
-        dist_type = 'levdist' what distance scoring function to use. Need to enforce this throughout the code later.
+        age_split : age in months to distinguish old vs. young children (30)
 
-        eval_phase: {'val', 'eval'} -- what to compute the scores in 
+        context_list : list of context widths to test ([0, 20])
 
-        exp_determiner: Which experimental set of models to use.
+        beta_low : lowest value of beta to test (2.5)
+        
+        beta_high : highest value of beta to test (4.5)
+    
+        beta_num_values : number of values to test between the low and the high value of beta(20)
 
-        child_context_width: How many different context widths to use
+        fail_on_beta_edge : should the code fail if the best value is on the edge of the range of betas tested? (1)
 
-        val_ratio: proportion of CHILDES to use for validation
+        lambda_low : lowest value of lambda to test (0)
 
-        subsample_mode: n_beta, n_across_time for faster iteration
+        lambda_high : highest value of lambda to test (2)
 
+        lambda_num_values : number of values to test between the low and the high value of lambda(20)   
+
+        fail_on_lambda_edge : should the code fail if the best value is on the edge of the range of lambdas tested? (1)
+
+        fst_path:  path to the fst txt file used for the WFST ("fst/chi-1.txt")
+
+        fst_sym_path: path to the phones file used for the WFST ("fst/chi_phones.sym")
+
+        fst_cache_path: path to where pairwise WFST path lengths between data and all vocab will be stored ("unigram_fst_cache")
+
+        
         '''
 
         # read in the environment variables        

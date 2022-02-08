@@ -1,19 +1,14 @@
 import os
 from os.path import join, exists
-
 import pandas as pd
 import numpy as np
 import transformers 
-
+import json
 from transformers import BertTokenizer, BertForMaskedLM
-
 from utils import transformers_bert_completions, split_gen, load_splits
 from utils_child import child_models
-
 import configuration
 config = configuration.Config()
-
-import json
 
 def gen_finetune_model_args():
 

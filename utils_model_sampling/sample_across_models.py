@@ -1,9 +1,7 @@
 import copy
 import pandas as pd
-
 from utils import load_models, transformers_bert_completions, load_splits
 from utils import wfst
-
 import configuration
 config = configuration.Config()
 import os
@@ -12,22 +10,22 @@ import numpy as np
 
 def sample_across_models(success_ids, yyy_ids, model, beta_values, lambda_values, examples_mode = False, all_tokens_phono=None):
     '''
-        Top-level method to sample all models for a set of communicative successes and failures. Allows for adjusting the beta value
-        
-        Note: model = model dictionary from the load models functions, not a huggingface model alone.
-        
-        >>> Notes of caution from original code:
-        
-        initial_vocab: word types corresponding to the softmask mask !!! potentially brittle:  different softmax masks per model 
-        cmu_in_initial_vocab: cmu pronunciations for the initial vocabulary !!! potentially brittle interaction with initial vocab
-        
-        We decided it was best to use same initial_vocab and cmu_in_initial_vocab for everything (on CHILDES data) because it prevents changing the quantitative meaning of the softmax scores.
-        
-        examples_mode = whether or not to retain highest probability word-related information, False to save memory
+
+        Efficiently compute posterior values computing to different parameterizations of the likelihood. Retrieve the priors once for a given model, compute the distances or WFST path lengths once, and then iterate over a range for the scaling parameter
+
+        Args: 
+        success_ids: utterance ids for utterances identified as communicative successes
+        yyy_ids: utterance ids for utterances identified as communicative failures
+        model: A model dictionary from the load models functions (not a HuggingFace model alone!)
+        beta_values: a vector of scaling parameters to test for the Levenshtein distance
+        lambda_values: a vector of scaling parameters to test for the WFST distance
+        examples_mode: return extra information about the top 10 completions, appropriate for generating the example table in the paper, otherwise very memory intensive
+        all_tokens_phono: for the examples table, moving the loading of phono up a level in the call stack avoids repeated data running
+
+        Return
+        A dataframe with all tokens scored for all models
 
     '''
-    
-    # Note: utterance_ids can't be a Dataframe or an empty sample will result
      
     if all_tokens_phono is None:
         all_tokens_phono = load_splits.load_phono()
@@ -57,6 +55,8 @@ def sample_across_models(success_ids, yyy_ids, model, beta_values, lambda_values
     #for each word, find the citation pronunciation that is most likely to generate the observed data 
     wfst_distances_for_age_interval = wfst.reduce_duplicates(wfst_distances_for_age_interval_unreduced, cmu_2syl_inchildes, initial_vocab, 'min', cmu_indices_for_initial_vocab) # min for smallest surprisal
     
+    import pdb
+    pdb.set_trace()
 
     for idx, lambda_value in enumerate(lambda_values):
         

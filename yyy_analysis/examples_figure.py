@@ -1,14 +1,19 @@
-
+import numpy as np
 from utils import transformers_bert_completions, load_splits, load_models
 from utils_model_sampling import sample_across_models, hyperparameter_utils
-
-import numpy as np
-
 import configuration
 config = configuration.Config()
-
     
 def get_scores_across_models(test_idx, which_models, is_success):
+
+    '''
+    Get scores across a selection of models appropriate for an example figure. Looks at the results of run_beta_search to choose the best hyperparameter settings
+    
+    test_idx: utterance index
+    which_models: selection of model specifications to run
+    is_success: is the test_idx a communicative success (True) or communicative failure (False)
+
+    '''
 
     scores_across_models = []
     success_ids, yyy_ids = [], []
@@ -17,10 +22,8 @@ def get_scores_across_models(test_idx, which_models, is_success):
         success_ids = [test_idx]
     else:
         yyy_ids = [test_idx]
-
     
     all_tokens_phono = load_splits.load_phono()
-
 
     for args_extract in which_models:
 
@@ -49,4 +52,3 @@ def get_scores_across_models(test_idx, which_models, is_success):
         scores_across_models.append(this_scoring)
 
     return scores_across_models
-

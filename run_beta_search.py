@@ -1,24 +1,30 @@
-
 import os
 from os.path import join, exists
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import argparse
+from datetime import datetime
 from utils import load_splits, load_models, split_gen, parsers
 from utils_model_sampling import hyperparameter_utils, sample_across_models
 from utils_child import child_models
-
 import configuration
 config = configuration.Config()
 
-import pandas as pd
-
-import matplotlib.pyplot as plt
- 
-import numpy as np
-
-import argparse
-from datetime import datetime
-
 def optimize_beta_and_lambda(split_name, dataset_name, model_dict, model_type):
- 
+    '''
+        Find the values of beta and lambda which minimize posterior surprisal; save this information in a place that run_models_across_time can load
+
+        Args:
+        split_name: If the model is a fine-tuned BERT model, is it trained on all CHILDES data, young children, or old chilren
+        dataset_name: what dataset should be evaluated?
+        model_dict: A model dictionary from the load models functions (not a HuggingFace model alone!)
+        model_type: model label, choose 'childes' for fine-tuned BERT, 'adult' for off the shelf BERT, 'flat_unigram' for UniformPrior, 'data_unigram' for CHILDES-unigram
+        
+        Return: the best parameter values for WFST and Levenshtein distance likelihoods and accompanying scores. Plots these results as a side effect.
+
+    '''
+
     beta_sample = hyperparameter_utils.get_hyperparameter_search_values('beta')
     lambda_sample = hyperparameter_utils.get_hyperparameter_search_values('lambda')
         
@@ -31,10 +37,6 @@ def optimize_beta_and_lambda(split_name, dataset_name, model_dict, model_type):
     if not exists(this_exp_path):
         os.makedirs(this_exp_path)
     
-    # Calculated over all of CHILDES (data pool for all/all split).
-    # Internally uses GPU if available.
-    # speaker tags handled internally in the transformers bert completions file.
-    
     success_utts_sample = load_splits.load_sample_successes(split_name, dataset_name).utterance_id
         
     # Don't use failures for beta search
@@ -46,8 +48,6 @@ def optimize_beta_and_lambda(split_name, dataset_name, model_dict, model_type):
     this_raw_beta_results = this_raw_beta_lambda_results.loc[this_raw_beta_lambda_results.likelihood_type == 'levdist']
     this_raw_lambda_results = this_raw_beta_lambda_results.loc[this_raw_beta_lambda_results.likelihood_type == 'wfst']
 
-
-    
     # Log the beta results
     this_beta_results_surp = this_raw_beta_lambda_results.loc[this_raw_beta_lambda_results.likelihood_type == 'levdist'].groupby(['beta_value']).posterior_probability.agg(lambda x: np.mean(-1 * np.log(x))
 ).reset_index()
@@ -72,6 +72,22 @@ def optimize_beta_and_lambda(split_name, dataset_name, model_dict, model_type):
     return this_raw_beta_results, this_beta_results_surp, this_raw_lambda_results, this_lambda_results_surp
     
 def plot_hyperparameter_optimization(fig_path_dir, hyperparameter_name, hyperparameters, hyperparameter_surprisals, split, dataset):
+
+    '''
+    Generate figures to look at scores across each hyperparamter range
+
+    Args:
+    fig_path_dir: directory to output to
+    hyperparameter_name: 'beta' or 'lambda'
+    hyperparameters: values of the hyperparameters (x axis)
+    hyperparameter_surprisals: scores associated with each hyperparameter
+    split: which subset of samples should be used to compute the scores
+    dataset: which dataset should this be scored against 
+
+    Return:
+    Path to the figure saved to disk
+
+    '''
     
     plt.title(hyperparameter_name +f' optimization for Split: {split}, Dataset: {dataset}')
     plt.xlabel(hyperparameter_name+' value')
@@ -90,12 +106,7 @@ if __name__ == '__main__':
     parser = parsers.split_parser()
     
     # 7/7/21: https://stackoverflow.com/questions/17118999/python-argparse-unrecognized-arguments    
-    raw_args = parser.parse_known_args()[0]
-    # end cite
-    # Not sure why known args is necessary here.
-    
-    # parsers.check_args(raw_args)
-    
+    raw_args = parser.parse_known_args()[0]    
     this_model_args = vars(raw_args)
     
     query_model_str = load_models.get_model_id(

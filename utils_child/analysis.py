@@ -1,14 +1,23 @@
-
 import pandas as pd
 from collections import defaultdict
-
 import numpy as np
 import matplotlib.pyplot as plt
-
 from utils_child import utils_child, child_models
+import pickle5 as pickle
 
 
 def organize_auc_scores_as_grid(auc_df):
+
+    '''
+        Arrange AUC scores into a k * k  matrix, where k is the number of children with fine-tuned models
+
+        Args:
+        auc_df: longform dataframe of AUC scores
+
+        Return:
+        k * k matrix reflecting scores when applying each child-specific prior to the test set of each child in the datset
+
+    '''
     
     names = child_models.get_child_names()
     
@@ -29,19 +38,43 @@ def organize_auc_scores_as_grid(auc_df):
     return score_arr
     
     
-def get_success_scores(is_mean, which_key):
+def get_success_scores(is_mean, which_key, likelihood_type):
+
+    '''
+        Top level function for comparing prior scores across 
+
+        Args:
+        is_mean: should this calculate mean or standard deviation?
+        which_key: should this look at "prior_probability" or "posterior_probability"? 
+        likelihood_type: should this evaluate scores from using a "wfst" or "levdist" likelihood function
+        
+        Return:
+        A figure with the crossed scores 
+    '''
     
-    stat_type = 'Mean' if is_mean else 'Standard deviation'
-    metric_type = f'{"prior" if "prior" in which_key else "posterior"} probability'
+    stat_type = 'Average' if is_mean else 'Standard Deviation'
+    metric_type = f'{"Prior Surprisal" if "prior" in which_key else "Posterior Surprisal"}'
     
-    this_score_df, this_score_arr = organize_scores(is_success = True, is_mean = is_mean, which_key = which_key)
-    this_title = f'{stat_type} {metric_type} for cross-child analysis'
+    this_score_df, this_score_arr = organize_scores(is_mean = is_mean, which_key = which_key, likelihood_type = likelihood_type)
+    this_title = f'{stat_type} {metric_type}'
     
     this_figure = get_heatmap(this_title, this_score_arr)
     
     return this_figure
     
 def get_heatmap(title, score_arr):
+
+    '''
+        Plot a heatmap using the k*k matrix of scores when applying each child-specific prior to the test set of each child in the datset
+
+        Args:
+        title: title to give the figure
+        score_arr: k*k matrix of scores where k is the number of children with child-specific priors 
+
+        Return
+        A matplotlib figure
+
+    '''
 
     figure = plt.figure()
     
@@ -65,8 +98,8 @@ def get_heatmap(title, score_arr):
     #6/2 rotation: https://www.delftstack.com/howto/matplotlib/how-to-rotate-x-axis-tick-label-text-in-matplotlib/
     #6/2 xtick text: https://www.mathworks.com/help/matlab/creating_plots/change-tick-marks-and-tick-labels-of-graph-1.html
 
-    plt.ylabel('Test items from child')
-    plt.xlabel('Prior fine-tuned on child')
+    plt.ylabel('Test Data From Child')
+    plt.xlabel('Prior Fine-Tuned On Data From Child')
     
     plt.xticks(range(num_x_ticks), display_words, rotation = 45)
     plt.yticks(range(num_x_ticks), display_words)
@@ -83,13 +116,47 @@ def get_heatmap(title, score_arr):
     return figure
 
 
-def get_cross_type(data, prior):
-    return f'data-{data}+prior_child-{prior}'
+def get_cross_type(data_child, prior_child):
+    '''
+        Get a model string reflecting the data child and the prior child in a conventional format 
+        
+        Args:
+        data_child: name of the child whose data will be tested
+        prior_child: named of the child whose prior will be used
+
+        Return:
+        A string with the model name
+        
+
+    '''
+    return f'data-{data_child}+prior_child-{prior_child}'
 
 
 def get_cross_augmented_scores(data_child, prior_child):
+
+    '''
+        Load individual score from using a specific child's fine-tuned prior on the data associated with another child
+
+        Args:
+        data_child: name of the child whose data will be tested
+        prior_child: named of the child whose prior will be used
+
+        Return:
+        A pandas dataframe of scores
+
+    '''
     
-    raw_scores = pd.read_pickle(utils_child.get_cross_path(data_child, prior_child))
+    score_path = utils_child.get_cross_path(data_child, prior_child)
+    try:
+        raw_scores = pd.read_pickle(score_path)
+    except:
+        with open(score_path, "rb") as fh:
+            data = pickle.load(fh)
+        path_to_protocol4 = score_path.replace('.pkl','.pkl4')
+        data.to_pickle(path_to_protocol4)
+
+        raw_scores = pd.read_pickle(path_to_protocol4)
+
     raw_scores['cross_type'] = get_cross_type(data_child, prior_child)
     raw_scores['data_child'] = data_child
     raw_scores['prior_child'] = prior_child
@@ -98,6 +165,17 @@ def get_cross_augmented_scores(data_child, prior_child):
                    
                    
 def load_all_scores():
+
+    '''
+        Load all scores for the cross-child fine-tuning analysis
+
+        Args: None
+
+        Return:
+        A pandas dataframe with scores from all scores
+
+
+    '''
     
     name_list = child_models.get_child_names()
     all_scores = pd.concat(
@@ -106,19 +184,41 @@ def load_all_scores():
             for data_child in name_list
             for prior_child in name_list
         ]
-    )
-    
+    )    
     return all_scores
     
     
-def process_score_results(data_child, prior_child, which_key, is_mean = True):
+def process_score_results(data_child, prior_child, which_key, likelihood_type, is_mean = True):
+
+    '''
+        Compute a mean or standard deviation over a column (eg prior or posterior probability) for a particular combination of child prior and child data
+
+        Args:
+        data_child: name of the child whose data will be tested
+        prior_child: named of the child whose prior will be used
+        which_key: should this look at "prior_probability" or "posterior_probability"? 
+        likelihood_type: should this evaluate scores from using a "wfst" or "levdist" likelihood function
+        is_mean: should this calculate mean or standard deviation?
+
+        Return: averate or standard deviation of a score for a specific prior_child, data_child combination
+
+    '''
     
     assert which_key in {'posterior_probability', 'prior_probability'}
     
     score_path = utils_child.get_cross_path(data_child, prior_child)
-    scores = pd.read_pickle(score_path)
+
+    try:
+        scores = pd.read_pickle(score_path)
+    except: 
+        with open(score_path, "rb") as fh:
+            data = pickle.load(fh)
+        path_to_protocol4 = score_path.replace('.pkl','.pkl4')
+        data.to_pickle(path_to_protocol4)
+
+        scores = pd.read_pickle(path_to_protocol4)
     
-    scores = scores[scores.set == ('success')]
+    scores = scores.loc[(scores.set == 'success') & (scores.likelihood_type == likelihood_type)]    
     
     # Match the R analyses "sem" function.
     stdev_match_r = lambda s : np.std(s, ddof = 1)
@@ -130,13 +230,25 @@ def process_score_results(data_child, prior_child, which_key, is_mean = True):
     return stats
 
     
-def organize_scores(is_mean, is_success, which_key):
+def organize_scores(is_mean, which_key, likelihood_type):
     
+    '''
+        Organize posterior or prior probabilities (as surprisals) by crossing child-specific priors and child-specific datasets
+
+        is_mean: should this calculate mean or standard deviation?
+        which_key: should this look at "prior_probability" or "posterior_probability"? 
+        likelihood_type: should this evaluate scores from using a "wfst" or "levdist" likelihood function
+
+        Returns: 
+        a longform dataframe with all scores, and a k*k matrix of scores where k is the number of children
+
+    '''
+
     results = defaultdict(list)
 
     name_list = child_models.get_child_names()
     for data_name in name_list:
-        results[data_name] = [process_score_results(data_name, prior_name, is_mean = is_mean, which_key = which_key) for prior_name in name_list]
+        results[data_name] = [process_score_results(data_name, prior_name, which_key, likelihood_type,  is_mean = is_mean) for prior_name in name_list]
     
     results['Prior child name'] = name_list
     

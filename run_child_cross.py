@@ -1,9 +1,7 @@
 import pandas as pd
-
+from datetime import datetime
 from utils_child import child_parser, child_models, utils_child
 from utils import split_gen, load_models
-
-from datetime import datetime
 
 if __name__ == '__main__':
     

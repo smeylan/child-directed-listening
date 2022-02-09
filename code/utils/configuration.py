@@ -132,6 +132,69 @@ class Config:
 
         self.model_analyses_dir = join(self.exp_dir, 'model_analyses')
 
+
+        #########################
+        ## TRAINING ARGUMENTS ##
+        #########################
+
+        self.general_training_args = {            
+            'model_name_or_path' : 'bert-base-uncased',            
+            'num_train_epochs' : 3,
+            'learning_rate' : 5e-5,            
+            'eval_steps' : 500 if not self.dev_mode else 1,
+            'logging_steps' : 500 if not self.dev_mode else 1,
+            'save_steps' : 500 if not self.dev_mode else 1,
+        }
+
+
+        ###########################################
+        #### CHILD-SPECIFIC TRAINING ARGUMENTS ####
+        ###########################################
+
+
+        self.version_name = self.training_version_name # Separate from exp determiner, because you may want to generate separate training files than scoring on Chompsky
+        self.exp_dir = join(join(self.local_root_dir, 'experiments'), self.version_name)
+        self.model_dir = join(self.exp_dir, 'models')
+
+
+        self.child_args = {
+            
+            'model_name_or_path' : load_models.get_model_path('all', 'all', True),
+            
+            'num_train_epochs' : 10,
+            'learning_rate' : 5e-5, # Unsure, need to check Alex convergence etc.
+
+            'eval_steps' : 100 if not self.dev_mode else 10,
+            'logging_steps' : 100 if not self.dev_mode else 10,
+            'save_steps' : 100 if not self.dev_mode else 10,
+            
+        }
+
+        base_args = {
+    
+            # Boolean arguments: basically pass in the argument --do_train, which signifies True
+            'do_train' : '', 
+            'do_eval': '',
+            'load_best_model_at_end' : '',
+            'overwrite_output_dir' : '',
+            
+            'metric_for_best_model' : 'eval_loss',
+            
+            'evaluation_strategy' : 'steps',
+            'save_strategy' : 'steps',
+            'logging_strategy' : 'steps',
+            'save_total_limit' : 1,
+            
+            # Always overwrite by default. Note child arguments load from a model path, not a trainer checkpoint.
+            
+            'per_device_train_batch_size' : 8, # Maximal for linebyline = False, 9 GB GPU.,
+            'per_device_eval_batch_size'  : 8 # Maximal for linebyline = False, 9 GB GPU.,
+            
+        }
+
+        self.child_args.update(base_args)
+        self.general_training_args.update(base_args)
+
     def check(self):
         assert self.n_beta == self.n_across_time, "The codebase generally assumes this for convenience."
 

@@ -10,8 +10,6 @@ from utils_child import child_models
 import configuration
 config = configuration.Config()
 
-import config_train
-
 from datetime import datetime
 
 import gen_sample_scripts
@@ -20,7 +18,7 @@ def models_get_split_folder(split_type, dataset_type, with_tags):
     
     tags_str = 'with_tags' if with_tags else 'no_tags' # For naming the model folder
     
-    base_dir = f'experiments/{config_train.version_name}/models'
+    base_dir = f'experiments/{config.version_name}/models'
     return join(base_dir, join(join(split_type, dataset_type), tags_str))
 
 
@@ -61,7 +59,7 @@ def get_isolated_training_commands(split_name, dataset_name, with_tags, om2_user
 
 def get_run_mlm_command(split_name, dataset_name, this_data_dir, this_model_dir, tags_data_str, om2_user):
     
-    this_args_dict = config_train.child_args if split_name == 'child' else config_train.non_child_args
+    this_args_dict = config.child_args if split_name == 'child' else config.general_training_args
     
     if split_name == 'child':
         _, is_tags = child_models.get_best_child_base_model_path()

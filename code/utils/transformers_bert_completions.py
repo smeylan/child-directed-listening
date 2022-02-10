@@ -733,27 +733,3 @@ def get_posteriors(prior_data, levdists, initial_vocab, bert_token_ids=None, sca
                    'highest_posterior_probabilities'] = ' '.join([str(x) for x in normalized[i, highest_posterior_indices]])
     
     return(prior_data)
-
-
-def get_edit_distance_matrix(all_tokens_phono, prior_data,  cmu_2syl_inchildes):    
-    '''
-    Get an edit distance matrix for matrix-based computation of the posterior.
-
-    all_tokens_phono: corpus in tokenized from, with phonological transcriptions
-    prior_data: priors of the form output by `compare_successes_failures_*`    
-    cmu_2syl_inchildes: cmu pronunctiations, must have 'word' and 'ipa_short' columns 
-
-    returns: a matrix where each row is an input string from prior_data and each column is a different pronunciation in cmu_2syl_inchildes.
-    thus a word type may correspond to multiple columns, and must be reduced using the wfst.reduce_duplicates function
-    '''
-
-    print('Getting the Levenshtein distance matrix')
-
-    bert_token_ids = prior_data['scores']['bert_token_id']
-    ipa = pd.DataFrame({'bert_token_id':bert_token_ids}).merge(all_tokens_phono[['bert_token_id',
-        'actual_phonology_no_dia']])
-
-
-    levdists = np.vstack([np.array([Levenshtein.distance(target,x) for x in cmu_2syl_inchildes.ipa_short
-    ]) for target in ipa.actual_phonology_no_dia]) 
-    return(levdists)

@@ -1,23 +1,15 @@
-
 import os
 from os.path import join, exists
-
 import copy
-from utils import load_models, transformers_bert_completions, load_splits, wfst
-from utils_model_sampling import hyperparameter_utils
-
-from collections import defaultdict
 import numpy as np
-
 import pandas as pd
-
 import glob
-
+from collections import defaultdict
+import pickle5 as pickle
+from utils import load_models, transformers_bert_completions, load_splits, likelihoods
+from utils_model_sampling import hyperparameter_utils
 import configuration
 config = configuration.Config()
-
-import pickle5 as pickle
-
 
 def assemble_scores_no_order(hyperparameter_set):
     """
@@ -79,14 +71,14 @@ def successes_and_failures_across_time_per_model(age, success_ids, yyy_ids, mode
 
     # run the best model    
     if likelihood_type == 'wfst':
-        likelihood_matrix, ipa = wfst.get_wfst_distance_matrix(all_tokens_phono, priors_for_age_interval, initial_vocab,  cmu_in_initial_vocab, config.fst_path, config.fst_sym_path)
+        likelihood_matrix, ipa = likelihoods.get_wfst_distance_matrix(all_tokens_phono, priors_for_age_interval, initial_vocab,  cmu_in_initial_vocab, config.fst_path, config.fst_sym_path)
         likelihood_matrix = -1 * np.log(likelihood_matrix + 10**-20) # yielding a surprisal
     elif likelihood_type == 'levdist':
-        likelihood_matrix = transformers_bert_completions.get_edit_distance_matrix(all_tokens_phono, 
+        likelihood_matrix = likelihoods.get_edit_distance_matrix(all_tokens_phono, 
             priors_for_age_interval, cmu_in_initial_vocab)            
 
     # likelihood_matrix has all pronunciation variants     
-    likelihood_matrix = wfst.reduce_duplicates(likelihood_matrix, cmu_in_initial_vocab, initial_vocab, 'min', cmu_indices_for_initial_vocab)
+    likelihood_matrix = likelihoods.reduce_duplicates(likelihood_matrix, cmu_in_initial_vocab, initial_vocab, 'min', cmu_indices_for_initial_vocab)
 
 
     if model['type'] == 'BERT':

@@ -91,7 +91,7 @@ def score_cross_prior(data_child, prior_child, likelihood_type):
     # Calculate distances -- depending on how implementation is done hopefully can abstract this out.
     
     if likelihood_type == 'wfst': 
-        likelihood_matrix, ipa = wfst.get_wfst_distance_matrix(this_cross_data, cross_priors, initial_vocab,  cmu_in_initial_vocab, config.fst_path, config.fst_sym_path)
+        likelihood_matrix, ipa = likelihoods.get_wfst_distance_matrix(this_cross_data, cross_priors, initial_vocab,  cmu_in_initial_vocab, config.fst_path, config.fst_sym_path)
         likelihood_matrix = -1 * np.log(likelihood_matrix + 10**-20)
     
     elif likelihood_type == 'levdist':
@@ -102,7 +102,7 @@ def score_cross_prior(data_child, prior_child, likelihood_type):
 
 
     # in either case, reduce the dimensionality of the likelihood matrix to find the best pronunciation in each case
-    likelihood_matrix = wfst.reduce_duplicates(likelihood_matrix, cmu_in_initial_vocab, initial_vocab, 'min', cmu_indices_for_initial_vocab)
+    likelihood_matrix = likelihoods.reduce_duplicates(likelihood_matrix, cmu_in_initial_vocab, initial_vocab, 'min', cmu_indices_for_initial_vocab)
 
     import pdb
     pdb.set_trace()

@@ -49,11 +49,11 @@ def sample_across_models(success_ids, yyy_ids, model, beta_values, lambda_values
 
     
     print('Computing WFST path lengths...')
-    wfst_distances_for_age_interval_unreduced, ipa = wfst.get_wfst_distance_matrix(all_tokens_phono, priors_for_age_interval, initial_vocab,  cmu_2syl_inchildes, config.fst_path, config.fst_sym_path)    
+    wfst_distances_for_age_interval_unreduced, ipa = likelihoods.get_wfst_distance_matrix(all_tokens_phono, priors_for_age_interval, initial_vocab,  cmu_2syl_inchildes, config.fst_path, config.fst_sym_path)    
     wfst_distances_for_age_interval_unreduced = -1 * np.log(wfst_distances_for_age_interval_unreduced + 10**-20) # convert this back to log space
 
     #for each word, find the citation pronunciation that is most likely to generate the observed data 
-    wfst_distances_for_age_interval = wfst.reduce_duplicates(wfst_distances_for_age_interval_unreduced, cmu_2syl_inchildes, initial_vocab, 'min', cmu_indices_for_initial_vocab) # min for smallest surprisal
+    wfst_distances_for_age_interval = likelihoods.reduce_duplicates(wfst_distances_for_age_interval_unreduced, cmu_2syl_inchildes, initial_vocab, 'min', cmu_indices_for_initial_vocab) # min for smallest surprisal
     
     import pdb
     pdb.set_trace()
@@ -85,7 +85,7 @@ def sample_across_models(success_ids, yyy_ids, model, beta_values, lambda_values
     edit_distances_for_age_interval_unreduced = transformers_bert_completions.get_edit_distance_matrix(all_tokens_phono, priors_for_age_interval, cmu_2syl_inchildes)
 
     #for each word, find the citation pronunciation that is most likely to generate the observed data. Look for the one with the *smallest* edit distance     
-    edit_distances_for_age_interval = wfst.reduce_duplicates(edit_distances_for_age_interval_unreduced, cmu_2syl_inchildes, initial_vocab, 'min', cmu_indices_for_initial_vocab)
+    edit_distances_for_age_interval = likelihoods.reduce_duplicates(edit_distances_for_age_interval_unreduced, cmu_2syl_inchildes, initial_vocab, 'min', cmu_indices_for_initial_vocab)
 
     
     for idx, beta_value in enumerate(beta_values):

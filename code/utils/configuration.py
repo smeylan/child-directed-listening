@@ -33,7 +33,7 @@ class Config:
     
         regenerate : specifies if CHILDES data is regenerated in Providence - Retrieve data.ipynb
 
-        dev_mode: ??? "Whether or not to truncate number of samples, etc. (for development purposes)" Used in config_train.py, gen_training_scripts, gen_sample scripts. Seems to decrease the scale of training and test 
+        dev_mode: ??? "Whether or not to truncate number of samples, etc. (for development purposes)" Decrease the number of samples in training and test 
 
         subsample_mode: ??? n_beta, n_across_time for faster iteration. How does this relate
 

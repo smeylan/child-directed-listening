@@ -15,7 +15,7 @@ configparser==5.0.2
 contextvars==2.4
 cycler==0.10.0
 Cython==0.29.26
-dataclasses==0.8
+dataclasses
 datasets==1.8.0
 decorator==4.4.2
 defusedxml==0.6.0

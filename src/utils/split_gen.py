@@ -27,7 +27,7 @@ def get_age_split_data(raw_data, months = config.age_split):
     return young_df, old_df
 
 def get_split_folder(split_type, dataset_name, base_dir):
-   
+    
     path = join(base_dir, join(split_type, dataset_name))
     
     if not exists(path):

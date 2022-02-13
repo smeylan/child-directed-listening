@@ -4,10 +4,8 @@ import copy
 import random
 import pandas as pd 
 import numpy as np
-from utils import load_splits, load_models, transformers_bert_completions, wfst
-from utils_model_sampling import hyperparameter_utils
-from utils_child import child_models, child_split_gen
-import configuration
+
+from src.utils import load_splits, load_models, transformers_bert_completions, likelihoods, hyperparameter_utils, child_models, child_split_gen, configuration
 config = configuration.Config()
 
 def load_cross_data(child_name):
@@ -95,7 +93,7 @@ def score_cross_prior(data_child, prior_child, likelihood_type):
         likelihood_matrix = -1 * np.log(likelihood_matrix + 10**-20)
     
     elif likelihood_type == 'levdist':
-        likelihood_matrix = transformers_bert_completions.get_edit_distance_matrix(this_cross_data, 
+        likelihood_matrix = likelihoods.get_edit_distance_matrix(this_cross_data, 
             cross_priors, cmu_in_initial_vocab)
     else:
         assert False, "Invalid dist specified in config file. Choose from: {levdist}"
@@ -103,9 +101,6 @@ def score_cross_prior(data_child, prior_child, likelihood_type):
 
     # in either case, reduce the dimensionality of the likelihood matrix to find the best pronunciation in each case
     likelihood_matrix = likelihoods.reduce_duplicates(likelihood_matrix, cmu_in_initial_vocab, initial_vocab, 'min', cmu_indices_for_initial_vocab)
-
-    import pdb
-    pdb.set_trace()
     
     if likelihood_type == 'wfst': 
         posteriors = transformers_bert_completions.get_posteriors(cross_priors, 

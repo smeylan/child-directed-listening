@@ -1,12 +1,11 @@
 import copy
 import pandas as pd
-from utils import load_models, transformers_bert_completions, load_splits
-from utils import likelihoods
-import configuration
-config = configuration.Config()
 import os
 import pickle
 import numpy as np
+from src.utils import configuration, likelihoods, load_models, transformers_bert_completions, load_splits
+config = configuration.Config()
+
 
 def sample_across_models(success_ids, yyy_ids, model, beta_values, lambda_values, examples_mode = False, all_tokens_phono=None):
     '''
@@ -54,9 +53,6 @@ def sample_across_models(success_ids, yyy_ids, model, beta_values, lambda_values
 
     #for each word, find the citation pronunciation that is most likely to generate the observed data 
     wfst_distances_for_age_interval = likelihoods.reduce_duplicates(wfst_distances_for_age_interval_unreduced, cmu_2syl_inchildes, initial_vocab, 'min', cmu_indices_for_initial_vocab) # min for smallest surprisal
-    
-    import pdb
-    pdb.set_trace()
 
     for idx, lambda_value in enumerate(lambda_values):
         
@@ -82,7 +78,7 @@ def sample_across_models(success_ids, yyy_ids, model, beta_values, lambda_values
 
 
     print('Computing edit distances...')
-    edit_distances_for_age_interval_unreduced = transformers_bert_completions.get_edit_distance_matrix(all_tokens_phono, priors_for_age_interval, cmu_2syl_inchildes)
+    edit_distances_for_age_interval_unreduced = likelihoods.get_edit_distance_matrix(all_tokens_phono, priors_for_age_interval, cmu_2syl_inchildes)
 
     #for each word, find the citation pronunciation that is most likely to generate the observed data. Look for the one with the *smallest* edit distance     
     edit_distances_for_age_interval = likelihoods.reduce_duplicates(edit_distances_for_age_interval_unreduced, cmu_2syl_inchildes, initial_vocab, 'min', cmu_indices_for_initial_vocab)

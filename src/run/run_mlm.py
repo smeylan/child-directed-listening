@@ -51,7 +51,8 @@ from transformers import (
 from transformers.trainer_utils import get_last_checkpoint, is_main_process
 from transformers.utils import check_min_version
 
-
+sys.path.append('.')
+sys.path.append('src/.')
 from src.utils import load_models, configuration
 config_repository = configuration.Config()
 
@@ -289,7 +290,10 @@ def main():
     }
     
     # load this separately, outside of configuration
-    model_args.model_name_or_path =  load_models.get_model_path('all', 'all', True)
+    # this might be a bad idea -- check on config.name
+    # model_args.model_name_or_path =  load_models.get_model_path('all', 'all', True)
+    # if not os.path.exists(model_args.model_name_or_path):
+    #     os.makedirs(model_args.model_name_or_path)
     
     if model_args.config_name:
         config = AutoConfig.from_pretrained(model_args.config_name, **config_kwargs)

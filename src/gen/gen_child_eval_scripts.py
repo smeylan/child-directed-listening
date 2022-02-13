@@ -1,17 +1,16 @@
-
 import os
 from os.path import join, exists
-from utils_child import child_models
-from utils import scripts
+import sys
 
-import gen_sample_scripts
-
-import configuration
+sys.path.append('.')
+sys.path.append('src/.')
+from src.utils import scripts, configuration, child_models
 config = configuration.Config()
+from src.gen import gen_sample_scripts
 
 if __name__ == '__main__':
     
-    sh_loc = 'scripts_child_cross'
+    sh_loc = 'output/SLURM/scripts_child_cross'
     
     if not exists(sh_loc):
         os.makedirs(sh_loc)
@@ -26,7 +25,7 @@ if __name__ == '__main__':
             
             slurm_folder = scripts.get_slurm_folder('child', data_child, 'child_cross') 
             
-            command = f'python3 run_child_cross.py --data_child {data_child} --prior_child {prior_child}'
+            command = f'python3 src/run/run_child_cross.py --data_child {data_child} --prior_child {prior_child}'
             
             with open(join(sh_loc, f'run_cross_{data_child}_{prior_child}.sh'), 'w') as f:
                 

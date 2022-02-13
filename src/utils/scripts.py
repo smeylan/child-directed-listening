@@ -2,8 +2,8 @@ import glob
 import os
 from os.path import join, exists
 import subprocess
-from utils import split_gen
-import configuration
+
+from src.utils import split_gen, configuration
 config = configuration.Config()
 
 def get_slurm_folder(split, dataset, task):
@@ -41,7 +41,7 @@ def gen_submit_script(dir_name, arg_set, task):
     
     text.extend(mkdir_commands)
     
-    base_dir = f'./scripts_{dir_name}'
+    base_dir = f'./output/SLURM/scripts_{dir_name}'
     base_add = '/*' if len(glob.glob(base_dir+'/*')) == 2 else ''
     
     text.append(f'FILES="{base_dir}/*{base_add}"')
@@ -52,7 +52,14 @@ def gen_submit_script(dir_name, arg_set, task):
     text.append('\tcat "$f"')
     text.append('done')
     
-    sh_path = f'submit_{dir_name}.sh'.replace('/', '_') 
+    
+    sh_path = 'output/SLURM/submission_scripts/submit_'+dir_name.replace('/', '_')+'.sh' 
+    
+    # make sure that the path exists
+    sh_dir = os.path.dirname(sh_path)
+    if not os.path.exists(sh_dir):
+        os.makedirs(sh_dir)
+
     
     give_space = lambda s : f"{s}\n"
     text = list(map(give_space, text))

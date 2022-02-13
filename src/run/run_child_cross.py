@@ -1,7 +1,14 @@
+import sys
+import os
+import numpy as np
 import pandas as pd
 from datetime import datetime
-from utils_child import child_parser, child_models, utils_child
-from utils import split_gen, load_models
+
+
+sys.path.append('.')
+sys.path.append('src/.')
+from src.utils import child_parser, child_models, utils_child, split_gen, load_models
+
 
 if __name__ == '__main__':
     

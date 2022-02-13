@@ -1,19 +1,15 @@
-
 import os
+import sys
 from os.path import join, exists
-
-from utils import load_models, load_splits, data_cleaning, parsers
-from utils_model_sampling import hyperparameter_utils, sample_models_across_time
-
 import numpy as np
-
 import pandas as pd
-import configuration
-config = configuration.Config()
-
 from collections import defaultdict
-
 from datetime import datetime
+
+sys.path.append('.')
+sys.path.append('src/.')
+from utils import load_models, load_splits, data_cleaning, parsers, hyperparameter_utils, sample_models_across_time, configuration
+config = configuration.Config()
   
     
 def call_single_across_time_model(sample_dict, all_tokens_phono, model_class, this_split, this_dataset_name, is_tags, context_width, examples_mode):

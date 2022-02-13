@@ -1,24 +1,21 @@
-# Used to deploy training and automatically request consistent text data.
-
 import os
 from os.path import join, exists
 import json
-
-from utils import scripts, split_gen
-from utils_child import child_models
-
-import configuration
-config = configuration.Config()
-
 from datetime import datetime
+import sys
 
-import gen_sample_scripts
+sys.path.append('.')
+sys.path.append('src/.')
+from src.utils import scripts, split_gen, child_models, configuration
+config = configuration.Config()
+from src.gen import gen_sample_scripts
+
 
 def models_get_split_folder(split_type, dataset_type, with_tags):
     
     tags_str = 'with_tags' if with_tags else 'no_tags' # For naming the model folder
     
-    base_dir = f'experiments/{config.version_name}/models'
+    base_dir = f'output/experiments/{config.exp_determiner}/models'
     return join(base_dir, join(join(split_type, dataset_type), tags_str))
 
 
@@ -90,7 +87,7 @@ def get_run_mlm_command(split_name, dataset_name, this_data_dir, this_model_dir,
         ]
 
     main_command = f"singularity exec --nv -B /om,/om2/user/{om2_user} /om2/user/{om2_user}/vagrant/ubuntu20.simg"
-    this_python_command = f' python3 run_mlm.py {" ".join(data_args + trainer_args)}'
+    this_python_command = f' python3 src/run/run_mlm.py {" ".join(data_args + trainer_args)}'
 
     return f"{main_command}{this_python_command}"
     
@@ -137,7 +134,8 @@ if __name__ == '__main__':
         for has_tags in [True, False]:
             t_split, t_dataset = split_args
             tags_str = 'with_tags' if has_tags else 'no_tags'
-            scripts.write_training_shell_script(t_split, t_dataset, has_tags, f'scripts_{label}/{tags_str}', get_isolated_training_commands)
+            output_directory = os.path.join(config.project_root, f'output/SLURM/scripts_{label}/{tags_str}') 
+            scripts.write_training_shell_script(t_split, t_dataset, has_tags, output_directory, get_isolated_training_commands)
 
     scripts.gen_submit_script(label, config.childes_model_args, label)
     

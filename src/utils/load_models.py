@@ -302,7 +302,13 @@ def get_model_from_path(model_path, with_tags):
     word_info_all = get_cmu_dict_info()
     word_info = word_info_all.word 
     
-    model = BertForMaskedLM.from_pretrained(model_path)
+    try:
+        model = BertForMaskedLM.from_pretrained(model_path)
+    except BaseException as e:
+        print('Model loading failed. Does a model actually exist at '+model_path)
+        print(e)
+        raise ValueError('Terminating!')
+
     
     model.eval()
     tokenizer = BertTokenizer.from_pretrained(model_path)

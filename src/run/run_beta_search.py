@@ -5,10 +5,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import argparse
 from datetime import datetime
-from utils import load_splits, load_models, split_gen, parsers
-from utils_model_sampling import hyperparameter_utils, sample_across_models
-from utils_child import child_models
-import configuration
+import sys
+
+sys.path.append('.')
+sys.path.append('src/.')
+from src.utils import load_splits, load_models, split_gen, parsers, hyperparameter_utils, sample_across_models, child_models, configuration
 config = configuration.Config()
 
 def optimize_beta_and_lambda(split_name, dataset_name, model_dict, model_type):

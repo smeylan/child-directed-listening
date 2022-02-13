@@ -2,8 +2,7 @@ import os
 from os.path import join, exists
 import pandas as pd
 import numpy as np
-from utils import load_models, split_gen
-import configuration
+from src.utils import configuration, load_models, split_gen
 config = configuration.Config()
 
 

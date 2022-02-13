@@ -84,7 +84,7 @@ class Config:
         '''
 
         # read in the environment variables        
-        self.json_path = '../../config.json'
+        self.json_path = os.path.join(os.environ['CDL_SLURM_ROOT'], 'config.json')
 
         # get the absolute path of the json and then update the config to use it             
         self.project_root = os.path.dirname(os.path.abspath(self.json_path))
@@ -104,7 +104,7 @@ class Config:
         # these all need to be defined with respect to the root
         self.make_folders([self.finetune_dir, self.prov_dir, self.prov_csv_dir])
         self.make_folders([self.model_dir, self.scores_dir, self.model_analyses_dir])
-        self.make_folders(['output/csv', 'output/pkl', 'output/fst','output/figures'])
+        self.make_folders(['output/csv', 'output/pkl', 'output/fst','output/figures', 'output/SLURM', 'output/unigram_fst_cache'])
 
 
     def set_defaults(self):
@@ -158,11 +158,6 @@ class Config:
         ###########################################
 
 
-        self.version_name = self.training_version_name # Separate from exp determiner, because you may want to generate separate training files than scoring on Chompsky
-        self.exp_dir = join(join(self.project_root, 'experiments'), self.version_name)
-        self.model_dir = join(self.exp_dir, 'models')
-
-
         self.child_args = {
             
             'num_train_epochs' : 10,
@@ -204,6 +199,6 @@ class Config:
 
     def make_folders(self, paths):        
         for p in paths:
-            p = os.path.join('../../', p)
+            p = os.path.join( os.environ['CDL_SLURM_ROOT'], p)
             if not exists(p):
                 os.makedirs(p)

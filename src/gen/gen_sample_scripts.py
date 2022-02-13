@@ -1,13 +1,13 @@
 # Generate the scripts for a beta search.
-
-import configuration
-config = configuration.Config()
-
 import argparse
-from utils import parsers, load_models, scripts
-
 import os
+import sys
 from os.path import join, exists
+
+sys.path.append('.')
+sys.path.append('src/.')
+from src.utils import configuration, parsers, load_models, scripts
+config = configuration.Config()
 
 def get_one_python_command(task_file, split, dataset, use_tags, context_width, model_type):
     
@@ -44,10 +44,10 @@ if __name__ == '__main__':
     label = 'non_child_beta_time'
 
     task_names = ['beta_search', 'models_across_time']
-    task_files = ['run_beta_search.py', 'run_models_across_time.py']
+    task_files = ['src/run/run_beta_search.py', 'src/run/run_models_across_time.py']
      
     
-    sh_script_loc_base = f'scripts_{label}'
+    sh_script_loc_base = f'output/SLURM/scripts_{label}'
 
     partitions = {
         'finetune' : load_models.gen_finetune_model_args,

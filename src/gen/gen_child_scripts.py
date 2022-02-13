@@ -1,13 +1,15 @@
-    
 import os
+import sys
 from os.path import join, exists
+sys.path.append('.')
+sys.path.append('src/.')
 
-import gen_training_scripts, gen_sample_scripts
-import configuration
+
+sys.path.append('.')
+sys.path.append('src/.')
+from src.gen import gen_training_scripts, gen_sample_scripts
+from src.utils import split_gen, scripts, configuration, child_models
 config = configuration.Config()
-
-from utils_child import child_models
-from utils import split_gen, scripts
 
     
 def gen_child_commands(name, is_tags):
@@ -38,14 +40,15 @@ def gen_child_commands(name, is_tags):
     ## Edit the last command to append the beta search.
     sing_header = scripts.gen_singularity_header()
     
-    run_commands[-1] = run_commands[-1] + f"; {sing_header} {gen_sample_scripts.get_one_python_command('run_beta_search.py', 'child', name, is_tags, 0, 'childes')[1]}\n"
+    run_commands[-1] = run_commands[-1] + f"; {sing_header} {gen_sample_scripts.get_one_python_command('src/run/run_beta_search.py', 'child', name, is_tags, 0, 'childes')[1]}\n"
 
     # Put the copy commands between the header and the actual python runs.
     
     commands = header_commands + [f"rm -r {this_model_dir}\n"] + run_commands
     
     filename = scripts.get_script_name('child', name, is_tags)
-    
+
+
     return filename, commands
 
     
@@ -56,7 +59,7 @@ if __name__ == '__main__':
     
     task_name = 'child_train'
     
-    sh_train_loc = f'scripts_{task_name}'
+    sh_train_loc = f'output/SLURM/scripts_{task_name}'
     
     child_arg_list = [('child', name) for name in child_names]
     scripts.gen_submit_script(task_name, child_arg_list, 'child_train')

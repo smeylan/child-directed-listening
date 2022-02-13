@@ -1,11 +1,16 @@
 import sys
-import pywrapfst
 from joblib import Parallel, delayed
 import os
 import copy
 import pandas as pd
 import numpy as np
 import time
+import Levenshtein
+
+
+sys.path.append("/usr/local/lib/python3.8/site-packages") #for pywrapfst
+sys.path.append('/usr/local/lib/python3.6/site-packages')
+import pywrapfst
 
 from src.utils import configuration
 config = configuration.Config()
@@ -198,11 +203,11 @@ def reconcile_symbols(fit_model, path_to_chi_phones_sym):
     
     fit_model_labeled = copy.copy(fit_model)
 
-    write_out_edited_fst(fit_model_superset, 'fst/chi_edited_fst.csv')
+    write_out_edited_fst(fit_model_superset, 'output/fst/chi_edited_fst.csv')
 
     superset_chi = pd.DataFrame({'sym': reverse_superset_cypher.keys(),
         'utf8':reverse_superset_cypher.values()})
-    superset_chi.to_csv('fst/superset_chi.sym', header = None, index=False, sep='\t')
+    superset_chi.to_csv('output/fst/superset_chi.sym', header = None, index=False, sep='\t')
     return(fit_model_superset, superset_chi)
 
 def normalize_log_probs(vec):
@@ -221,6 +226,31 @@ def split(a, n):
     '''split a list into n approximately equal length sublists, appropriate for parallelization'''
     k, m = divmod(len(a), n)
     return (a[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(n))
+
+
+def get_edit_distance_matrix(all_tokens_phono, prior_data,  cmu_2syl_inchildes):    
+    '''
+    Get an edit distance matrix for matrix-based computation of the posterior.
+
+    all_tokens_phono: corpus in tokenized from, with phonological transcriptions
+    prior_data: priors of the form output by `compare_successes_failures_*`    
+    cmu_2syl_inchildes: cmu pronunctiations, must have 'word' and 'ipa_short' columns 
+
+    returns: a matrix where each row is an input string from prior_data and each column is a different pronunciation in cmu_2syl_inchildes.
+    thus a word type may correspond to multiple columns, and must be reduced using the wfst.reduce_duplicates function
+    '''
+
+    print('Getting the Levenshtein distance matrix')
+
+    bert_token_ids = prior_data['scores']['bert_token_id']
+    ipa = pd.DataFrame({'bert_token_id':bert_token_ids}).merge(all_tokens_phono[['bert_token_id',
+        'actual_phonology_no_dia']])
+
+
+    levdists = np.vstack([np.array([Levenshtein.distance(target,x) for x in cmu_2syl_inchildes.ipa_short
+    ]) for target in ipa.actual_phonology_no_dia]) 
+    return(levdists)
+
 
 def get_wfst_distance_matrix(all_tokens_phono, prior_data, initial_vocab,  cmu_2syl_inchildes, 
     path_to_baum_welch_transducer, path_to_chi_phones_sym, num_cores=24):    
@@ -243,7 +273,7 @@ def get_wfst_distance_matrix(all_tokens_phono, prior_data, initial_vocab,  cmu_2
     fit_model = pd.read_csv(path_to_baum_welch_transducer, sep='\t', header=None)
     
     fit_model_superset, superset_chi = reconcile_symbols(fit_model, path_to_chi_phones_sym)
-    superset_chi_sym = pywrapfst.SymbolTable.read_text('fst/superset_chi.sym')
+    superset_chi_sym = pywrapfst.SymbolTable.read_text('output/fst/superset_chi.sym')
 
     # [X] Change from a joint model to a conditional model.
     # as of 11/10/21, only works for the unigram case
@@ -252,9 +282,9 @@ def get_wfst_distance_matrix(all_tokens_phono, prior_data, initial_vocab,  cmu_2
     tail = fit_model_superset.tail(1)
     tail[[1]] = -1 * np.log(1)
     conditioned = pd.concat([conditioned, tail])
-    write_out_edited_fst(conditioned, 'fst/chi_conditioned_fst.csv')
-    os.system('fstcompile --arc_type=standard fst/chi_conditioned_fst.csv fst/chi_conditioned.fst')    
-    transducer = pywrapfst.Fst.read("fst/chi_conditioned.fst")
+    write_out_edited_fst(conditioned, 'output/fst/chi_conditioned_fst.csv')
+    os.system('fstcompile --arc_type=standard output/fst/chi_conditioned_fst.csv output/fst/chi_conditioned.fst')    
+    transducer = pywrapfst.Fst.read("output/fst/chi_conditioned.fst")
             
     #[X] translate all words in the vocab into FSAs (w_fsas)and compose with the n-gram transducer
     

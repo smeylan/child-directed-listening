@@ -5,6 +5,7 @@
     "local_root_dir" : "",
     "SEED" : 0, 
     "n_beta" : 5000,
+    "n_lambda" : 5000,
     "n_across_time" : 5000,
     "subsamples" : [2, 1000, 5000],
     "val_ratio" : ".2",
@@ -31,7 +32,10 @@
     "lambda_high" : 2,
     "lambda_num_values" : 20,    
     "fail_on_lambda_edge" : 1,
-    "fst_path":"fst/chi-1.txt",
-    "fst_sym_path":"fst/chi_phones.sym"
+    "fst_path":"output/fst/chi-1.txt",
+    "fst_sym_path":"output/fst/chi_phones.sym",
+    "fst_cache_path":"output/unigram_fst_cache"
 }
+
+
 

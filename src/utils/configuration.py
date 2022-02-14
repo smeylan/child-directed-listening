@@ -84,10 +84,12 @@ class Config:
         '''
 
         # read in the environment variables        
-        self.json_path = os.path.join(os.environ['CDL_SLURM_ROOT'], 'config.json')
 
-        # get the absolute path of the json and then update the config to use it             
-        self.project_root = os.path.dirname(os.path.abspath(self.json_path))
+
+        # get the path of the current file
+        config_dir = os.path.dirname(os.path.abspath(__file__))
+        self.project_root =  os.path.split(os.path.split(config_dir)[0])[0]
+        self.json_path = os.path.join(self.project_root, 'config.json')
 
         
         # read in the JSON path and set everything
@@ -199,6 +201,6 @@ class Config:
 
     def make_folders(self, paths):        
         for p in paths:
-            p = os.path.join( os.environ['CDL_SLURM_ROOT'], p)
+            p = os.path.join( self.project_root, p)
             if not exists(p):
                 os.makedirs(p)

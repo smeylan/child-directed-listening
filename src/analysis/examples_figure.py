@@ -1,7 +1,5 @@
 import numpy as np
-from utils import transformers_bert_completions, load_splits, load_models
-from utils_model_sampling import sample_across_models, hyperparameter_utils
-import configuration
+from src.utils import transformers_bert_completions, load_splits, load_models, sample_across_models, hyperparameter_utils, configuration
 config = configuration.Config()
     
 def get_scores_across_models(test_idx, which_models, is_success):

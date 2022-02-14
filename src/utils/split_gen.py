@@ -182,13 +182,13 @@ def write_data_partitions_text(all_data, split_folder, phase, phase_idxs, split_
     return all_data_with_assignments, this_phase_data
 
 
-def exec_split_gen(cleaned_utt_glosses, this_split_folder, phase, phase_label):
+def exec_split_gen(cleaned_utt_glosses, this_split_folder, phase, phase_label, split_on = 'transcript_id'):
     
-    train_idxs, val_idxs = determine_split_idxs(cleaned_utt_glosses, 'transcript_id', val_ratio = config.val_ratio)
+    train_idxs, val_idxs = determine_split_idxs(cleaned_utt_glosses, split_on, val_ratio = config.val_ratio)
 
-    split_glosses_df, train_df = write_data_partitions_text(cleaned_utt_glosses, this_split_folder, 'train', train_idxs, 'transcript_id', phase_label)
+    split_glosses_df, train_df = write_data_partitions_text(cleaned_utt_glosses, this_split_folder, 'train', train_idxs, split_on, phase_label)
     
-    split_glosses_df, _ = write_data_partitions_text(split_glosses_df, this_split_folder, 'val', val_idxs, 'transcript_id', phase_label)
+    split_glosses_df, _ = write_data_partitions_text(split_glosses_df, this_split_folder, 'val', val_idxs, split_on, phase_label)
 
     glosses_path = join(this_split_folder, 'data_pool_with_phases.pkl')
     

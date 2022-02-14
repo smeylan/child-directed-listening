@@ -48,7 +48,7 @@ def sample_across_models(success_ids, yyy_ids, model, beta_values, lambda_values
 
     
     print('Computing WFST path lengths...')
-    wfst_distances_for_age_interval_unreduced, ipa = likelihoods.get_wfst_distance_matrix(all_tokens_phono, priors_for_age_interval, initial_vocab,  cmu_2syl_inchildes, config.fst_path, config.fst_sym_path)    
+    wfst_distances_for_age_interval_unreduced, ipa = likelihoods.get_wfst_distance_matrix(all_tokens_phono, priors_for_age_interval, initial_vocab,  cmu_2syl_inchildes, os.path.join(config.project_root, config.fst_path), config.fst_sym_path)    
     wfst_distances_for_age_interval_unreduced = -1 * np.log(wfst_distances_for_age_interval_unreduced + 10**-20) # convert this back to log space
 
     #for each word, find the citation pronunciation that is most likely to generate the observed data 

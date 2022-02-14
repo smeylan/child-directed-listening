@@ -177,7 +177,7 @@ def reconcile_symbols(fit_model, path_to_chi_phones_sym):
     input_cypher = dict(zip(input_symbol_table.int, input_symbol_table.symbol))
     
     
-    output_symbol_table = pd.read_csv(path_to_chi_phones_sym, sep='\t', header=None)
+    output_symbol_table = pd.read_csv(os.path.join(config.project_root, path_to_chi_phones_sym), sep='\t', header=None)
     output_symbol_table.columns = ['symbol','int']
     output_cypher = dict(zip(output_symbol_table.int, output_symbol_table.symbol))
     output_cypher
@@ -203,11 +203,11 @@ def reconcile_symbols(fit_model, path_to_chi_phones_sym):
     
     fit_model_labeled = copy.copy(fit_model)
 
-    write_out_edited_fst(fit_model_superset, 'output/fst/chi_edited_fst.csv')
+    write_out_edited_fst(fit_model_superset, os.path.join(config.project_root, 'output/fst/chi_edited_fst.csv'))
 
     superset_chi = pd.DataFrame({'sym': reverse_superset_cypher.keys(),
         'utf8':reverse_superset_cypher.values()})
-    superset_chi.to_csv('output/fst/superset_chi.sym', header = None, index=False, sep='\t')
+    superset_chi.to_csv(os.path.join(config.project_root, 'output/fst/superset_chi.sym'), header = None, index=False, sep='\t')
     return(fit_model_superset, superset_chi)
 
 def normalize_log_probs(vec):
@@ -273,7 +273,7 @@ def get_wfst_distance_matrix(all_tokens_phono, prior_data, initial_vocab,  cmu_2
     fit_model = pd.read_csv(path_to_baum_welch_transducer, sep='\t', header=None)
     
     fit_model_superset, superset_chi = reconcile_symbols(fit_model, path_to_chi_phones_sym)
-    superset_chi_sym = pywrapfst.SymbolTable.read_text('output/fst/superset_chi.sym')
+    superset_chi_sym = pywrapfst.SymbolTable.read_text(os.path.join(config.project_root, 'output/fst/superset_chi.sym'))
 
     # [X] Change from a joint model to a conditional model.
     # as of 11/10/21, only works for the unigram case
@@ -282,9 +282,12 @@ def get_wfst_distance_matrix(all_tokens_phono, prior_data, initial_vocab,  cmu_2
     tail = fit_model_superset.tail(1)
     tail[[1]] = -1 * np.log(1)
     conditioned = pd.concat([conditioned, tail])
-    write_out_edited_fst(conditioned, 'output/fst/chi_conditioned_fst.csv')
-    os.system('fstcompile --arc_type=standard output/fst/chi_conditioned_fst.csv output/fst/chi_conditioned.fst')    
-    transducer = pywrapfst.Fst.read("output/fst/chi_conditioned.fst")
+    write_out_edited_fst(conditioned, os.path.join(config.project_root, 'output/fst/chi_conditioned_fst.csv'))
+    
+    chi_conditioned_path = os.path.join(config.project_root, 'output/fst/chi_conditioned.fst')
+
+    os.system('fstcompile --arc_type=standard output/fst/chi_conditioned_fst.csv '+chi_conditioned_path)    
+    transducer = pywrapfst.Fst.read(os.path.join(config.project_root, "output/fst/chi_conditioned.fst"))
             
     #[X] translate all words in the vocab into FSAs (w_fsas)and compose with the n-gram transducer
     
@@ -296,7 +299,7 @@ def get_wfst_distance_matrix(all_tokens_phono, prior_data, initial_vocab,  cmu_2
         w_fsas[w['ipa_short']] = w_in.arcsort(sort_type="ilabel")
         ws.append(w['ipa_short'])
 
-    fst_cache_path = config.fst_cache_path
+    fst_cache_path = os.path.join(config.project_root, config.fst_cache_path)
     if not os.path.exists(fst_cache_path):
         os.mkdir(fst_cache_path)
         

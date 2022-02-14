@@ -1,9 +1,11 @@
 import pandas as pd
-from collections import defaultdict
 import numpy as np
+from collections import defaultdict
 import matplotlib.pyplot as plt
-from utils_child import utils_child, child_models
 import pickle5 as pickle
+
+from src.utils import utils_child, child_models
+
 
 
 def organize_auc_scores_as_grid(auc_df):

@@ -28,6 +28,7 @@ def gen_finetune_model_args():
                 load_bert_args.append((this_split, this_dataset_name, use_tags, context, 'childes'))
 
 
+
     return load_bert_args 
 
 
@@ -72,6 +73,7 @@ def gen_model_title(split, dataset, is_tags, context_num, model_type):
         'adult' : 'Adult BERT',
         'flat_unigram' : 'Flat prior',
         'data_unigram' : 'CHILDES unigram',
+        'switchboard': 'Switchboard BERT'
     }
     context_dict = {
         0 : 'same utt only',
@@ -239,9 +241,11 @@ def get_model_dict(split, dataset, with_tags, context, model_type):
     elif model_type == 'flat_unigram':
         model_dict = get_flat_unigram_dict(split, dataset, with_tags, context)
     
+    import pdb
+    pdb.set_trace()
     # Update the tokenizers if needed.
     
-    # 7/9/21: So childes doesn't need to re-add the tokens, and it works fine with the tokens, manually checked via prints
+    # 7/9/21: So childes doesn't need to re-add the tokens, and it works fine with the tokens, manually checked via prints    
     if model_type != 'childes':
         model_dict['kwargs']['tokenizer'].add_tokens(['[chi]','[cgv]'])
 

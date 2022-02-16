@@ -18,7 +18,7 @@ def assemble_scores_no_order(hyperparameter_set):
     # hyperparameter_set: wfst or levdist
     
     this_load_args = load_models.gen_all_model_args()
-    
+
     score_store = []
     
     for split, dataset, tags, context, model_type in this_load_args:
@@ -33,6 +33,8 @@ def assemble_scores_no_order(hyperparameter_set):
             #data_df = pd.read_pickle(this_data_path)
             with open(this_data_path, "rb") as fh:
                 data_df = pickle.load(fh)
+                data_df['dataset'] = dataset
+                data_df['split'] = split
             
             score_store.append(data_df)
                       

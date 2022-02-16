@@ -56,7 +56,7 @@ def load_hyperparameter_folder(split, dataset, tags, context, model_type):
     folder = split_gen.get_split_folder(split, dataset, config.scores_dir)
     this_title = load_models.query_model_title(split, dataset, tags, context, model_type)
     exp_path = join(folder, this_title.replace(' ', '_'))
-    
+
     if not exists(exp_path):
         os.makedirs(exp_path)
     

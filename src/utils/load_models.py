@@ -16,11 +16,17 @@ def gen_finetune_model_args():
         
         this_split, this_dataset_name = model_args 
         
-        for use_tags in [True, False]:
-                
-            for context in config.context_list:
+        
+        if  this_split in ('all','age'):
+            for use_tags in [True, False]:
+                for context in config.context_list:
+                    load_bert_args.append((this_split, this_dataset_name, use_tags, context, 'childes'))
 
+        else:
+            use_tags = False
+            for context in config.context_list:
                 load_bert_args.append((this_split, this_dataset_name, use_tags, context, 'childes'))
+
 
     return load_bert_args 
 

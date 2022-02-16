@@ -128,14 +128,24 @@ if __name__ == '__main__':
     
     label = 'non_child_train'
     
-    all_splits = [('all', 'all'), ('age', 'old'), ('age', 'young')]
+    all_splits = [('all', 'all'), ('age', 'old'), ('age', 'young'), ('switchboard','all')]
     
     for split_args in all_splits:
-        for has_tags in [True, False]:
+
+        # childes datasets should be run with and without tags
+        if split_args[0] in ('all','age'):
+            for has_tags in [True, False]:
+                t_split, t_dataset = split_args
+                tags_str = 'with_tags' if has_tags else 'no_tags'
+                output_directory = os.path.join(config.project_root, f'output/SLURM/scripts_{label}/{tags_str}') 
+                scripts.write_training_shell_script(t_split, t_dataset, has_tags, output_directory, get_isolated_training_commands)
+
+        # other datasets, eg switchboard should be run without tags only
+        else: 
+            has_tags = False
             t_split, t_dataset = split_args
-            tags_str = 'with_tags' if has_tags else 'no_tags'
+            tags_str = 'no_tags'
             output_directory = os.path.join(config.project_root, f'output/SLURM/scripts_{label}/{tags_str}') 
             scripts.write_training_shell_script(t_split, t_dataset, has_tags, output_directory, get_isolated_training_commands)
 
     scripts.gen_submit_script(label, config.childes_model_args, label)
-    

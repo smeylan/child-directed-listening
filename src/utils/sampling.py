@@ -31,6 +31,7 @@ def get_sample_path(data_type, task_name, split_name, dataset_name, eval_phase =
         if not exists(this_data_folder):
             os.makedirs(this_data_folder)
             
+    
     this_data_path = join(this_data_folder, f'{data_type}_utts_{task_name}_{n}{age_str}_{eval_phase}.csv')
     
     return this_data_path
@@ -67,7 +68,9 @@ def sample_successes_yyy(pool, data_type, age, task, split, dataset, eval_phase,
     
     sample = sample_pool_ids(pool, n)
     
+
     this_data_path = get_sample_path(data_type, task, split, dataset, eval_phase, age)
+
 
     print(f"Resampling for: task: {task}, split: {split}, dataset: {dataset}, age: {age}, phase: {eval_phase}")
     sample.to_csv(this_data_path) 

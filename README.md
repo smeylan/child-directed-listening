@@ -1,14 +1,57 @@
 # child-directed-listening
 
-Analyses for "Child Directed Listening".
+Analyses for "Child Directed Listening" project. 
 
-Users are strongly encouraged to install the Python packages in a virtual enviroment and use the virtual environment as a Jupyter kernel.
+# Corresponding Publications and Manuscripts
+Different hashed versions correspond to three separate publications/manuscripts:
 
-Primary analyses are in `Models across time analyses.ipynb`, supported by the functions in `utils/transfomers_bert_completions.py`, which are executed by the files in the repository root that are named `run_*.py`.
+- "How adults understand what young children say," (ms under review) bb6fe1def63110f6dc45608b6489a604ddd3da21
+- "Child-directed Listening: How Caregiver Inference Enables Children's Early Verbal Communication" (CogSci, 2021), https://arxiv.org/abs/2102.03462v2
+778b677629d00f9167df9a493aeaeec9e19492ec
+- "Characterizing Child-Directed Listening with Corpus and Model-based Analyses" (ICIS, 2020)  7fe6d22065bd36f936a53f4e3ba706fa127b0811
 
-# Generating results
+To check out the codebase at the corresponding point in development, try:
 
-Note that this assumes use of a SLURM system for GPU access. Both the local and the remote machine should have Python 3.6. The general organization is shell scripts which call jupyter notebook `nbconvert` to output notebooks where all cells have been run. The notebooks can be inspected, and the scripts generate figures and tables used in the paper.
+```git checkout <hash>```
+
+# Organization
+
+This codebase assumes that you have a local machine and a SLURM cluster with GPU nodes. The code is separated into three stages:
+
+`tier_1`: On your local machine: Download, transform, and prepare data; enforce data splits; create vocabulary; train WFST model for likelihood
+`tier_2`: On a cluster: Train and do inference for all of the models 
+`tier_3`: On your local machine: Run analyses on the model results, appropriate to generate the tables and figures in the paper. 
+
+Tiers 1 and 3 are mostly comprised of Jupyter notebooks; invoking the relevant shell scripts will run `nbconvert` to convert notebooks into outputs where all cells have been run. These notebooks can be inspected amd edited.
+
+Tier 1 ends with a shell script that copies all of the data produced in Tier 1 to your cluster. Tier 3 begins with a shell script that copies all of the trained models and model inferences to your local machine.
+
+You need to set up a Python virtual environment, install dependencies, and then configure the virtual machine as a Jupyter kernel for Tier 1 and Tier 3. For Tier 2, you can either set up a virtual machine (unsupported) or use a Singularity virtual machine image. You must clone the repo onto both yur local machine and on to your cluster.
+
+
+# Environment
+
+Assumes Python 3.8. All requirements should be installed in a virtual enviroment. Make a new environment called `child-directed-listening` with
+
+```virtualenv -p python3.6 child-directed-listening```
+
+Activate it with:
+
+```source child-directed-listening/bin/activate```
+
+And install requirements with: 
+
+```pip3 install -r requirements.txt```
+
+You can then install the virtual environment as a kernel by running the following within the virtual machine.
+
+```pip3 install --user ipykernel ``` 
+```python3 -m ipykernel install --user --name=child-directed-listening```
+
+
+# Using SLURM
+
+Scripts under `tier_2`require a SLURM system with GPU nodes for model training, and relatively high CPU counts for the likelihood (~24 cores). Ideally this SLURM system can also run Singularity virtual machines.  
 
 0. Clone this repository to your local machine and to your SLURM machine. Note the directory on the SLURM machine as this will be `CDL_SLURM_ROOT`
 0. Set the following environment variables on **both** your local machine and on the SLURM machine
@@ -16,7 +59,6 @@ Note that this assumes use of a SLURM system for GPU access. Both the local and 
 export SLURM_USERNAME="*****@******"  
 export CDL_SLURM_USER="smeylan"  
 export CDL_SLURM_ROOT="~/om2/python/child-directed-listening"  
-export CDL_CONFIG_PATH="stephan_configuration.json"  
 export CDL_SINGULARITY_PATH="/om2/user/wongn/vagrant/trans-pytorch-gpu"  
 ```
 Above values are examples. Set them as follows:
@@ -24,58 +66,40 @@ Above values are examples. Set them as follows:
 `SLURM_USERNAME` is username and domain of the SLURM login node.  
 `CDL_SLURM_USER` is the username of the SLURM user  
 `CDL_SLURM_ROOT` is the path on the SLURM machine where all results will reside  
-`CDL_CONFIG_PATH` is the path to the json configuration file (similar to command line arguments)  
 `CDL_SINGULARITY_PATH` is the path to the Singularity image on the SLURM machine (with Transformers, pytorch, etc.)  
+
+`sacct -u smeylan`
  
-2. Set up a virtual environment in the project repo on the local machine and activate it `virtualenv -p python3.6 cdl_env && source cdl_env/bin/activate`. Note that the SLURM machine does not need a vritual environment, as it will be using a Singularity image
-3. Install the Python dependencies on the local machine `pip3 install -r requirements.txt`
-4. Register the virtual environment as a kernel with Jupyter on the local machine: `python -m ipykernel install --user --name=child-listening-env`
-5. From `~/.jupyter/jupyter_nbconvert_config.json` remove the entry `"postprocessor_class": "jupyter_contrib_nbextensions.nbconvert_support.EmbedPostProcessor"` 
-6. On your local machine, run `./tier_1_data_gen.sh`. The end of this script starts an rsync job that copies the generated files to the SLURM machine (into the directory `CDL_SLURM_ROOT`); this may require your password
-8. On your SLURM machine, run `sbatch tier_2a_non_child_train_shelf_scores.sh`. This will generate job scripts and submit jobs to finetune models on non-child specific data and run token scoring for models that don't require finetuning (that is, off-the-shelf BERT models, unigrams).
-After the computations have fully completed (not after the .sh completes submitting the jobs, but after you have confirmed that the program executed completely), run `sbatch tier_2b_finetune_scores_child_train.sh`.
-4. After the computations have fully completed, run `sbatch tier_2c_child_cross.sh`.
-4. Follow the rsync directions in 2c file to rsync the `experiments` folder back to your local machine.
-5. When the relevant notebooks are complete, run `tier_3_analysis.sh`.
-6. Locate your analyses in the following notebooks:
-    a. `Examples for Success and Failure Table.ipynb`
-    b. `Models across time analyses.ipynb`
-    c. `Child evaluations.ipynb`
-    d. `Prevalence analyses.ipynb`
+ Take any failed jobs and search for relevant logs with `find . -name "*<jobID>*"`
+ 
+ For interactive debugging, start an interactive session on your cluster with `srun` (e.g., `srun -p cpl -t 24:00:00 --gres=gpu:1  --cpus-per-task=24 --ntasks=1 --constraint=high-capacity --mem=35G --pty bash`) and run the individual commands one by one.  For Python code, you can force the interpreter to drop you into the debugger on failure by using `python3 -m pdb -c c <script contents>`. Move up the stack with `u` until you see some variables that make sense.
 
-Note that all commands do not necessarily have a flexible OpenMind (SLURM) user specified.
+To confirm that resource usage is appropriate, run `nvidia-smi` for GPU usage and `htop` for CPU usage
+
+# Running the Code
+
+Once you have your environment configured on your local machine, run `./tier_1_data_gen.sh`. The end of this script starts an rsync job that copies the generated files to the SLURM machine (into the directory `CDL_SLURM_ROOT`); this may require your password.
+
+To kick off tier_2, from your SLURM login node, run `sbatch tier_2a_non_child_train_shelf_scores.sh`. This will generate job scripts and submit jobs to finetune models on CHILDES and Switchboard data,  and run token scoring for models that don't require finetuning (that is, off-the-shelf BERT models, unigrams).
+After the computations have fully completed (not after the .sh completes submitting the jobs, but after you have confirmed that the program executed completely), run `sbatch tier_2b_finetune_scores_child_train.sh`, which runs inference with the models newly trained in 2a, and trains child-specific models.
+`sbatch tier_2c_child_cross` runs infrence on the the child-specific models trained in 2b. 
+
+Tier 3 is back on your local machine. This scripts starts by using rsync to copy the `output` folder back to your local machine. Tier 3b and 3c include analysis scripts.
 
 
-# Retrieving completions from BERT
+# Core code
 
-Most functions that support scoring computations can be found in `utils/transformers_bert_completions.py`.
-
-Note that running these functions via the scripts requires rsyncs as described in the .sh files.
+The key code for extracting probability distributions for the prior can be found in `src/utils/transformers_bert_completions.py`; likelihoods are retrieved in `src/utils/likelihoods`.
 
 Below is an overview of how the token scores are generated:
 ![function relationships in transformers retrieval code](figures_info/codebase_diagram.jpg)
 
 The top-level functions and function calls are in the following files:
 
-- `run_models_across_time.py` computes scores of tokens from samples that have been drawn across time. It will eventually call `success_and_failures_across_time_per_model`. This function retrieves prior probabilities from BERT models and unigram models as matrices, computes an edit-distance based likelihood (also a matrix), and does element-wise multiplication and row normalization to get the posteriors.
+- `run_beta_search.py` does parameter search for the two likelihoods. It calls ``optimize_beta``, which calls ``sample_across_models``. This computes the optimal beta and lambda values within specified search spaces, given a sample of communicative successes. 
 
-- `run_beta_search.py` will call ``optimize_beta``, which calls ``sample_across_models``. The latter is similar to ``successes_and_failures_across_time_per_model``, above. However, it computes the optimal beta within a search space of beta values, given a sample of communicative successes, which are not drawn from across time. It computes the likelihood values (where higher beta assigns lower probabilities to words at a higher edit distance).
+- Once the parameter search is over, `run_models_across_time.py` computes scores of tokens from samples that have been drawn across time. It will eventually call `success_and_failures_across_time_per_model`. This function retrieves prior probabilities from BERT models and unigram models as matrices, computes an edit-distance based likelihood (also a matrix), and does element-wise multiplication and row normalization to get the posteriors. It pulls the best hyperparameter value found by `run_beta_search.py`
 
 - `run_child_cross.py` will call ``score_cross_prior``, which will calculate the scores per token similar to the across time and beta functions described above. However, it will do so by loading a model finetuned on a certain child, and data associated with another child (possibly, but not necessarily, different children).
 
-# Example commands
-
-For training (non-child):
-
-`python3 run_mlm.py --train_file /net/vast-storage/scratch/vast/cpl/wongn/child_split/child-directed-listening/finetune/age/old/train_no_tags.txt --validation_file /net/vast-storage/scratch/vast/cpl/wongn/child_split/child-directed-listening/finetune/age/old/val_no_tags.txt --cache_dir ~/.cache/$SLURM_JOB_ID --output_dir /net/vast-storage/scratch/vast/cpl/wongn/child_split/child-directed-listening/experiments/no_versioning/models/age/old/no_tags --do_eval  --do_train  --eval_steps 1 --evaluation_strategy steps --learning_rate 5e-05 --load_best_model_at_end  --logging_steps 1 --logging_strategy steps --metric_for_best_model eval_loss --model_name_or_path bert-base-uncased --num_train_epochs 3 --overwrite_output_dir  --per_device_eval_batch_size 8 --per_device_train_batch_size 8 --save_steps 1 --save_strategy steps --save_total_limit 1 --max_train_samples 10 --max_eval_samples 10`
-
-For BERT model scoring:
-`python3 run_models_across_time.py --split age --dataset old --context_width 0 --use_tags False --model_type childes`
-
-For unigram scoring:
-`python3 run_beta_search.py --split all --dataset all --context_width 0 --use_tags False --model_type flat_unigram`
-`python3 run_models_across_time.py --split all --dataset all --context_width 0 --use_tags False --model_type flat_unigram`
-
-For child scoring:
-`python3 run_child_cross.py --data_child Alex --prior_child Alex`
 

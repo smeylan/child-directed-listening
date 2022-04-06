@@ -12,7 +12,7 @@ sys.path.append('src/.')
 from src.utils import load_splits, load_models, split_gen, parsers, hyperparameter_utils, sample_across_models, child_models, configuration
 config = configuration.Config()
 
-def optimize_beta_and_lambda(split_name, dataset_name, model_dict, model_type):
+def optimize_beta_and_lambda(split_name, dataset_name, model_dict, model_type, training_dataset_name, training_split_name):
     '''
         Find the values of beta and lambda which minimize posterior surprisal; save this information in a place that run_models_across_time can load
 
@@ -33,25 +33,25 @@ def optimize_beta_and_lambda(split_name, dataset_name, model_dict, model_type):
     
     initial_vocab, cmu_in_initial_vocab, cmu_indices_for_initial_vocab  = load_models.get_initial_vocab_info()
     
-    this_exp_path = hyperparameter_utils.load_hyperparameter_folder(split_name, dataset_name, model_dict['kwargs']['use_speaker_labels'], model_dict['kwargs']['context_width_in_utts'], model_type)
+    # this needs to be distunguished betweeen a test and a training dataset
+    this_exp_path = hyperparameter_utils.load_hyperparameter_folder(training_split_name, dataset_name, model_dict['kwargs']['use_speaker_labels'], model_dict['kwargs']['context_width_in_utts'], model_type, training_dataset_name)
     
+    import pdb
+    pdb.set_trace()
     if not exists(this_exp_path):
         os.makedirs(this_exp_path)
     
+    # use the split_name, not the training_split_name to determine the test set
     success_utts_sample = load_splits.load_sample_successes(split_name, dataset_name).utterance_id
         
     # Don't use failures for beta search
-    this_raw_beta_lambda_results = sample_across_models.sample_across_models(success_utts_sample,
-                                                                      [], 
-                                                                      model_dict,
-                                                                      beta_sample, lambda_sample)
+    this_raw_beta_lambda_results = sample_across_models.sample_across_models(success_utts_sample, [], model_dict, beta_sample, lambda_sample)
     
     this_raw_beta_results = this_raw_beta_lambda_results.loc[this_raw_beta_lambda_results.likelihood_type == 'levdist']
     this_raw_lambda_results = this_raw_beta_lambda_results.loc[this_raw_beta_lambda_results.likelihood_type == 'wfst']
 
     # Log the beta results
-    this_beta_results_surp = this_raw_beta_lambda_results.loc[this_raw_beta_lambda_results.likelihood_type == 'levdist'].groupby(['beta_value']).posterior_probability.agg(lambda x: np.mean(-1 * np.log(x))
-).reset_index()
+    this_beta_results_surp = this_raw_beta_lambda_results.loc[this_raw_beta_lambda_results.likelihood_type == 'levdist'].groupby(['beta_value']).posterior_probability.agg(lambda x: np.mean(-1 * np.log(x))).reset_index()
     this_beta_results_surp = this_beta_results_surp.rename(columns = {'posterior_probability' : 'posterior_surprisal'})
     beta_results_path = join(this_exp_path, f'beta_search_results_{config.n_beta}.csv')
     this_beta_results_surp.to_csv(beta_results_path)
@@ -110,10 +110,18 @@ if __name__ == '__main__':
     raw_args = parser.parse_known_args()[0]    
     this_model_args = vars(raw_args)
     
+    # If training_dataset or training_split is defined, use its value to determine the model to load. Otherwise assume that `dataset` and `split` are overloaded and that the value should be used in order to choose both the dataet to test against and the model to load
+
+    if not this_model_args['training_dataset']:
+        this_model_args['training_dataset'] = this_model_args['dataset']
+
+    if not this_model_args['training_split']:
+        this_model_args['training_split'] = this_model_args['split']
+
     query_model_str = load_models.get_model_id(
-        split_name = this_model_args['split'],
-        dataset_name = this_model_args['dataset'],
-        with_tags =  this_model_args['use_tags'],
+        split_name = this_model_args['training_split'],
+        dataset_name = this_model_args['training_dataset'],
+        use_tags =  this_model_args['use_tags'],
         context_width = this_model_args['context_width'],
         model_type = this_model_args['model_type']
     )
@@ -121,21 +129,16 @@ if __name__ == '__main__':
     print(this_model_args)
    
     if this_model_args['split'] != 'child':
-        this_model_dict = load_models.get_model_dict(
-            this_model_args['split'],
-            this_model_args['dataset'],
-            this_model_args['use_tags'],
-            this_model_args['context_width'],
-            this_model_args['model_type'],
-        )
+        this_model_dict = load_models.get_model_dict(this_model_args['training_split'], this_model_args['training_dataset'], this_model_args['use_tags'],this_model_args['context_width'],this_model_args['model_type'],)
     else:
         
-        this_model_dict = child_models.get_child_model_dict(this_model_args['dataset'])
+        this_model_dict = child_models.get_child_model_dict(this_model_args)
         
         assert this_model_dict['kwargs']['use_speaker_labels'] == this_model_args['use_tags']
         assert this_model_dict['kwargs']['context_width_in_utts'] == this_model_args['context_width']
-        
-    hyperparameter_args = (this_model_args['split'], this_model_args['dataset'], this_model_dict, this_model_args['model_type'])
+
+    # second argument is the test dataset; if the training dataset has been altered, it's in the model_dict that gets passed
+    hyperparameter_args = (this_model_args['split'], this_model_args['dataset'], this_model_dict, this_model_args['model_type'], this_model_args['training_dataset'], this_model_args['training_split'])
     raw_beta_results, beta_results, raw_lambda_results, lambda_results = optimize_beta_and_lambda(*hyperparameter_args)
 
     print(f'Computations complete for: {query_model_str}')

@@ -36,7 +36,7 @@ def get_optimal_hyperparameter_value_with_dict(split, dataset, model_dict, model
     return get_optimal_hyperparameter_value(split, dataset, model_dict['kwargs']['use_speaker_labels'], model_dict['kwargs']['context_width_in_utts'], model_type, hyperparameter)
     
 
-def load_hyperparameter_folder(split, dataset, tags, context, model_type):
+def load_hyperparameter_folder(split, dataset, tags, context, model_type, training_dataset):
 
     '''
     Load hyperparameter results (both lambda and beta) of run_beta_search.py for a single model
@@ -52,18 +52,21 @@ def load_hyperparameter_folder(split, dataset, tags, context, model_type):
     The path to the hyperparameter folder
 
     '''     
+    if training_dataset is not None:
+        folder = split_gen.get_split_folder(split, dataset, config.scores_dir)
+    else:
+        folder = split_gen.get_split_folder(split, dataset, config.scores_dir, training_dataset)
+    
+    this_title = load_models.query_model_title(split, dataset, tags, context, model_type, training_dataset)
 
-    folder = split_gen.get_split_folder(split, dataset, config.scores_dir)
-    this_title = load_models.query_model_title(split, dataset, tags, context, model_type)
     exp_path = join(folder, this_title.replace(' ', '_'))
-
     if not exists(exp_path):
         os.makedirs(exp_path)
     
     return exp_path    
 
     
-def get_optimal_hyperparameter_value(split, dataset, tags, context, model_type, hyperparameter):
+def get_optimal_hyperparameter_value(split, dataset, tags, context, model_type, hyperparameter, training_dataset=None):
 
     '''
     Get the best hyperparameter value from the results of run_beta_search.py
@@ -80,8 +83,9 @@ def get_optimal_hyperparameter_value(split, dataset, tags, context, model_type, 
     The best-scoring hyperparameter value 
 
     '''     
+    exp_model_path = load_hyperparameter_folder(split, dataset, tags, context, model_type, training_dataset)
 
-    exp_model_path = load_hyperparameter_folder(split, dataset, tags, context, model_type)
+
     
     if hyperparameter == 'beta':     
         n_hyperparameter = config.n_beta    

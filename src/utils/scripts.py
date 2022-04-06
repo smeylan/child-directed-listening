@@ -13,8 +13,9 @@ def get_slurm_folder(split, dataset, task):
         'non_child_train_search' : config.model_dir, # Non-child train
         'non_child_beta_time' : config.scores_dir, # Non-child beta + time scoring
         
-        'child_train' : config.scores_dir, # Child train + beta search
-        'child_cross' : config.scores_dir, # Child scoring
+        'child_train' : config.scores_dir, # Child train 
+        'child_fit' : config.scores_dir, # Child beta and lambda fitting
+        'child_eval' : config.scores_dir, # Child scoring
     }
     
     assert task in base_paths.keys()
@@ -26,7 +27,8 @@ def get_slurm_folders_by_args(args, task):
     all_paths = []
     
     for this_args in args:
-        this_split, this_dataset = this_args
+        this_split = this_args['split_name']
+        this_dataset = this_args['dataset_name']
         this_path = get_slurm_folder(this_split, this_dataset, task)
         all_paths.append(this_path)
     
@@ -83,10 +85,15 @@ def write_training_shell_script(split, dataset, is_tags, dir_name, get_command_f
         f.writelines(get_command_func(split, dataset, is_tags, om2_user = om2_user))
         
 
-def get_script_name(split, dataset, is_tags):
+def get_script_name(split, dataset, is_tags, training_dataset=None, model_type=None):
     
     this_tags_str = 'with_tags' if is_tags else 'no_tags'
-    return f'run_model_{split}_{dataset}_{this_tags_str}.sh'
+    if training_dataset is None:        
+        return f'run_model_{split}_{dataset}_{this_tags_str}.sh'
+    else:
+        if model_type is None:
+            raise ValueError ('model_type must be specified if training_dataset is shared')
+        return f'run_model_{model_type}_{split}_{dataset}_{training_dataset}_{this_tags_str}.sh'
 
     
 # For the command text

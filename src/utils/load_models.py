@@ -66,7 +66,7 @@ def gen_all_model_args():
     return gen_adult_model_args() + gen_finetune_model_args() + gen_unigram_args()
      
     
-def gen_model_title(split, dataset, is_tags, context_num, model_type):
+def gen_model_title(split, dataset, is_tags, context_num, model_type, training_dataset=None):
     
     model_type_dict = {
         'childes' : 'CHILDES BERT',
@@ -85,16 +85,18 @@ def gen_model_title(split, dataset, is_tags, context_num, model_type):
         'young' : 'younger children',
         'old' : 'older children'
     }
+    dataset_dict.update({ k : k for k in child_models.get_child_names()})
     
-    if split == 'child':
-        dataset_dict.update({ k : k for k in child_models.get_child_names()})
 
     speaker_tags_dict = {
         True : 'with tags',
         False :  'without tags',
     }
     
-    model_title = f'{model_type_dict[model_type]} {speaker_tags_dict[is_tags]}, {dataset_dict[dataset]}, {context_dict[context_num]}'
+    if training_dataset is None:
+        model_title = f'{model_type_dict[model_type]} {speaker_tags_dict[is_tags]}, {dataset_dict[dataset]}, {context_dict[context_num]}'
+    else:
+        model_title = f'{model_type_dict[model_type]} {speaker_tags_dict[is_tags]}, {dataset_dict[dataset]}, {dataset_dict[training_dataset]}, {context_dict[context_num]}'
     
     return model_title
     
@@ -111,16 +113,16 @@ def get_tag_context_str(tags, context):
     return tag_rep, context_rep
     
 
-def get_model_id(split_name, dataset_name, with_tags, context_width, model_type):
+def get_model_id(split_name, dataset_name, use_tags, context_width, model_type):
     
-    tag_str, context_str = get_tag_context_str(with_tags, context_width)
+    tag_str, context_str = get_tag_context_str(use_tags, context_width)
     model_id = '/'.join([split_name, dataset_name, tag_str, context_str, model_type])
     
     return model_id
 
 
-def query_model_title(split, dataset, is_tags, context_num, model_type):
-    return gen_model_title(split, dataset, is_tags, context_num, model_type)
+def query_model_title(split, dataset, is_tags, context_num, model_type, training_dataset):
+    return gen_model_title(split, dataset, is_tags, context_num, model_type, training_dataset)
     
     
 def get_vocab_tok_modules():
@@ -234,6 +236,8 @@ def get_model_dict(split, dataset, with_tags, context, model_type):
     
     if model_type == 'childes': 
         model_dict = get_finetune_dict(split, dataset, with_tags, context)
+    if model_type == 'switchboard': 
+        model_dict = get_finetune_dict(split, dataset, with_tags, context)
     elif model_type == 'adult':
         model_dict = get_shelf_dict(split, dataset, with_tags, context)
     elif model_type == 'data_unigram': 
@@ -241,8 +245,6 @@ def get_model_dict(split, dataset, with_tags, context, model_type):
     elif model_type == 'flat_unigram':
         model_dict = get_flat_unigram_dict(split, dataset, with_tags, context)
     
-    import pdb
-    pdb.set_trace()
     # Update the tokenizers if needed.
     
     # 7/9/21: So childes doesn't need to re-add the tokens, and it works fine with the tokens, manually checked via prints    

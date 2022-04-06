@@ -148,7 +148,7 @@ def get_cross_augmented_scores(data_child, prior_child):
 
     '''
     
-    score_path = utils_child.get_cross_path(data_child, prior_child)
+    score_path = utils_child.get_cross_path(data_child, prior_child, model_type)
     try:
         raw_scores = pd.read_pickle(score_path)
     except:
@@ -190,7 +190,7 @@ def load_all_scores():
     return all_scores
     
     
-def process_score_results(data_child, prior_child, which_key, likelihood_type, is_mean = True):
+def process_score_results(data_child, prior_child, model_type, which_key, likelihood_type, is_mean = True):
 
     '''
         Compute a mean or standard deviation over a column (eg prior or posterior probability) for a particular combination of child prior and child data
@@ -208,7 +208,7 @@ def process_score_results(data_child, prior_child, which_key, likelihood_type, i
     
     assert which_key in {'posterior_probability', 'prior_probability'}
     
-    score_path = utils_child.get_cross_path(data_child, prior_child)
+    score_path = utils_child.get_cross_path(data_child, prior_child, model_type)
 
     try:
         scores = pd.read_pickle(score_path)
@@ -248,9 +248,9 @@ def organize_scores(is_mean, which_key, likelihood_type):
 
     results = defaultdict(list)
 
-    name_list = child_models.get_child_names()
+    name_list = child_models.get_child_names() 
     for data_name in name_list:
-        results[data_name] = [process_score_results(data_name, prior_name, which_key, likelihood_type,  is_mean = is_mean) for prior_name in name_list]
+        results[data_name] = [process_score_results(data_name, prior_name, model_type, which_key, likelihood_type,  is_mean = is_mean) for prior_name in name_list]
     
     results['Prior child name'] = name_list
     

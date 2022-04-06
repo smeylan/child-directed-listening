@@ -12,15 +12,15 @@ from src.utils import split_gen, scripts, configuration, child_models
 config = configuration.Config()
 
     
-def gen_child_commands(name, is_tags):
+def gen_child_training_commands(model_child, data_child, is_tags):
     
-    your_model_path = split_gen.get_split_folder('child', name, config.model_dir)
+    your_model_path = split_gen.get_split_folder('child', model_child, config.model_dir)
     
     # ---------- begin new code
     
     # Generate the appropriate header and the slurm folder
     
-    slurm_folder = scripts.get_slurm_folder('child', name, 'child_train')
+    slurm_folder = scripts.get_slurm_folder('child', model_child, 'child_train')
     
     mem_alloc_gb, time_alloc_hrs,  n_tasks, cpus_per_task = gen_training_scripts.get_training_alloc('child')
     
@@ -30,24 +30,24 @@ def gen_child_commands(name, is_tags):
         slurm_folder = slurm_folder,
         slurm_name = f'training_beta_tags={is_tags}', 
         two_gpus = False)
+    commands = header_commands
+
+
+    this_model_dir = '/'.join(gen_training_scripts.models_get_split_folder('child', model_child, is_tags).split('/')[:-1])
     
-    this_model_dir = '/'.join(gen_training_scripts.models_get_split_folder('child', name, is_tags).split('/')[:-1])
-    
-    # Construct the python/training-related commands
-    
-    run_commands = gen_training_scripts.get_non_header_commands('child', name, is_tags)[:-1] 
-    
-    ## Edit the last command to append the beta search.
+
     sing_header = scripts.gen_singularity_header()
     
-    run_commands[-1] = run_commands[-1] + f"; {sing_header} {gen_sample_scripts.get_one_python_command('src/run/run_beta_search.py', 'child', name, is_tags, 0, 'childes')[1]}\n"
-
+    commands += [f"rm -r {this_model_dir}\n"]  # clear the directory to train new stuff     
+        
+    
+    # Construct the python/training-related commands
+    run_commands = gen_training_scripts.get_non_header_commands('child', model_child, is_tags)[:-1]
+        
     # Put the copy commands between the header and the actual python runs.
+    commands += run_commands
     
-    commands = header_commands + [f"rm -r {this_model_dir}\n"] + run_commands
-    
-    filename = scripts.get_script_name('child', name, is_tags)
-
+    filename = scripts.get_script_name('child', model_child, is_tags, data_child)
 
     return filename, commands
 
@@ -67,13 +67,12 @@ if __name__ == '__main__':
     if not exists(sh_train_loc):
         os.makedirs(sh_train_loc)
 
-    for child in child_names:
-    
+    for model_child in child_names:
+        data_child =  model_child
         # Generate appropriate scripts for model_training
-        
-        train_file, train_commands = gen_child_commands(child, is_tags)
-        
+    
+        train_file, train_commands = gen_child_training_commands(model_child, data_child, is_tags)
+    
         with open(join(sh_train_loc, train_file), 'w') as f:
             f.writelines(train_commands)
-   
-    
+

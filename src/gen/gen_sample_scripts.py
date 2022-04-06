@@ -9,15 +9,38 @@ sys.path.append('src/.')
 from src.utils import configuration, parsers, load_models, scripts
 config = configuration.Config()
 
-def get_one_python_command(task_file, split, dataset, use_tags, context_width, model_type):
+# def get_one_python_command(task_file, split, dataset, use_tags, context_width, model_type, training_dataset=None):
+    
+#     model_id = load_models.get_model_id(
+#         split, dataset, use_tags, context_width, model_type
+#     ).replace('/', '_')
+    
+#     if training_dataset is None:
+#         command = f"python3 {task_file} --split {split} --dataset {dataset} --context_width {context_width} --use_tags {use_tags} --model_type {model_type}"
+
+#     else: 
+#         command = f"python3 {task_file} --split {split} --dataset {dataset} --training_dataset {training_dataset} --context_width {context_width} --use_tags {use_tags} --model_type {model_type}"
+
+#     return model_id, command
+
+
+# singularity exec --nv -B /om,/om2/user/smeylan /om2/user/smeylan/vagrant/ubuntu20.simg  python3 -m pdb -c c src/run/run_beta_search.py --split child --training_split all --dataset Alex --training_dataset all --context_width 20 --use_tags True --model_type childes
+
+def get_one_python_command(task_file, split, dataset, use_tags, context_width, model_type, training_dataset=None, training_split=None):
     
     model_id = load_models.get_model_id(
         split, dataset, use_tags, context_width, model_type
     ).replace('/', '_')
     
-    command = f"python3 {task_file} --split {split} --dataset {dataset} --context_width {context_width} --use_tags {use_tags} --model_type {model_type}"
+    if training_dataset is None:
+        command = f"python3 {task_file} --split {split} --dataset {dataset} --context_width {context_width} --use_tags {use_tags} --model_type {model_type}"
 
-    return model_id, command
+    else: 
+        if training_split is None:
+            raise ValueError('Training split must be specified if training_dataset is specified')
+        command = f"python3 {task_file} --split {split} --training_split {training_split} --dataset {dataset} --training_dataset {training_dataset} --context_width {context_width} --use_tags {use_tags} --model_type {model_type}"
+
+    return model_id, command    
 
 
 def time_and_mem_alloc():

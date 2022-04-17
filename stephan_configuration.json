@@ -10,7 +10,7 @@
     "subsamples" : [2, 1000, 5000],
     "val_ratio" : ".2",
     "child_val_eval_num" : 3,
-    "childes_model_args" : [["all", "all"], ["age", "young"],["age", "old"]],
+    "childes_model_args" : [["all", "all"], ["age", "young"],["age", "old"], ["switchboard", "all"]],
     "regenerate" : 1,
     "dev_mode" : 0,
     "subsample_mode" : 1,

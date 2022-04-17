@@ -34,18 +34,18 @@ def load_success_utts(child_name = None, display_all = False):
     return load_success_yyy_utts('success', child_name, display_all)
 
 
-def load_yyy_utts(child_name = None, display_all = False):
+def load_yyy_utts(child_name = None, display_all = False): 
     return load_success_yyy_utts('yyy', child_name, display_all)
 
     
-def get_cross_path(data_child_name, prior_child_name):
+def get_cross_path(data_child_name, prior_child_name, model_type):
     
     this_folder = join(config.scores_dir, 'child_cross')
     
     if not exists(this_folder):
         os.makedirs(this_folder)
     
-    this_path = join(this_folder, f'data_{data_child_name}_prior_{prior_child_name}.pkl')
+    this_path = join(this_folder, f'data_{data_child_name}_prior_{prior_child_name}_model_{model_type}.pkl')
     return this_path
     
 def score_cross_prior(data_child, prior_child, likelihood_type):

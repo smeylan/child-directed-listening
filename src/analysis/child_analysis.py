@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import pickle5 as pickle
 
 from src.utils import utils_child, child_models
-
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
 def organize_auc_scores_as_grid(auc_df):
@@ -40,7 +40,7 @@ def organize_auc_scores_as_grid(auc_df):
     return score_arr
     
     
-def get_success_scores(is_mean, which_key, likelihood_type):
+def get_success_scores(is_mean, which_key, likelihood_type, vmin, vmax, cmap):
 
     '''
         Top level function for comparing prior scores across 
@@ -56,15 +56,16 @@ def get_success_scores(is_mean, which_key, likelihood_type):
     
     stat_type = 'Average' if is_mean else 'Standard Deviation'
     metric_type = f'{"Prior Surprisal" if "prior" in which_key else "Posterior Surprisal"}'
+    threshold = 5 if "prior" in which_key else 1.2
     
-    this_score_df, this_score_arr = organize_scores(is_mean = is_mean, which_key = which_key, likelihood_type = likelihood_type)
-    this_title = f'{stat_type} {metric_type}'
+    this_score_df, this_score_arr, test_dataset_name_list, training_dataset_name_list = organize_scores(is_mean = is_mean, which_key = which_key, likelihood_type = likelihood_type)
+    this_title = f'{stat_type} {metric_type}' 
     
-    this_figure = get_heatmap(this_title, this_score_arr)
+    this_figure = get_heatmap(this_title, this_score_arr, test_dataset_name_list, training_dataset_name_list, threshold, vmin, vmax, cmap)
     
     return this_figure
     
-def get_heatmap(title, score_arr):
+def get_heatmap(title, score_arr, test_dataset_name_list, training_dataset_name_list, threshold, vmin, vmax, cmap):
 
     '''
         Plot a heatmap using the k*k matrix of scores when applying each child-specific prior to the test set of each child in the datset
@@ -78,11 +79,15 @@ def get_heatmap(title, score_arr):
 
     '''
 
+    training_dataset_name_list[-2] = 'CHILDES'
+    training_dataset_name_list[-1] = 'Switchboard'
+
+
     figure = plt.figure()
     
-    display_words = child_models.get_child_names()
-    
-    num_x_ticks = len(display_words)
+    num_y_ticks = len(test_dataset_name_list)
+    num_x_ticks = len(training_dataset_name_list)
+
 
     # For text annotations and color bar
     # 6/2 : https://www.pythonprogramming.in/heatmap-with-intermediate-color-text-annotations.html
@@ -90,9 +95,15 @@ def get_heatmap(title, score_arr):
     fig, ax = plt.subplots(figsize=(15, 15))
 
     plt.title(title)
-
-    im = ax.imshow(score_arr, cmap = "YlGnBu")
-    fig.colorbar(im)
+    if vmin is not None or vmax is not None:
+        im = ax.imshow(score_arr, vmin=vmin, vmax=vmax, cmap = "YlGnBu")
+    else:
+        im = ax.imshow(score_arr, cmap = cmap)    
+    
+    divider = make_axes_locatable(ax)
+    cax = divider.new_vertical(size='5%', pad=2.5, pack_start = True)    
+    plt.colorbar(im, fraction=0.046, pad=0.04, shrink=.75, cax=cax, orientation = 'horizontal')
+    plt.axvline(x=5.5, color='black', linestyle='--')
 
     textcolors = ["k", "w"] 
 
@@ -101,19 +112,19 @@ def get_heatmap(title, score_arr):
     #6/2 xtick text: https://www.mathworks.com/help/matlab/creating_plots/change-tick-marks-and-tick-labels-of-graph-1.html
 
     plt.ylabel('Test Data From Child')
-    plt.xlabel('Prior Fine-Tuned On Data From Child')
-    
-    plt.xticks(range(num_x_ticks), display_words, rotation = 45)
-    plt.yticks(range(num_x_ticks), display_words)
-    
-    threshold = 6
+    plt.xlabel('Prior Fine-Tuned On Data From Child/Dataset')
 
-    for i in range(len(display_words)):
-        for j in range(len(display_words)):
+    plt.xticks(range(num_x_ticks), training_dataset_name_list, rotation = 45)
+    plt.yticks(range(num_y_ticks), test_dataset_name_list)
+
+    for i in range(len(test_dataset_name_list)):
+        for j in range(len(training_dataset_name_list)):
             this_val = round(score_arr[i][j].item(), 3)
             ax.text(j, i, this_val, ha="center", va="center", color=textcolors[this_val > threshold])
 
     # End taken code
+    fig.add_axes(cax)
+
 
     return figure
 
@@ -134,7 +145,7 @@ def get_cross_type(data_child, prior_child):
     return f'data-{data_child}+prior_child-{prior_child}'
 
 
-def get_cross_augmented_scores(data_child, prior_child):
+def get_cross_augmented_scores(data_child, prior_child, model_type):
 
     '''
         Load individual score from using a specific child's fine-tuned prior on the data associated with another child
@@ -182,7 +193,7 @@ def load_all_scores():
     name_list = child_models.get_child_names()
     all_scores = pd.concat(
         [
-            get_cross_augmented_scores(data_child, prior_child)
+            get_cross_augmented_scores(data_child, prior_child, model_type)
             for data_child in name_list
             for prior_child in name_list
         ]
@@ -248,14 +259,25 @@ def organize_scores(is_mean, which_key, likelihood_type):
 
     results = defaultdict(list)
 
-    name_list = child_models.get_child_names() 
-    for data_name in name_list:
-        results[data_name] = [process_score_results(data_name, prior_name, model_type, which_key, likelihood_type,  is_mean = is_mean) for prior_name in name_list]
+    # name_list = child_models.get_child_names() 
+    # models = ['childes' for x in range(len(child_models.get_child_names()))] + ['childes','switchboard']    
+
+    # for data_name in name_list:
+    #     results[data_name] = [process_score_results(data_name, name_list[i], models[i], which_key, likelihood_type,  is_mean = is_mean) for i in range(len(name_list))]
+
+
+    test_dataset_name_list = child_models.get_child_names()
+    training_dataset_name_list = test_dataset_name_list + ['all', 'all'] 
+    model_type_list = ['childes' for x in range(len(child_models.get_child_names()))] + ['childes','switchboard']    
+
+    for test_dataset_name in test_dataset_name_list:
+        results[test_dataset_name] = [process_score_results(test_dataset_name, training_dataset_name_list[i], model_type_list[i], which_key, likelihood_type,  is_mean = is_mean) for i in range(len(training_dataset_name_list))]
+
     
-    results['Prior child name'] = name_list
+    results['Prior child name'] = training_dataset_name_list
     
-    scores_arr = np.stack([np.array(results[name]) for name in name_list], axis = 0) 
+    scores_arr = np.stack([np.array(results[name]) for name in test_dataset_name_list], axis = 0) 
     
     results_df = pd.DataFrame.from_records(results)
     
-    return results_df, scores_arr
+    return results_df, scores_arr, test_dataset_name_list, training_dataset_name_list

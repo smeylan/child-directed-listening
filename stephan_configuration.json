@@ -10,7 +10,39 @@
     "subsamples" : [2, 1000, 5000],
     "val_ratio" : ".2",
     "child_val_eval_num" : 3,
-    "childes_model_args" : [["all", "all"], ["age", "young"],["age", "old"], ["switchboard", "all"]],
+    "finetune_model_args" : [        
+        
+        {"training_split":"Providence",
+         "training_dataset":"all",
+        "model_type":"BERT"}, 
+        
+        {"training_split":"Providence-Age",
+         "training_dataset":"young",
+        "model_type":"BERT"},
+
+        {"training_split":"Providence-Age",
+         "training_dataset":"old",
+        "model_type":"BERT"}, 
+
+        {"training_split":"Switchboard",
+         "training_dataset":"all",
+        "model_type":"BERT"}, 
+        
+        {"training_split":"Providence",
+         "training_dataset":"all",
+        "model_type":"fit_unigram"}], 
+
+    "shelf_model_args": [       
+
+        {"training_split":"adult-written",
+         "training_dataset":"all",
+        "model_type":"BERT"}, 
+        
+        {"training_split": "",
+         "training_dataset": "",
+        "model_type":"uniform"}
+
+        ], 
     "regenerate" : 1,
     "dev_mode" : 0,
     "subsample_mode" : 1,
@@ -34,7 +66,8 @@
     "fail_on_lambda_edge" : 1,
     "fst_path":"output/fst/chi-1.txt",
     "fst_sym_path":"output/fst/chi_phones.sym",
-    "fst_cache_path":"output/unigram_fst_cache"
+    "fst_cache_path":"output/unigram_fst_cache",
+    "slurm_log_dir": "output/logs"
 }
 
 

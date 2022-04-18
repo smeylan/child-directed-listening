@@ -7,23 +7,28 @@ from src.utils import split_gen, configuration
 config = configuration.Config()
 
 def get_slurm_folder(split, dataset, task):
+
+    raise ValueError('Deprecated')
     
     base_paths = {
         'non_child_train' : config.model_dir, # Non-child train
-        'non_child_train_search' : config.model_dir, # Non-child train
-        'non_child_beta_time' : config.scores_dir, # Non-child beta + time scoring
+        'non_child_fit_finetune' : config.model_dir, # Non-child train
+        'non_child_fit_shelf' : config.model_dir,
+        'non_child_eval' : config.scores_dir, # Non-child beta + time scoring
         
         'child_train' : config.scores_dir, # Child train 
         'child_fit' : config.scores_dir, # Child beta and lambda fitting
         'child_eval' : config.scores_dir, # Child scoring
     }
-    
     assert task in base_paths.keys()
     return split_gen.get_split_folder(split, dataset, base_paths[task])
     
     
 def get_slurm_folders_by_args(args, task):
     
+    raise ValueError('Deprecated')
+
+
     all_paths = []
     
     for this_args in args:
@@ -34,19 +39,12 @@ def get_slurm_folders_by_args(args, task):
     
     return sorted(list(set(all_paths)))
     
-def gen_submit_script(dir_name, arg_set, task):
+def gen_submit_script(task_name, task_phase):
     
     text = ['#!/bin/bash -e']
-    
-    mkdir_which = get_slurm_folders_by_args(arg_set, task)
-    mkdir_commands = [f"mkdir -p {p}" for p in mkdir_which]
-    
-    text.extend(mkdir_commands)
-    
-    base_dir = f'./output/SLURM/scripts_{dir_name}'
-    base_add = '/*' if len(glob.glob(base_dir+'/*')) == 2 else ''
-    
-    text.append(f'FILES="{base_dir}/*{base_add}"')
+        
+    base_dir = f'./output/SLURM/{task_name}_{task_phase}'
+    text.append(f'FILES="{base_dir}/*"')
     text.append('for f in $FILES')
     text.append('do')
     text.append('\techo "Processing $f file..."')
@@ -55,45 +53,41 @@ def gen_submit_script(dir_name, arg_set, task):
     text.append('done')
     
     
-    sh_path = 'output/SLURM/submission_scripts/submit_'+dir_name.replace('/', '_')+'.sh' 
+    submit_sh_path = f'output/SLURM/submission_scripts/submit_{task_name}_{task_phase}.sh' 
     
     # make sure that the path exists
-    sh_dir = os.path.dirname(sh_path)
-    if not os.path.exists(sh_dir):
-        os.makedirs(sh_dir)
+    submit_sh_dir = os.path.dirname(submit_sh_path)
+    if not os.path.exists(submit_sh_dir):
+        os.makedirs(submit_sh_dir)
 
     
     give_space = lambda s : f"{s}\n"
     text = list(map(give_space, text))
     
-    with open(sh_path, 'w') as f:
+    with open(submit_sh_path, 'w') as f:
         f.writelines(text)
     
-    subprocess.call(f'chmod u+x {sh_path}', shell = True)
+    subprocess.call(f'chmod u+x {submit_sh_path}', shell = True)
     
     return text
     
     
-def write_training_shell_script(split, dataset, is_tags, dir_name, get_command_func, om2_user = config.slurm_user): 
+def write_training_shell_script(split,  dataset,  is_tags, context, training_split, dir_name, training_dataset, get_command_func, om2_user = config.slurm_user): 
     
     if not exists(dir_name):
         os.makedirs(dir_name)
     
-    script_name = get_script_name(split, dataset, is_tags)
+    script_name = get_script_name(split, dataset, is_tags, context, training_dataset, training_split)
     
     with open(join(dir_name, script_name), 'w') as f:
         f.writelines(get_command_func(split, dataset, is_tags, om2_user = om2_user))
         
 
-def get_script_name(split, dataset, is_tags, training_dataset=None, model_type=None):
+
+
     
-    this_tags_str = 'with_tags' if is_tags else 'no_tags'
-    if training_dataset is None:        
-        return f'run_model_{split}_{dataset}_{this_tags_str}.sh'
-    else:
-        if model_type is None:
-            raise ValueError ('model_type must be specified if training_dataset is shared')
-        return f'run_model_{model_type}_{split}_{dataset}_{training_dataset}_{this_tags_str}.sh'
+    
+    
 
     
 # For the command text
@@ -116,7 +110,9 @@ def format_time(args):
     return (args[0],) + new_args
   
 
-def gen_command_header(mem_alloc_gb, time_alloc_hrs, n_tasks, cpus_per_task, slurm_folder, slurm_name, two_gpus = False):
+def gen_command_header(mem_alloc_gb, time_alloc_hrs, n_tasks, cpus_per_task, two_gpus = False):
+
+    slurm_folder = config.slurm_log_dir
     
     if isinstance(time_alloc_hrs, int):
         time_alloc_hrs_str = f'{time_alloc_hrs}:00:00'
@@ -125,7 +121,7 @@ def gen_command_header(mem_alloc_gb, time_alloc_hrs, n_tasks, cpus_per_task, slu
         time_alloc_hrs_str = f'{hrs}:{mins}:{secs}'
               
     
-    slurm_organization_command = f"#SBATCH --output={slurm_folder}/%j.out\n" if slurm_name is None else f"#SBATCH --output={slurm_folder}/%j_{slurm_name}.out\n"
+    slurm_organization_command = f"#SBATCH --output={slurm_folder}/%j.out\n"
     
     commands = []
     commands.append("#!/bin/bash -e\n")
@@ -153,3 +149,63 @@ def gen_command_header(mem_alloc_gb, time_alloc_hrs, n_tasks, cpus_per_task, slu
 
 # end taken code
     
+
+def time_and_mem_alloc():
+    
+    is_subsample = (config.n_subsample <= 500) # Always use n_subsample, just depends if 500 or 1000
+    
+    this_time_alloc = (0, 10, 0) if config.dev_mode else ((1, 0, 0) if is_subsample else (12, 0, 0))
+    this_mem_amount = 10 if config.dev_mode else (13 if is_subsample else 35)
+    this_n_tasks = 1
+    this_cpus_per_task = 24 
+    
+    return this_time_alloc, this_mem_amount, this_n_tasks, this_cpus_per_task
+
+
+def get_training_alloc(training_dataset):
+        
+    time, mem, n_tasks, cpus_per_task = time_and_mem_alloc()
+    if training_dataset != 'Providence-Child':
+        time = 24 if not config.dev_mode else (0, 30, 0)                
+    
+    return mem, time, n_tasks, cpus_per_task
+
+
+
+def get_run_mlm_command(training_split, training_dataset, use_tags, data_input_dir, model_output_dir, slurm_user):
+    
+    this_args_dict = config.child_args if training_split == 'Providence-Child' else config.general_training_args
+    
+    if training_split == 'Providence-Child':
+        _, is_tags = child_models.get_best_child_base_model_path()
+        base_model = models_get_split_folder('all', 'all', is_tags)
+    else:
+        base_model = 'bert-base-uncased'
+        
+    this_args_dict['model_name_or_path'] = base_model
+    
+    this_args_list = sorted(list(this_args_dict.keys())) # readability
+    
+    data_args = [
+            f"--train_file {data_input_dir}/train.txt",
+            f"--validation_file {data_input_dir}/val.txt", 
+            f"--cache_dir ~/.cache/$SLURM_JOB_ID",
+            f"--output_dir {model_output_dir}",
+        ]
+    
+    trainer_args = [
+        f"--{key} {this_args_dict[key]}"
+        for key in this_args_list
+    ]
+    
+    if config.dev_mode:
+        trainer_args += [
+            f"--max_train_samples 10",
+            f"--max_eval_samples 10",
+        ]
+
+    main_command = f"singularity exec --nv -B /om,/om2/user/{slurm_user} /om2/user/{slurm_user}/vagrant/ubuntu20.simg"
+    this_python_command = f' python3 src/run/run_mlm.py {" ".join(data_args + trainer_args)}'
+    
+    return f"{main_command}{this_python_command}"
+

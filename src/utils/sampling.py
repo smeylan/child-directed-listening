@@ -2,39 +2,16 @@ import os
 from os.path import join, exists
 import pandas as pd
 import numpy as np
-from src.utils import split_gen, configuration
+from src.utils import split_gen, configuration, paths
 config = configuration.Config()
-
-
 np.random.seed(config.SEED)
+
     
-def get_n(task):
+def get_n(task_phase):
    
-    assert task in ['beta', 'models_across_time'], "Invalid task name for sample successes -- use either 'beta' or 'models_across_time'."
-    n = config.n_beta if task == 'beta' else config.n_across_time
+    assert task_phase in ['fitting', 'eval'], "Invalid task name for sample successes -- use either 'fitting' or 'eval'."
+    n = config.n_beta if task == 'fitting' else config.n_across_time
     return n
-
-
-def get_sample_path(data_type, task_name, split_name, dataset_name, eval_phase = config.eval_phase, age = None):
-    
-    n = get_n(task_name)
-    
-    assert ( (age is None) and (task_name == 'beta' or split_name == 'all') ) or ( (age is not None) and (task_name == 'models_across_time') )
-    age_str = f'_{float(age)}' if age is not None else ''
-    
-    assert data_type in ['success', 'yyy'], "Invalid data type requested of sample path: choose one of {success, yyy}."
-    
-    if task_name == 'beta':
-        this_data_folder = split_gen.get_split_folder(split_name, dataset_name, config.prov_dir)
-    else:
-        this_data_folder = join(config.prov_dir, 'across_time_samples')
-        if not exists(this_data_folder):
-            os.makedirs(this_data_folder)
-            
-    
-    this_data_path = join(this_data_folder, f'{data_type}_utts_{task_name}_{n}{age_str}_{eval_phase}.csv')
-    
-    return this_data_path
 
 
 def sample_pool_ids(this_pool, this_n):
@@ -51,11 +28,8 @@ def sample_pool_ids(this_pool, this_n):
     return sample
     
     
-def sample_successes_yyy(pool, data_type, age, task, split, dataset, eval_phase, n = None):
-    """
-    task_name = designates the cached value to use for optimizations.
-        The cache should be different for beta optimization and run_models_across_time.
-    """
+def sample_successes_yyy(pool, task_phase, split, dataset, data_type, age, n = None):
+    
     
     if n is None:
         n = get_n(task)
@@ -68,11 +42,8 @@ def sample_successes_yyy(pool, data_type, age, task, split, dataset, eval_phase,
     
     sample = sample_pool_ids(pool, n)
     
-
-    this_data_path = get_sample_path(data_type, task, split, dataset, eval_phase, age)
-
-
-    print(f"Resampling for: task: {task}, split: {split}, dataset: {dataset}, age: {age}, phase: {eval_phase}")
+    this_data_path = paths.get_sample_csv_path(task_phase, split, dataset, data_type, age)
+    
     sample.to_csv(this_data_path) 
     
     return sample
@@ -91,22 +62,23 @@ def _filter_for_scoreable_without_partition(df):
 
     return df
     
-def sample_successes(task, split, dataset, age, raw_phono, eval_phase):
+def sample_successes(task_phase, training_split, training_dataset, age, raw_phono):
     
     phono = _filter_for_scoreable_without_partition(raw_phono)
     success_pool = phono[phono.partition == 'success']
     
-    sample = sample_successes_yyy(success_pool, 'success', age, task, split, dataset, eval_phase)
+    sample = sample_successes_yyy(success_pool, task_phase, training_split, training_dataset,
+                'success', age)
     
     return sample
     
     
-def sample_yyy(task, split, dataset, age, raw_phono, eval_phase):
+def sample_yyy(task_phase, training_split, training_dataset, age, raw_phono):
     
     phono = _filter_for_scoreable_without_partition(raw_phono)
     yyy_pool = phono[phono.partition == 'yyy']
     
-    sample = sample_successes_yyy(yyy_pool, 'yyy', age, task, split, dataset, eval_phase)
+    sample = sample_successes_yyy(yyy_pool, task_phase, training_split, training_dataset,
+        'yyy', age)
     
     return sample
-    

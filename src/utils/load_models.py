@@ -4,43 +4,46 @@ import pandas as pd
 import numpy as np
 import transformers 
 import json
+import copy
 from transformers import BertTokenizer, BertForMaskedLM
 from src.utils import configuration, transformers_bert_completions, split_gen, load_splits, child_models
 config = configuration.Config()
 
 def gen_finetune_model_args():
 
-    load_bert_args = []
+    finetune_model_args = []
     
-    for model_args in config.childes_model_args:
-        
-        this_split, this_dataset_name = model_args 
-        
-        
-        if  this_split in ('all','age'):
+    for model_arg_set in config.finetune_model_args:
+                
+        if model_arg_set['training_split'] in ('Providence','Providence-Age'):
             for use_tags in [True, False]:
                 for context in config.context_list:
-                    load_bert_args.append((this_split, this_dataset_name, use_tags, context, 'childes'))
+                    model_arg_set['use_tags'] = use_tags
+
+                    model_arg_set['context_width'] = context
+                    finetune_model_args.append(copy.copy(model_arg_set))
 
         else:
-            use_tags = False
             for context in config.context_list:
-                load_bert_args.append((this_split, this_dataset_name, use_tags, context, 'childes'))
+                model_arg_set['use_tags'] = False
+                model_arg_set['context_width'] = context
+                finetune_model_args.append(copy.copy(model_arg_set))
 
-
-
-    return load_bert_args 
+    return finetune_model_args
 
 
 def gen_adult_model_args():
+
+    shelf_model_args = []
     
-    # Two adult baselines
-    load_args = []
-    baseline_args = ('all', 'all', False)
-    for context in config.context_list:
-        load_args.append(baseline_args + (context , 'adult'))
-    
-    return load_args
+    for model_arg_set in config.shelf_model_args:        
+        for context in config.context_list:
+            model_arg_set['use_tags'] = False
+            model_arg_set['context_width'] = context
+            
+            shelf_model_args.append(copy.copy(model_arg_set))        
+
+    return shelf_model_args
     
 def gen_unigram_args():
     
@@ -48,7 +51,13 @@ def gen_unigram_args():
     
     # Two unigram baselines
     for unigram_name in ['flat_unigram', 'data_unigram']:
-        load_args.append(('all', 'all', False) + (0, unigram_name))
+        load_args.append({
+                    'split_name': 'all', 
+                    'dataset_name': 'all',  
+                    'use_tags' : False,
+                    'context_width' : 0,
+                    'model_type': unigram_name
+                })
     
     return load_args
 

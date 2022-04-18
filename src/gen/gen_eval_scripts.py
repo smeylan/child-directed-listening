@@ -75,12 +75,15 @@ if __name__ == '__main__':
     partitions = {
         'finetune' : load_models.gen_finetune_model_args,
         'shelf' : load_models.gen_shelf_model_args,
-    }
+    }    
     
     take_split_dataset = lambda arg_set : arg_set[:2]
     partitions_for_submit_script = {
         k : list(map(take_split_dataset, v())) for k, v in partitions.items() # Split, dataset
     }
+    
+    import pdb
+    pdb.set_trace()
     
     print(partitions_for_submit_script)
     

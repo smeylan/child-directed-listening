@@ -168,6 +168,22 @@ def write_out_edited_fst(edited_fst, output_path):
     
     ats_section.to_csv(output_path, mode='a',index=False, header=None, sep='\t')
 
+
+def get_utf8_sym_table(fit_model):
+    
+    utf8_points = np.unique(fit_model[[2]].append(fit_model[[3]]) )
+    utf8_points = utf8_points[~np.isnan(utf8_points)].astype(int)
+    utf8_sym = pd.DataFrame({'utf8':[chr(x) for x in utf8_points], 'sym': utf8_points})
+    sym_path = os.path.join(config.project_root, 'output/fst/utf8.sym')
+    utf8_sym.at[utf8_sym.sym ==0, 'utf8'] = '<epsilon>'
+    utf8_sym.at[utf8_sym.sym ==32, 'utf8'] = 'q' #dummy code. Track down these 32s
+    utf8_sym.to_csv(sym_path, header = None, index=False, sep='\t')
+    # try reading it in right here
+    test = pywrapfst.SymbolTable.read_text(sym_path)
+
+    return(sym_path)
+
+
 def reconcile_symbols(fit_model, path_to_chi_phones_sym):
     '''generate a transducer and symbol set in the same symbol set which includes all inputs and outputs'''
     ints = [int(x) for x in np.unique(fit_model[[2]]) if not np.isnan(x)]        
@@ -270,17 +286,28 @@ def get_wfst_distance_matrix(all_tokens_phono, prior_data, initial_vocab,  cmu_2
     iv = cmu_2syl_inchildes
     
     # [X] Load the transducer, create a covering symbol set, and change the transducer to the data symbol set
-    fit_model = pd.read_csv(path_to_baum_welch_transducer, sep='\t', header=None)
+    fit_model_superset = pd.read_csv(path_to_baum_welch_transducer, sep='\t', header=None)
     
-    fit_model_superset, superset_chi = reconcile_symbols(fit_model, path_to_chi_phones_sym)
-    superset_chi_sym = pywrapfst.SymbolTable.read_text(os.path.join(config.project_root, 'output/fst/superset_chi.sym'))
+    utf8_sym_path = get_utf8_sym_table(fit_model_superset)
+    utf8_sym = pywrapfst.SymbolTable.read_text(utf8_sym_path)
+
+    #fit_model_superset, superset_chi = reconcile_symbols(fit_model, path_to_chi_phones_sym)
+    #superset_chi_sym = pywrapfst.SymbolTable.read_text(os.path.join(config.project_root, 'output/fst/superset_chi.sym'))
 
     # [X] Change from a joint model to a conditional model.
     # as of 11/10/21, only works for the unigram case
     grouped = list(fit_model_superset.iloc[0:fit_model_superset.shape[0] - 1].groupby(2))
     conditioned = pd.concat([normalize_partition(x) for x in grouped ])
+    conditioned[[1]] = [int(x) if not np.isnan(x) else '' for x in conditioned[1]]
+    conditioned[[2]] = [int(x) if not np.isnan(x) else '' for x in conditioned[2]]
+    conditioned[[3]] = [int(x) if not np.isnan(x) else '' for x in conditioned[3]]
+
     tail = fit_model_superset.tail(1)
     tail[[1]] = -1 * np.log(1)
+    tail[[2]] = [int(x) if not np.isnan(x) else '' for x in tail[2]]
+    tail[[3]] = [int(x) if not np.isnan(x) else '' for x in tail[3]]
+    tail[[4]] = [int(x) if not np.isnan(x) else '' for x in tail[4]]
+
     conditioned = pd.concat([conditioned, tail])
     write_out_edited_fst(conditioned, os.path.join(config.project_root, 'output/fst/chi_conditioned_fst.csv'))
     
@@ -294,7 +321,7 @@ def get_wfst_distance_matrix(all_tokens_phono, prior_data, initial_vocab,  cmu_2
     w_fsas = {}
     ws = []
     for w in iv.to_dict('records'):    
-        w_fsa = string_to_fsa(w['ipa_short'], superset_chi_sym)    
+        w_fsa = string_to_fsa(w['ipa_short'], utf8_sym)    
         w_in = pywrapfst.compose(w_fsa.arcsort(sort_type="ilabel"), transducer.arcsort(sort_type="ilabel"))
         w_fsas[w['ipa_short']] = w_in.arcsort(sort_type="ilabel")
         ws.append(w['ipa_short'])
@@ -304,7 +331,7 @@ def get_wfst_distance_matrix(all_tokens_phono, prior_data, initial_vocab,  cmu_2
         os.mkdir(fst_cache_path)
         
     #[X] translate all observed words (data) into FSAs (d_fsas)
-    serial_inputs = [(string_to_fsa(d, superset_chi_sym).arcsort(sort_type="olabel"), w_fsas, ws, d, fst_cache_path) for d in ipa.actual_phonology_no_dia]
+    serial_inputs = [(string_to_fsa(d, utf8_sym).arcsort(sort_type="olabel"), w_fsas, ws, d, fst_cache_path) for d in ipa.actual_phonology_no_dia]
      
     # make the splits on the dfsas        
     if len(serial_inputs) >= num_cores: #avoid stupid weirdness if we have to deal with empty assignments for the workers

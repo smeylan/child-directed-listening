@@ -36,8 +36,6 @@ def optimize_beta_and_lambda(split_name, dataset_name, model_dict, model_type, t
     # this needs to be distunguished betweeen a test and a training dataset
     this_exp_path = hyperparameter_utils.load_hyperparameter_folder(training_split_name, dataset_name, model_dict['kwargs']['use_speaker_labels'], model_dict['kwargs']['context_width_in_utts'], model_type, training_dataset_name)
     
-    import pdb
-    pdb.set_trace()
     if not exists(this_exp_path):
         os.makedirs(this_exp_path)
     

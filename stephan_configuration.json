@@ -67,7 +67,22 @@
     "fst_path":"output/fst/chi-1.txt",
     "fst_sym_path":"output/fst/chi_phones.sym",
     "fst_cache_path":"output/unigram_fst_cache",
-    "slurm_log_dir": "output/logs"
+    "slurm_log_dir": "output/logs",
+    "task_phases": ["sample", "extract_data", "train", "fit", "eval", "analyze"],
+    "training_datasets": [["Providence", "all"], ["Providence-Age", "old"], ["Providence-Age", "young"], ["Providence-Child", "Alex"], ["Providence-Child", "Ethan"], ["Providence-Child", "Naima"], ["Providence-Child", "Lily"], ["Providence-Child", "Alex"], ["Providence-Child", "Violet"], ["Providence-Child", "William"], ["Switchboard", "all"]],
+    "test_datasets": [["Providence", "all"], ["Providence-Child", "Alex"], ["Providence-Child", "Ethan"], ["Providence-Child", "Naima"], ["Providence-Child", "Lily"], ["Providence-Child", "Alex"], ["Providence-Child", "Violet"], ["Providence-Child", "William"]],
+    "spec_dict_params": [
+            "test_split", 
+            "training_split",
+            "test_dataset",
+            "training_dataset",
+            "model_type",
+            "n_samples",
+            "use_tags",
+            "context_width",        
+            "task_name",
+            "task_phase"
+    ]
 }
 
 

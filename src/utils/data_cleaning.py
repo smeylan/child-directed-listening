@@ -160,7 +160,7 @@ def drop_errors(utt_data):
 
 
 
-def clean_glosses(data):
+def clean_glosses_and_add_speaker_label(data, use_tags):
         
     fill_punct_val = '.'
     
@@ -196,7 +196,11 @@ def clean_glosses(data):
     
     # Cell 268
     data = data.loc[[x is not None for x in data.punct]]
-    data['gloss_with_punct'] = [x['speaker_code_simple'] + ' '+ x['gloss'].lower() + x['punct'] for x in data.to_dict('records')]
+
+    if use_tags:
+        data['gloss_with_punct'] = [x['speaker_code_simple'] + ' '+ x['gloss'].lower() + x['punct'] for x in data.to_dict('records')]
+    else:
+        data['gloss_with_punct'] = [x['gloss'].lower() + x['punct'] for x in data.to_dict('records')]
     
     return data
 

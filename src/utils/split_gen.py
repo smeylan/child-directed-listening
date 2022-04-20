@@ -117,28 +117,6 @@ def determine_split_idxs(unsorted_cleaned_data, split_on, val_ratio = None, val_
     train_idx, validation_idx = sklearn.model_selection.train_test_split(split_attr_inventory, test_size = sample_num)
     
     return train_idx, validation_idx 
-    
-
-    
-def find_phase_data(phase, phase_label, pool):
-
-    this_phase_data = pool.loc[pool[phase_label] == phase]
-    return this_phase_data
-
-
-def assign_and_find_phase_data(phase, split_on, phase_idxs, data_pool, phase_label):
-    """
-    Different from the original function, re-test
-    See dtermine_split_idxs comments on what to split on for which models.
-        basically child = utterance_id, anything else = transcript_id.
-    """
-    
-    data_pool.loc[data_pool[split_on].isin(phase_idxs),
-             phase_label] = phase
-    
-    phase_data = find_phase_data(phase, phase_label, data_pool)
-    
-    return phase_data, data_pool
 
 
 def filter_text_from_content(lines):
@@ -158,31 +136,30 @@ def filter_text(text_path):
 
     
 def write_partition(phase, phase_data, split_folder):
+
+    if not exists(split_folder):
+        os.makedirs(split_folder)
     
     this_file_path = join(split_folder, f'{phase}.txt')
+
     phase_data[['gloss_with_punct']].to_csv(this_file_path, index=False, header=False)
      
     print(f'File written to {this_file_path}')
     
-    # Write the tagless version as well.
-    filtered_text = filter_text(this_file_path)
     
-    # Separate the filename and modify it.
-    filtered_path = join('/'.join(this_file_path.split('/')[:-1]), f'{phase}_no_tags.txt')
-    with open(filtered_path, 'w') as f:
-        f.writelines(filtered_text)
-        
-    print(f'File written to {filtered_path}')
-    
-    
-def write_data_partitions_text(all_data, split_folder, phase, phase_idxs, split_on, phase_label):
+def write_data_partitions_text(all_data, split_folder, phase, phase_idxs, split_on):
     """
     See determine_split_idxs comments on what to use for split_on argument per split type.
     Need to test this function, it has changed.
     """
  
-    this_phase_data, all_data_with_assignments = assign_and_find_phase_data(phase, split_on, phase_idxs, all_data, phase_label)
+    # this_phase_data, all_data_with_assignments = assign_and_find_phase_data(phase, split_on, phase_idxs, all_data, phase_label)
     
+
+    all_data.loc[all_data[split_on].isin(phase_idxs),
+             'phase'] = phase
+    
+    this_phase_data = all_data.loc[all_data['phase'] == phase]
    
     # This is needed in case you write from all_tokens_phono,
     # Because you never want to write errors (at the utterance level) into the finetune text file.
@@ -198,23 +175,23 @@ def write_data_partitions_text(all_data, split_folder, phase, phase_idxs, split_
     # Make sure that each id is paired with one gloss with punct.
     # i.e. no single id has two different glosses with punct.
     
-    assert len(set(phase_data_clean['utterance_id'])) == phase_data_by_utts.shape[0]
-    
+    assert len(set(phase_data_clean['utterance_id'])) == phase_data_by_utts.shape[0]    
+
     write_partition(phase, phase_data_by_utts, split_folder)
     
-    return all_data_with_assignments, this_phase_data
+    return all_data, this_phase_data
 
 
-def exec_split_gen(cleaned_utt_glosses, this_split_folder, phase, phase_label, split_on = 'transcript_id'):
+def exec_split_gen(cleaned_utt_glosses, split_output_folder, phase, split_on = 'transcript_id'):
     
     train_idxs, val_idxs = determine_split_idxs(cleaned_utt_glosses, split_on, val_ratio = config.val_ratio)
 
-    split_glosses_df, train_df = write_data_partitions_text(cleaned_utt_glosses, this_split_folder, 'train', train_idxs, split_on, phase_label)
+    split_glosses_df, train_df = write_data_partitions_text(cleaned_utt_glosses, split_output_folder, 'train', train_idxs, split_on)
     
-    split_glosses_df, _ = write_data_partitions_text(split_glosses_df, this_split_folder, 'val', val_idxs, split_on, phase_label)
+    split_glosses_df, _ = write_data_partitions_text(split_glosses_df, split_output_folder, 'eval', val_idxs, split_on)
 
-    glosses_path = join(this_split_folder, 'data_pool_with_phases.pkl')
-    
+
+    glosses_path = join(split_output_folder, 'data_pool_with_phases.pkl')
     split_glosses_df.to_pickle(glosses_path)
     
     print(f'Writing split glosses to: {glosses_path}')

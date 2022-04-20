@@ -105,7 +105,7 @@ class Config:
         
         # these all need to be defined with respect to the root
         self.make_folders([self.finetune_dir, self.prov_dir, self.prov_csv_dir])
-        self.make_folders([self.model_dir, self.sample_dir, self.scores_dir, self.model_analyses_dir])
+        self.make_folders([self.model_dir, self.sample_dir, self.model_analyses_dir, self.data_dir, self.eval_dir, self.fitting_dir])
         self.make_folders(['output/csv', 'output/pkl', 'output/fst','output/figures', 'output/SLURM', 'output/unigram_fst_cache', 'output/logs'])
 
 
@@ -134,12 +134,12 @@ class Config:
 
         self.exp_dir = join(join(self.project_root, 'output/experiments'), self.exp_determiner)
 
-        self.model_dir = join(self.exp_dir, 'models')
-        self.sample_dir = join(self.exp_dir, 'samples')
-
-        self.scores_dir = join(self.exp_dir, join('scores', join(f'n={self.n_used_score_subsample if (self.subsample_mode or self.dev_mode) else self.n_beta}', self.eval_phase))) # Beta, across time, cross-child scoring.
-
-        self.model_analyses_dir = join(self.exp_dir, 'model_analyses')
+        self.sample_dir = join(self.exp_dir, 'sample')
+        self.data_dir = join(self.exp_dir, 'extract_data')
+        self.model_dir = join(self.exp_dir, 'train')
+        self.fitting_dir = join(self.exp_dir, 'fit')
+        self.eval_dir = join(self.exp_dir, 'eval')
+        self.model_analyses_dir = join(self.exp_dir, 'analyze')        
 
 
         #########################

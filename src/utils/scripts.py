@@ -188,7 +188,7 @@ def get_run_mlm_command(training_split, training_dataset, use_tags, data_input_d
     
     data_args = [
             f"--train_file {data_input_dir}/train.txt",
-            f"--validation_file {data_input_dir}/val.txt", 
+            f"--validation_file {data_input_dir}/eval.txt", 
             f"--cache_dir ~/.cache/$SLURM_JOB_ID",
             f"--output_dir {model_output_dir}",
         ]

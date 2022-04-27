@@ -146,6 +146,7 @@ def write_partition(phase, phase_data, split_folder):
      
     print(f'File written to {this_file_path}')
 
+
 def assign_and_find_phase_data(phase, split_on, phase_idxs, data_pool, phase_label='phase'):
     """
     Different from the original function, re-test
@@ -153,8 +154,7 @@ def assign_and_find_phase_data(phase, split_on, phase_idxs, data_pool, phase_lab
         basically child = utterance_id, anything else = transcript_id.
     """
     
-    data_pool.loc[data_pool[split_on].isin(phase_idxs),
-             phase_label] = phase
+    data_pool.loc[data_pool[split_on].isin(phase_idxs), phase_label] = phase
     
     phase_data = data_pool.loc[data_pool[phase_label] == phase]
     

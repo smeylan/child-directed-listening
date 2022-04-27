@@ -3,7 +3,7 @@ import os
 from os.path import join, exists
 import subprocess
 
-from src.utils import split_gen, configuration
+from src.utils import split_gen, configuration, child_models, paths
 config = configuration.Config()
 
 def get_slurm_folder(split, dataset, task):
@@ -176,19 +176,44 @@ def get_run_mlm_command(training_split, training_dataset, use_tags, data_input_d
     
     this_args_dict = config.child_args if training_split == 'Providence-Child' else config.general_training_args
     
-    if training_split == 'Providence-Child':
-        _, is_tags = child_models.get_best_child_base_model_path()
-        base_model = models_get_split_folder('all', 'all', is_tags)
-    else:
-        base_model = 'bert-base-uncased'
+    if training_split == 'Providence-Child':        
         
-    this_args_dict['model_name_or_path'] = base_model
+        # load the best model
+        base_model_spec = {
+            'task_name': 'child',
+            'task_phase' : 'train',
+            'training_split': 'Providence',
+            'training_dataset': 'all',
+            'test_split': None,
+            'test_dataset': None,
+            'model_type': 'BERT',
+            'use_tags': True,
+            'context_width': None,
+            'n_samples':  config.n_across_time                
+        }            
+
+        base_model_path = paths.get_directory(base_model_spec)
+        #models_get_split_folder('all', 'all', is_tags)
+    
+    else:
+        base_model_path = 'bert-base-uncased'
+        
+    this_args_dict['model_name_or_path'] = base_model_path
+
     
     this_args_list = sorted(list(this_args_dict.keys())) # readability
     
+
+    if base_model_spec['task_name'] == 'child':
+        validation_filename = 'val.txt'
+    elif base_model_spec['task_name'] == 'non_child':
+        validation_filename = 'eval.txt'
+    else:
+        raise ValueError('task_name not recognized for MLM training')
+
     data_args = [
             f"--train_file {data_input_dir}/train.txt",
-            f"--validation_file {data_input_dir}/val.txt", 
+            f"--validation_file {data_input_dir}/{validation_filename}", 
             f"--cache_dir ~/.cache/$SLURM_JOB_ID",
             f"--output_dir {model_output_dir}",
         ]
@@ -204,8 +229,19 @@ def get_run_mlm_command(training_split, training_dataset, use_tags, data_input_d
             f"--max_eval_samples 10",
         ]
 
+
+    import pdb
+    pdb.set_trace()
+
     main_command = f"singularity exec --nv -B /om,/om2/user/{slurm_user} /om2/user/{slurm_user}/vagrant/ubuntu20.simg"
     this_python_command = f' python3 src/run/run_mlm.py {" ".join(data_args + trainer_args)}'
     
     return f"{main_command}{this_python_command}"
+
+
+def get_python_run_command(task_file, spec_dict):
+        
+    command = f"python3 {task_file} --task_name {spec_dict['task_name']} --task_phase {spec_dict['task_phase']} --test_split {spec_dict['test_split']} --test_dataset {spec_dict['test_dataset']} --context_width {spec_dict['context_width']} --use_tags {spec_dict['use_tags']} --model_type {spec_dict['model_type']} --training_split {spec_dict['training_split']} --training_dataset {spec_dict['training_dataset']}"
+
+    return command    
 

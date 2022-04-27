@@ -92,7 +92,7 @@ def get_directory(spec_dict):
 		confirm_values_are_none(spec_dict,['context_width', 'test_dataset','test_split'])
 		confirm_values_are_not_none(spec_dict,['task_phase', 'model_type', 'training_split','training_dataset', 'use_tags'])
 
-		tags_str = 'with_tags' if spect_dict['use_tags'] else 'no_tags'
+		tags_str = 'with_tags' if spec_dict['use_tags'] else 'no_tags'
 		n_str = 'n='+str(spec_dict['n_samples'])
 
 		path = join(config.exp_dir, spec_dict['task_phase'], n_str, spec_dict['training_split'] + '_' + spec_dict['training_dataset'] + '_'  + tags_str + 'x' + spec_dict['model_type']) 
@@ -113,24 +113,16 @@ def get_directory(spec_dict):
 
 	return(path)
 
-def get_slurm_script_name(
-    test_split, 
-    training_split,
-    test_dataset,
-    training_dataset,
-    model_type,
-    use_tags,
-    context_width,        
-    task_name,
-    task_phase
-):
+def get_slurm_script_name(spec_dict):
 		# formerly get_slurm_script_path
 
-        tags_str = 'with_tags' if use_tags else 'no_tags'    
+        tags_str = 'with_tags' if spec_dict['use_tags'] else 'no_tags'    
 
-        if task_phase == 'train':
+        if spec_dict['task_phase']:
 
-            path =  f'{task_phase}_{model_type}_{training_split}_{training_dataset}_{context_width}_{tags_str}.sh'
+        	#<training_split>_<training_dataset>(x<tags>)(x<model_type>)(x<test_split>_<test_dataset>_<context_width>)
+
+            path =  spec_dict['task_phase']+'_'+spec_dict['training_split']+'_'+spec_dict['training_dataset']+'_'+tags_str+'_'+spec_dict['model_type']+'.sh'
         else:
 
             raise NotImplementedError

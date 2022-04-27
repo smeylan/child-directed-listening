@@ -1,0 +1,71 @@
+#!/bin/bash
+
+set -eou pipefail
+
+readonly SEED=1916
+readonly DATA=../../data
+readonly RANDOM_STARTS=48
+
+mkdir -p checkpoints
+
+for TRAIN_TSV in "${DATA}/train/"*"_train.tsv"; do
+    DEV_TSV="${TRAIN_TSV//train/dev}"
+    TEST_TSV="${TRAIN_TSV//train/test}"
+    LANGUAGE="$(basename $TRAIN_TSV _train.tsv)"
+    # Output symbols.
+    # cut -f2 "${TRAIN_TSV}" "${DEV_TSV}" \
+    #     | ngramsymbols \
+    #     > "${LANGUAGE}_phones.sym"
+    # Alignments.
+    
+    # ./align.py \
+    #     --seed="${SEED}" \
+    #     --random_starts="${RANDOM_STARTS}" \
+    #     --tsv_path="${TRAIN_TSV}" \
+    #     --output_token_type="${LANGUAGE}_phones.sym" \
+    #     --encoder_path="${LANGUAGE}.enc" \
+    #     --far_path="${LANGUAGE}.far"
+
+
+    ./align.py \
+        --seed="${SEED}" \
+        --random_starts="${RANDOM_STARTS}" \
+        --tsv_path="${TRAIN_TSV}" \
+        --input_token_type=utf8 \
+        --output_token_type=utf8 \
+        --encoder_path="${LANGUAGE}.enc" \
+        --far_path="${LANGUAGE}.far"
+
+    # Loops over LM orders from 3 (trigram) to 9. 
+    for ORDER in $(seq 1 1); do
+        # NGram model.
+        ./model \
+            --encoder_path="${LANGUAGE}.enc" \
+            --far_path="${LANGUAGE}.far" \
+            --fst_path="checkpoints/${LANGUAGE}-${ORDER}.fst" \
+            --order="${ORDER}"
+        # Evaluation.
+        ./predict \
+            --input_path="${DEV_TSV}" \
+            --fst_path="checkpoints/${LANGUAGE}-${ORDER}.fst" \
+            --output_token_type=utf8 \
+            --output_path="${LANGUAGE}.txt"
+        ./evaluate \
+            --gold_path="${DEV_TSV}" \
+            --hypo_path="${LANGUAGE}.txt" \
+            > "checkpoints/${LANGUAGE}-${ORDER}-dev.res"
+        ./predict \
+            --input_path="${TEST_TSV}" \
+            --fst_path="checkpoints/${LANGUAGE}-${ORDER}.fst" \
+            --output_token_type=utf8 \
+            --output_path="${LANGUAGE}.txt"
+        ./evaluate \
+            --gold_path="${TEST_TSV}" \
+            --hypo_path="${LANGUAGE}.txt" \
+            > "checkpoints/${LANGUAGE}-${ORDER}-test.res"
+    done
+    #rm "${LANGUAGE}_phones.sym" \
+    #    "${LANGUAGE}.enc" \
+    #    "${LANGUAGE}.far" \
+    #    "${LANGUAGE}.txt"
+done

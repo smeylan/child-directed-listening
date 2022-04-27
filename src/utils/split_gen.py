@@ -145,6 +145,20 @@ def write_partition(phase, phase_data, split_folder):
     phase_data[['gloss_with_punct']].to_csv(this_file_path, index=False, header=False)
      
     print(f'File written to {this_file_path}')
+
+def assign_and_find_phase_data(phase, split_on, phase_idxs, data_pool):
+    """
+    Different from the original function, re-test
+    See dtermine_split_idxs comments on what to split on for which models.
+        basically child = utterance_id, anything else = transcript_id.
+    """
+    
+    data_pool.loc[data_pool[split_on].isin(phase_idxs),
+             'phase'] = phase
+    
+    phase_data = data_pool.loc[data_pool['phase'] == phase]
+    
+    return phase_data, data_pool
     
     
 def write_data_partitions_text(all_data, split_folder, phase, phase_idxs, split_on):
@@ -156,10 +170,10 @@ def write_data_partitions_text(all_data, split_folder, phase, phase_idxs, split_
     # this_phase_data, all_data_with_assignments = assign_and_find_phase_data(phase, split_on, phase_idxs, all_data, phase_label)
     
 
-    all_data.loc[all_data[split_on].isin(phase_idxs),
-             'phase'] = phase
+   #all_data.loc[all_data[split_on].isin(phase_idxs),
+   #          'phase'] = phase
     
-    this_phase_data = all_data.loc[all_data['phase'] == phase]
+    this_phase_data, all_data_with_assignments = assign_and_find_phase_data(phase, split_on, phase_idxs, all_data)
    
     # This is needed in case you write from all_tokens_phono,
     # Because you never want to write errors (at the utterance level) into the finetune text file.

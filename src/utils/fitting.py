@@ -1,47 +1,56 @@
-from src.utils import configuration, split_gen, scripts
-from src.gen import gen_training_scripts, gen_eval_scripts
-config = configuration.Config()
+import os
+import sys
+from os.path import join, exists
+import copy
 
-def gen_fitting_commands(
-        split_name,
-        training_split_name, 
-        dataset_name,
-        training_dataset_name,
-        model_type,
-        use_tags,
-        context_width,
-        task_name):
+sys.path.append('.')
+sys.path.append('src/.')
+from src.utils import paths, configuration, scripts
+config = configuration.Config()  
+
+
+def gen_fitting_commands(fitting_spec_dict):
     
-    your_model_path = split_gen.get_split_folder(split_name, training_dataset_name, config.model_dir)
+    paths.validate_spec_dict(fitting_spec_dict, config.spec_dict_params)
+    paths.validate_phase(fitting_spec_dict['task_phase'], config.task_phases)
     
-    # ---------- begin new code
     
-    # Generate the appropriate header and the slurm folder
-    
-    slurm_folder = scripts.get_slurm_folder(split_name, training_dataset_name, task_name)
-    
-    mem_alloc_gb, time_alloc_hrs,  n_tasks, cpus_per_task = gen_training_scripts.get_training_alloc(split_name)
-    
+    mem_alloc_gb, time_alloc_hrs,  n_tasks, cpus_per_task = scripts.get_training_alloc(fitting_spec_dict['training_dataset'])
+
     header_commands = scripts.gen_command_header(mem_alloc_gb = mem_alloc_gb, time_alloc_hrs = time_alloc_hrs,
         n_tasks = n_tasks,
-        cpus_per_task = cpus_per_task,
-        slurm_folder = slurm_folder,
-        slurm_name = f'training_beta_tags={use_tags}', 
+        cpus_per_task = cpus_per_task,        
         two_gpus = False)
-    commands = header_commands
+    slurm_commands = header_commands
+
+    fitting_output_path = paths.get_directory(fitting_spec_dict)    
+    if not exists(fitting_output_path):
+        os.makedirs(fitting_output_path)    
+
+    slurm_commands += [f"rm -rf {fitting_output_path}\n"]  # clear the directory in case it had stuff in it before
+    slurm_commands += [f"mkdir -p {fitting_output_path}\n"]  # make the training directory if necessary     
+    slurm_commands += ["mkdir ~/.cache/$SLURM_JOB_ID\n"]
 
 
-    this_model_dir = '/'.join(gen_training_scripts.models_get_split_folder(split_name, training_dataset_name, use_tags).split('/')[:-1])
+    model_input_spec_dict = copy.copy(fitting_spec_dict)
+    model_input_spec_dict['task_phase'] = 'train'
+    model_input_spec_dict['context_width'] = None
+    model_input_spec_dict['test_split'] = None
+    model_input_spec_dict['test_dataset'] = None
+    model_input_dir = paths.get_directory(model_input_spec_dict)
+
+    sh_loc = 'output/SLURM/'+fitting_spec_dict['task_name']+'_'+fitting_spec_dict['task_phase']
     
-
+    if not exists(sh_loc):
+        os.makedirs(sh_loc)
+    
     sing_header = scripts.gen_singularity_header()   
-    
-    run_commands = [f"{sing_header} {gen_eval_scripts.get_one_python_command('src/run/run_beta_search.py', split_name, dataset_name , use_tags, context_width, model_type, training_dataset_name, training_split_name)[1]}\n"]    
+    # slurm_commands += [f"{sing_header} {gen_eval_scripts.get_one_python_command('src/run/run_beta_search.py', fitting_spec_dict['test_split'], fitting_spec_dict['test_dataset'] , fitting_spec_dict['use_tags'], fitting_spec_dict['context_width'], fitting_spec_dict['model_type'], fitting_spec_dict['training_dataset'], fitting_spec_dict['training_split'])[1]}\n"]    
+
+    slurm_commands += [f"{sing_header} {scripts.get_python_run_command('src/run/run_beta_search.py', fitting_spec_dict)}\n"]
+
         
-    # Put the copy commands between the header and the actual python runs.
-    commands += run_commands
-    
-    filename = scripts.get_script_name(split_name, dataset_name, use_tags, context_width, training_dataset_name, model_type)
+    slurm_filename = os.path.join(sh_loc, paths.get_slurm_script_name(fitting_spec_dict))
 
 
-    return filename, commands
+    return slurm_filename, slurm_commands

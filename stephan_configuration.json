@@ -10,6 +10,18 @@
     "subsamples" : [2, 1000, 5000],
     "val_ratio" : ".2",
     "child_val_eval_num" : 3,
+    "unigram_model_args": [
+        {
+            "training_split": "Providence",
+            "training_dataset": "all",              
+            "model_type": "data_unigram"
+        },
+        {
+            "training_split": "no-split",
+            "training_dataset": "no-dataset",
+            "model_type":"flat_unigram"
+        }
+    ],
     "finetune_model_args" : [        
         
         {"training_split":"Providence",
@@ -26,23 +38,33 @@
 
         {"training_split":"Switchboard",
          "training_dataset":"all",
-        "model_type":"BERT"}, 
-        
-        {"training_split":"Providence",
-         "training_dataset":"all",
-        "model_type":"fit_unigram"}], 
+        "model_type":"BERT"}], 
 
     "shelf_model_args": [       
-
         {"training_split":"adult-written",
          "training_dataset":"all",
+        "model_type":"BERT"} 
+    ], 
+    "child_model_args" : [                
+        {"training_split":"Providence-Child",
+         "training_dataset":"Alex",
         "model_type":"BERT"}, 
-        
-        {"training_split": "",
-         "training_dataset": "",
-        "model_type":"uniform"}
-
-        ], 
+        {"training_split":"Providence-Child",
+         "training_dataset":"Ethan",
+        "model_type":"BERT"}, 
+        {"training_split":"Providence-Child",
+         "training_dataset":"Lily",
+        "model_type":"BERT"}, 
+        {"training_split":"Providence-Child",
+         "training_dataset":"Naima",
+        "model_type":"BERT"}, 
+        {"training_split":"Providence-Child",
+         "training_dataset":"Violet",
+        "model_type":"BERT"}, 
+        {"training_split":"Providence-Child",
+         "training_dataset":"William",
+        "model_type":"BERT"}         
+    ], 
     "regenerate" : 1,
     "dev_mode" : 0,
     "subsample_mode" : 1,
@@ -69,7 +91,8 @@
     "fst_cache_path":"output/unigram_fst_cache",
     "slurm_log_dir": "output/logs",
     "task_phases": ["sample", "extract_data", "train", "fit", "eval", "analyze"],
-    "training_datasets": [["Providence", "all"], ["Providence-Age", "old"], ["Providence-Age", "young"], ["Providence-Child", "Alex"], ["Providence-Child", "Ethan"], ["Providence-Child", "Naima"], ["Providence-Child", "Lily"], ["Providence-Child", "Alex"], ["Providence-Child", "Violet"], ["Providence-Child", "William"], ["Switchboard", "all"]],
+    "training_datasets": [["Providence", "all"], ["Providence-Age", "old"], ["Providence-Age", "young"], ["Providence-Child", "Alex"], ["Providence-Child", "Ethan"], ["Providence-Child", "Naima"], ["Providence-Child", "Lily"], ["Providence-Child", "Alex"], ["Providence-Child", "Violet"], ["Providence-Child", "William"], ["Switchboard", "all"],
+        ["adult-written", "all"], ["no-split","no-dataset"]],
     "test_datasets": [["Providence", "all"], ["Providence-Child", "Alex"], ["Providence-Child", "Ethan"], ["Providence-Child", "Naima"], ["Providence-Child", "Lily"], ["Providence-Child", "Alex"], ["Providence-Child", "Violet"], ["Providence-Child", "William"]],
     "spec_dict_params": [
             "test_split", 

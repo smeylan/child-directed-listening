@@ -7,7 +7,7 @@ import glob
 from collections import defaultdict
 import pickle5 as pickle
 
-from src.utils import load_models, transformers_bert_completions, load_splits, likelihoods, hyperparameter_utils, configuration 
+from src.utils import load_models, transformers_bert_completions, load_splits, likelihoods, hyperparameter_utils, configuration, paths 
 config = configuration.Config()
 
 def assemble_scores_no_order(hyperparameter_set):
@@ -17,15 +17,23 @@ def assemble_scores_no_order(hyperparameter_set):
     
     # hyperparameter_set: wfst or levdist
     
-    this_load_args = load_models.gen_all_model_args()
+    model_args = finetune_models = load_models.gen_finetune_model_args() + load_models.gen_shelf_model_args() + load_models.gen_unigram_args() 
 
     score_store = []
     
-    for split, dataset, tags, context, model_type in this_load_args:
-       
-        this_hyperparameter_folder = hyperparameter_utils.load_hyperparameter_folder(split, dataset, tags, context, model_type)
+    for model_arg in model_args:
 
-        search_string = join(this_hyperparameter_folder, hyperparameter_set+'_run_models_across_time_*.pkl')
+        model_arg['task_name'] = 'analysis'
+        model_arg['task_phase'] = 'eval' 
+        model_arg['test_split'] = 'Providence'
+        model_arg['test_dataset'] = 'all'  
+        model_arg['n_samples'] = config.n_across_time
+
+        
+        # loading from 
+        results_path = paths.get_directory(model_arg)    
+        search_string = join(results_path, hyperparameter_set+'_run_models_across_time_*.pkl')
+        print('Searching '+search_string)
         age_paths = glob.glob(search_string)
         
         for this_data_path in age_paths:
@@ -33,10 +41,21 @@ def assemble_scores_no_order(hyperparameter_set):
             #data_df = pd.read_pickle(this_data_path)
             with open(this_data_path, "rb") as fh:
                 data_df = pickle.load(fh)
-                data_df['dataset'] = dataset
-                data_df['split'] = split
+                data_df['training_split'] = model_arg['training_split']
+                data_df['training_dataset'] = model_arg['training_dataset']
+                data_df['test_split'] = model_arg['test_split']
+                data_df['test_dataset'] = model_arg['test_dataset']
+                data_df['model_type'] = model_arg['model_type']
             
+
+                data_df['split'] = data_df.training_split + '_' + data_df.training_dataset
+                data_df['model'] = paths.compose_filepath(model_arg)
+
+
             score_store.append(data_df)
+
+
+
                       
     return score_store
 

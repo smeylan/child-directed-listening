@@ -50,13 +50,19 @@ def gen_unigram_args():
     load_args = []
     
     # Two unigram baselines
-    for unigram_name in ['flat_unigram', 'data_unigram']:
-        load_args.append({
-                    'split_name': 'all', 
-                    'dataset_name': 'all',  
+    load_args.append({
+                    'training_dataset': 'no-dataset', 
+                    'training_split': 'no-split',  
                     'use_tags' : False,
                     'context_width' : 0,
-                    'model_type': unigram_name
+                    'model_type': 'flat_unigram'
+                })
+    load_args.append({
+                    'training_split': 'Providence', 
+                    'training_dataset': 'all',  
+                    'use_tags' : False,
+                    'context_width' : 0,
+                    'model_type': 'data_unigram'
                 })
     
     return load_args

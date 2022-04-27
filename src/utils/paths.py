@@ -8,10 +8,12 @@ def validate_spec_dict(spec_dict, spec_dict_params):
 	''' make sure all necessary keys are specified for the spec_dict'''
 	for key in spec_dict_params:
 		if key not in spec_dict:
+			print(spec_dict)
 			raise ValueError('spec_dict must contain the key '+key)
 	
 	for key in spec_dict:
 		if key not in spec_dict_params:
+			print(spec_dict)
 			raise ValueError('spec_dict has extraneous key '+key)
 
 def validate_phase(phase, known_phases):
@@ -30,6 +32,7 @@ def confirm_values_are_not_none(spec_dict, varnames):
 
 def validate_training_params(spec_dict):
 	if [spec_dict['training_split'], spec_dict['training_dataset']] not in config.training_datasets:
+		print(spec_dict)
 		raise ValueError("training parameters don't correspond to a known dataset")
 
 def validate_test_params(spec_dict):
@@ -100,34 +103,39 @@ def get_directory(spec_dict):
 	elif spec_dict['task_phase'] in ('fit','eval'):
 
 
-		confirm_values_are_not_none(spec_dict, ['training_split', 'training_dataset','tags_str', 'n_samples', 'test_split', 'test_dataset', 'context_width'])
+		confirm_values_are_not_none(spec_dict, ['training_split', 'training_dataset', 'use_tags', 'n_samples', 'test_split', 'test_dataset', 'context_width'])
 		validate_test_params(spec_dict)
 				
-		tags_str = 'with_tags' if spect_dict['use_tags'] else 'no_tags'
+		tags_str = 'with_tags' if spec_dict['use_tags'] else 'no_tags'
 		n_str = 'n='+str(spec_dict['n_samples'])
 
-		path = join(config.exp_dir, spec_dict['task_phase'], n_str, spec_dict['training_split'] + '_' + spec_dict['training_dataset'] + '_'  + tags_str + 'x' + spec_dict['model_type'] +  spec_dict['test_split'] + '_' + spec_dict['test_dataset'] + spec_dict['context_width'])
+		path = join(config.exp_dir, spec_dict['task_phase'], n_str, spec_dict['training_split'] + '_' + spec_dict['training_dataset'] + '_'  + tags_str + 'x' + spec_dict['model_type'] + '_' +  spec_dict['test_split'] + '_' + spec_dict['test_dataset'] + '_' + str(spec_dict['context_width']))
 
 	else:
 		raise ValueError('Task phase not recognized. Must be one of '+config.task_phases)
 
 	return(path)
 
+
+def compose_filepath(spec_dict):
+
+	#<training_split>_<training_dataset>(x<tags>)(x<model_type>)(x<test_split>_<test_dataset>_<context_width>)
+
+	tags_str = 'with_tags' if spec_dict['use_tags'] else 'no_tags'    
+
+	if spec_dict['task_phase'] in ['train'] :
+		path = spec_dict['task_phase']+'_'+spec_dict['training_split']+'_'+spec_dict['training_dataset']+'_'+tags_str+'_'+spec_dict['model_type']
+	
+	elif spec_dict['task_phase'] in ['eval','analysis'] :
+		path = spec_dict['training_split']+'_'+spec_dict['training_dataset']+'x'+tags_str+'x'+spec_dict['model_type']+'x'+spec_dict['test_split']+'_'+spec_dict['test_dataset']+'_'+ spec_dict['training_split']+'_'+str(spec_dict['context_width'])
+	else:
+		raise NotImplementedError
+
+	return(path)
+
 def get_slurm_script_name(spec_dict):
 		# formerly get_slurm_script_path
-
-        tags_str = 'with_tags' if spec_dict['use_tags'] else 'no_tags'    
-
-        if spec_dict['task_phase']:
-
-        	#<training_split>_<training_dataset>(x<tags>)(x<model_type>)(x<test_split>_<test_dataset>_<context_width>)
-
-            path =  spec_dict['task_phase']+'_'+spec_dict['training_split']+'_'+spec_dict['training_dataset']+'_'+tags_str+'_'+spec_dict['model_type']+'.sh'
-        else:
-
-            raise NotImplementedError
-
-        return(path)
+        return(compose_filepath(spec_dict)+'.sh')
 
 
 def get_sample_csv_path(task_phase_to_sample_for, split, dataset, data_type, age = None, n=None):    

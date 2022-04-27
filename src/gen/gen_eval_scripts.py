@@ -1,136 +1,51 @@
-# Generate the scripts for a beta search.
-import argparse
 import os
 import sys
+import copy
 from os.path import join, exists
-
 sys.path.append('.')
 sys.path.append('src/.')
-from src.utils import configuration, parsers, load_models, scripts
+import copy
+
+from src.gen import gen_training_scripts, gen_eval_scripts
+from src.utils import split_gen, scripts, configuration, child_models, load_models, paths, evaluation
 config = configuration.Config()
 
-# def get_one_python_command(task_file, split, dataset, use_tags, context_width, model_type, training_dataset=None):
-    
-#     model_id = load_models.get_model_id(
-#         split, dataset, use_tags, context_width, model_type
-#     ).replace('/', '_')
-    
-#     if training_dataset is None:
-#         command = f"python3 {task_file} --split {split} --dataset {dataset} --context_width {context_width} --use_tags {use_tags} --model_type {model_type}"
-
-#     else: 
-#         command = f"python3 {task_file} --split {split} --dataset {dataset} --training_dataset {training_dataset} --context_width {context_width} --use_tags {use_tags} --model_type {model_type}"
-
-#     return model_id, command
-
-
-# singularity exec --nv -B /om,/om2/user/smeylan /om2/user/smeylan/vagrant/ubuntu20.simg  python3 -m pdb -c c src/run/run_beta_search.py --split child --training_split all --dataset Alex --training_dataset all --context_width 20 --use_tags True --model_type childes
-
-def get_one_python_command(task_file, split, dataset, use_tags, context_width, model_type, training_dataset=None, training_split=None):
-    
-    model_id = load_models.get_model_id(
-        split, dataset, use_tags, context_width, model_type
-    ).replace('/', '_')
-    
-    if training_dataset is None:
-        command = f"python3 {task_file} --split {split} --dataset {dataset} --context_width {context_width} --use_tags {use_tags} --model_type {model_type}"
-
-    else: 
-        if training_split is None:
-            raise ValueError('Training split must be specified if training_dataset is specified')
-        command = f"python3 {task_file} --split {split} --training_split {training_split} --dataset {dataset} --training_dataset {training_dataset} --context_width {context_width} --use_tags {use_tags} --model_type {model_type}"
-
-    return model_id, command    
-
-
-def time_and_mem_alloc():
-    
-    is_subsample = (config.n_subsample <= 500) # Always use n_subsample, just depends if 500 or 1000
-    
-    this_time_alloc = (0, 10, 0) if config.dev_mode else ((1, 0, 0) if is_subsample else (12, 0, 0))
-    this_mem_amount = 10 if config.dev_mode else (13 if is_subsample else 35)
-    this_n_tasks = 1
-    this_cpus_per_task = 24 
-    
-    return this_time_alloc, this_mem_amount, this_n_tasks, this_cpus_per_task
-    
-
-def write_commands(sh_script_loc, task_name, model_id, commands):
-    with open(join(sh_script_loc, f'{task_name}_{model_id}.sh'), 'w') as f:
-        f.writelines(commands)
-    print('Wrote out to '+sh_script_loc)
-    return sh_script_loc
-            
-            
 if __name__ == '__main__':
     
-    label = 'non_child_beta_time'
+    task_phase = 'eval'
+    task_name = 'non_child'            
 
-    task_names = ['beta_search', 'models_across_time']
-    task_files = ['src/run/run_beta_search.py', 'src/run/run_models_across_time.py']
-     
-    
-    sh_script_loc_base = f'output/SLURM/scripts_{label}'
+
+    finetune_models = load_models.gen_finetune_model_args()
+    shelf_models = load_models.gen_shelf_model_args() 
+    unigram_models = load_models.gen_unigram_model_args() 
 
     partitions = {
-        'finetune' : load_models.gen_finetune_model_args,
-        'shelf' : load_models.gen_shelf_model_args,
+        'finetune' : finetune_models,
+        'shelf' : shelf_models,
+        'unigram': unigram_models
     }    
     
-    take_split_dataset = lambda arg_set : arg_set[:2]
-    partitions_for_submit_script = {
-        k : list(map(take_split_dataset, v())) for k, v in partitions.items() # Split, dataset
-    }
-    
-    import pdb
-    pdb.set_trace()
-    
-    print(partitions_for_submit_script)
-    
-    for key in ['shelf', 'finetune']:
-        scripts.gen_submit_script(f'{label}/{key}', partitions_for_submit_script[key], label)
-    
-    for partition_name, model_args in partitions.items():
+    for subtask in ['shelf', 'finetune', 'unigram']:
+
+        subtask_name = task_name + '_' + subtask
+        sh_fit_loc = f'output/SLURM/{subtask_name}_{task_phase}'
+        if not exists(sh_fit_loc):
+            os.makedirs(sh_fit_loc) 
         
-        sh_script_loc = join(sh_script_loc_base, partition_name) 
-            
-        if not exists(sh_script_loc):
-            os.makedirs(sh_script_loc)
-
-
-        # TODO: Adapt this to have variable running times -- especially for data unigram and BERT.
-        # "subsampling amount if else non-subsampling amount"
+        model_args = []
+        for model in partitions[subtask]:            
+            model['task_name'] = subtask_name
+            model['test_split'] = 'Providence'
+            model['test_dataset'] = 'all'       
+            model['task_phase'] = task_phase
+            model['n_samples'] = config.n_across_time                
+            model_args.append(copy.copy(model))
         
-        this_time_alloc, this_mem_amount, this_n_tasks, this_cpus_per_task = time_and_mem_alloc()
-        
-        for arg_set in model_args():
-            
-            split, dataset, tags, context, model_type = arg_set
-            slurm_folder = scripts.get_slurm_folder(split, dataset, task = label)
-            
-            py_commands = {}
+        for arg_set in model_args:
+            fit_file, fit_commands = evaluation.gen_evaluation_commands(arg_set)
 
-            header = scripts.gen_command_header(mem_alloc_gb = this_mem_amount,
-                                                time_alloc_hrs = this_time_alloc,
-                                                n_tasks = this_n_tasks,
-                                                cpus_per_task = this_cpus_per_task,
-                                                slurm_folder = slurm_folder,
-                                                slurm_name = f'{label}_model={model_type}_tags={tags}_context={context}',
-                                                two_gpus = False)            
+            with open(fit_file, 'w') as f:
+                f.writelines(fit_commands)
 
-            for task_name, task_file in zip(task_names, task_files):
-                model_id, py_commands[task_name] = get_one_python_command(task_file, *arg_set)
-            
-            # 7/31/21: https://unix.stackexchange.com/questions/552695/how-to-run-multiple-scripts-one-after-another-but-only-after-previous-one-got-co
-            sing_header = scripts.gen_singularity_header()
-            full_py_command = sing_header + f'{py_commands["beta_search"]}; {sing_header} {py_commands["models_across_time"]}'
-            # end cite
-            
-            all_commands = header + [full_py_command]
-
-
-            write_commands(sh_script_loc, task_name, model_id, all_commands)
-
-            
-            
-            
+        scripts.gen_submit_script(subtask_name, task_phase)

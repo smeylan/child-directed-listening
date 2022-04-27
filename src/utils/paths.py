@@ -13,8 +13,8 @@ def validate_spec_dict(spec_dict, spec_dict_params):
 	
 	for key in spec_dict:
 		if key not in spec_dict_params:
-			print(spec_dict)
-			raise ValueError('spec_dict has extraneous key '+key)
+			if key not in ['title','kwargs','examples_mode']: # some reseved keys for building model fitting and eval dicts
+				raise ValueError('spec_dict has extraneous key '+key)
 
 def validate_phase(phase, known_phases):
 	if phase not in known_phases:
@@ -66,7 +66,7 @@ def get_directory(spec_dict):
 
 	validate_spec_dict(spec_dict, config.spec_dict_params)	
 	validate_phase(spec_dict['task_phase'], config.task_phases)
-	validate_training_params(spec_dict)
+	validate_training_params(spec_dict)	
 
 
 	if spec_dict['task_phase'] == 'sample':		
@@ -103,7 +103,7 @@ def get_directory(spec_dict):
 	elif spec_dict['task_phase'] in ('fit','eval'):
 
 
-		confirm_values_are_not_none(spec_dict, ['training_split', 'training_dataset', 'use_tags', 'n_samples', 'test_split', 'test_dataset', 'context_width'])
+		confirm_values_are_not_none(spec_dict, ['training_split', 'training_dataset','use_tags', 'n_samples', 'test_split', 'test_dataset', 'context_width'])
 		validate_test_params(spec_dict)
 				
 		tags_str = 'with_tags' if spec_dict['use_tags'] else 'no_tags'
@@ -117,25 +117,23 @@ def get_directory(spec_dict):
 	return(path)
 
 
-def compose_filepath(spec_dict):
-
-	#<training_split>_<training_dataset>(x<tags>)(x<model_type>)(x<test_split>_<test_dataset>_<context_width>)
-
+def get_file_identifier(spec_dict):	
 	tags_str = 'with_tags' if spec_dict['use_tags'] else 'no_tags'    
-
-	if spec_dict['task_phase'] in ['train'] :
-		path = spec_dict['task_phase']+'_'+spec_dict['training_split']+'_'+spec_dict['training_dataset']+'_'+tags_str+'_'+spec_dict['model_type']
-	
-	elif spec_dict['task_phase'] in ['eval','analysis'] :
-		path = spec_dict['training_split']+'_'+spec_dict['training_dataset']+'x'+tags_str+'x'+spec_dict['model_type']+'x'+spec_dict['test_split']+'_'+spec_dict['test_dataset']+'_'+ spec_dict['training_split']+'_'+str(spec_dict['context_width'])
+	if spec_dict['task_phase'] == 'train':        	
+		path =  spec_dict['task_phase']+'_'+spec_dict['training_split']+'_'+spec_dict['training_dataset']+'_'+tags_str+'_'+spec_dict['model_type']
+	elif spec_dict['task_phase'] in ['eval','analysis', 'fit']:        	
+		path =  spec_dict['task_phase']+'_'+spec_dict['training_split']+'_'+spec_dict['training_dataset']+'_'+tags_str+'_'+spec_dict['model_type']+'_'+spec_dict['test_split']+'_'+spec_dict['test_dataset']+'_'+str(spec_dict['context_width'])
 	else:
 		raise NotImplementedError
-
 	return(path)
+
 
 def get_slurm_script_name(spec_dict):
 		# formerly get_slurm_script_path
-        return(compose_filepath(spec_dict)+'.sh')
+		#<training_split>_<training_dataset>(x<tags>)(x<model_type>)(x<test_split>_<test_dataset>_<context_width>)
+
+		path = get_file_identifier(spec_dict)+'.sh'	
+		return(path)
 
 
 def get_sample_csv_path(task_phase_to_sample_for, split, dataset, data_type, age = None, n=None):    

@@ -7,7 +7,7 @@ from src.utils import configuration, likelihoods, load_models, transformers_bert
 config = configuration.Config()
 
 
-def sample_across_models(success_ids, yyy_ids, model, beta_values, lambda_values, examples_mode = False, all_tokens_phono=None):
+def sample_across_models(success_ids, yyy_ids, model, beta_values, lambda_values, gamma_values, examples_mode = False, all_tokens_phono=None, child_name=None):
     '''
 
         Efficiently compute posterior values computing to different parameterizations of the likelihood. Retrieve the priors once for a given model, compute the distances or WFST path lengths once, and then iterate over a range for the scaling parameter
@@ -47,6 +47,40 @@ def sample_across_models(success_ids, yyy_ids, model, beta_values, lambda_values
         raise ValueError('model_type not recognized')
       
     score_store_single_model = []
+
+    if gamma_values is not None:
+        print('Computing child-specific WFST path lengths')    
+
+        fst_path = os.path.join(config.project_root, 'output/fst/', child_name+'-1.txt')
+        child_wfst_distances_for_age_interval_unreduced, child_ipa = likelihoods.get_wfst_distance_matrix(all_tokens_phono, priors_for_age_interval, initial_vocab,  cmu_2syl_inchildes, fst_path, config.fst_sym_path)    
+        child_wfst_distances_for_age_interval_unreduced = -1 * np.log(child_wfst_distances_for_age_interval_unreduced + 10**-20) # convert this back to log space
+
+        #for each word, find the citation pronunciation that is most likely to generate the observed data 
+        child_wfst_distances_for_age_interval = likelihoods.reduce_duplicates(child_wfst_distances_for_age_interval_unreduced, cmu_2syl_inchildes, initial_vocab, 'min', cmu_indices_for_initial_vocab) # min for smallest surprisal
+
+        for idx, gamma_value in enumerate(gamma_values):
+            
+            print(f'Processing gamma value {idx + 1} of {config.lambda_num_values}') #re-using gamma parameterization
+
+            # get the posteriors        
+            if model['model_type'] == 'BERT':
+                posteriors_for_age_interval = transformers_bert_completions.get_posteriors(priors_for_age_interval, 
+                    child_wfst_distances_for_age_interval, initial_vocab, None, gamma_value, examples_mode = examples_mode)
+
+            elif model['model_type'] in ['data_unigram', 'flat_unigram']:
+                posteriors_for_age_interval = transformers_bert_completions.get_posteriors(priors_for_age_interval, child_wfst_distances_for_age_interval, initial_vocab, this_bert_token_ids, gamma_value, examples_mode = examples_mode)
+                print('If possible compare the bert_token_id in sample_across_models to the bert_token_id in one of the other scores sets from bert.')
+            else:
+                raise ValueError('model_type not recognized')
+                
+            posteriors_for_age_interval['scores']['gamma_value'] = gamma_value
+            posteriors_for_age_interval['scores']['model'] = model['title']
+            posteriors_for_age_interval['scores']['likelihood_type'] = 'wfst-child'
+            
+            posteriors_for_age_interval['scores'].astype({'gamma_value' : 'float16'})
+            this_score = copy.deepcopy(posteriors_for_age_interval['scores'])
+            
+            score_store_single_model.append(this_score)     
 
     
     print('Computing WFST path lengths...')

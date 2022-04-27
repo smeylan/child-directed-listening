@@ -26,37 +26,6 @@ def get_age_split_data(raw_data, months = config.age_split):
 
     return young_df, old_df
 
-def get_split_folder(
-        split_name, 
-        dataset_name,
-        training_dataset_name,
-        model_type,
-        use_tags,
-        context_width,        
-        task_name,
-        task_phase,
-        sh_fit_loc):
-
-    raise ValueError('Deprecated!')
-
-    path = join(config.model_dir, join(split_name, dataset_name, training_dataset_name, use_tags, model_type))
-
-    
-    if not exists(path):
-        os.makedirs(path)
-    
-    return path
-
-
-def models_get_split_folder(split_type, dataset_type, with_tags):
-
-    raise ValueError('Deprecated!')
-    
-    tags_str = 'with_tags' if with_tags else 'no_tags' # For naming the model folder
-    
-    base_dir = f'output/experiments/{config.exp_determiner}/models'
-    return join(base_dir, join(join(split_type, dataset_type), tags_str))
-
 
 
 def save_chi_vocab(train_data, split_type, dataset_name):

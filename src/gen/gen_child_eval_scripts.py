@@ -4,7 +4,7 @@ from os.path import join, exists
 
 sys.path.append('.')
 sys.path.append('src/.')
-from src.utils import split_gen, scripts, configuration, child_models, fitting, load_models, paths, evaluation  
+from src.utils import split_gen, scripts, configuration, child_models, fitting, load_models, paths, evaluation, load_splits  
 config = configuration.Config()
 
 
@@ -13,16 +13,9 @@ if __name__ == '__main__':
     task_phase = 'eval'
     task_name = 'child'
 
-    child_names = child_models.get_child_names()
+    child_names = load_splits.get_child_names()
 
-
-    # finetune_models = load_models.gen_finetune_model_args()
-    # shelf_models = load_models.gen_shelf_model_args() 
-    # unigram_models = load_models.gen_unigram_model_args() 
-    # child_model_set = load_models.gen_child_model_args()
-    
-    # full cross of the child models
-
+    # cross each child with the Providence testing data for each other child
     child_arg_list = []
     for training_child in child_names:      
         for test_child in child_names:
@@ -39,7 +32,7 @@ if __name__ == '__main__':
                 'task_phase': task_phase})
 
     
-    # Pretends that Switchboard is a kid
+    # Pretends that Switchboard is a kid and cross with the Providence testing data for each other child
     for test_child in child_names:
         child_arg_list.append(
             {'training_split': 'Switchboard',
@@ -54,7 +47,7 @@ if __name__ == '__main__':
                 'task_phase': task_phase})
 
 
-    # Pretends that Switchboard is a kid
+    # Pretends that Switchboard is a kid and cross with the Providence testing data for each other child
     for test_child in child_names:
         child_arg_list.append(
             {'training_split': 'Providence',
@@ -77,7 +70,6 @@ if __name__ == '__main__':
 
         with open(fit_file, 'w') as f:
                 f.writelines(fit_commands)
-
 
     scripts.gen_submit_script(task_name, task_phase)
     

@@ -46,24 +46,7 @@ def apply_if_subsample(data, path = None):
     
     trunc_data = data.iloc[0:trunc_to]
             
-    return trunc_data
-    
-    
-def get_age_success_sample_paths(phase = config.eval_phase):
-    raise ValueError('Deprecated')
-    return sorted(list(get_ages_sample_paths('success', phase).values()))
-
-
-def get_age_yyy_sample_paths(phase = config.eval_phase):
-    raise ValueError('Deprecated')
-    return sorted(list(get_ages_sample_paths('yyy', phase).values()))
-
-
-def load_sample_successes(split, dataset, age = None, eval_phase = config.eval_phase):
-    raise ValueError('Deprecated')
-    this_path = sampling.get_sample_path('success', 'beta', split, dataset, eval_phase, age)
-    this_data = pd.read_csv(this_path)
-    return apply_if_subsample(this_data)
+    return trunc_data    
 
 
 def load_sample_model_across_time_args():
@@ -87,4 +70,11 @@ def load_phono():
     return pd.read_pickle(join(config.prov_dir, 'pvd_all_tokens_phono_for_eval.pkl'))
 
 
+def get_child_names():
+    """
+    Get all Providence children.
+    """
     
+    all_phono = load_phono()
+    return sorted(list(set(all_phono.target_child_name)))
+

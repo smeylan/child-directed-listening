@@ -4,7 +4,7 @@ from os.path import join, exists
 
 sys.path.append('.')
 sys.path.append('src/.')
-from src.utils import split_gen, scripts, configuration, child_models, fitting, load_models, paths  
+from src.utils import split_gen, scripts, configuration, child_models, fitting, load_models, paths, load_splits
 config = configuration.Config()
 
 
@@ -13,7 +13,7 @@ if __name__ == '__main__':
     task_phase = 'fit'
     task_name = 'child'
 
-    child_names = child_models.get_child_names()
+    child_names = load_splits.get_child_names()
 
 
     finetune_models = load_models.gen_finetune_model_args()
@@ -23,9 +23,10 @@ if __name__ == '__main__':
 
     
     
-    # full cross of the child models
+    
     child_models = load_models.gen_child_model_args()
     
+    # cross each child with the Providence testing data for each other child
     child_arg_list = []
     for training_child in child_names:      
         for test_child in child_names:
@@ -42,7 +43,7 @@ if __name__ == '__main__':
                 'task_phase': task_phase})
 
     
-    # Pretends that Switchboard is a kid
+    # Pretends that Switchboard is a kid and cross with the Providence testing data for each other child
     for test_child in child_names:
         child_arg_list.append(
             {'training_split': 'Switchboard',
@@ -57,7 +58,7 @@ if __name__ == '__main__':
                 'task_phase': task_phase})
 
 
-    # Pretends that Switchboard is a kid
+    # Pretends that Switchboard is a kid and cross with the Providence testing data for each other child
     for test_child in child_names:
         child_arg_list.append(
             {'training_split': 'Providence',

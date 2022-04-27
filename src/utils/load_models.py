@@ -103,73 +103,7 @@ def gen_all_model_args():
     """
 
     return gen_shelf_model_args() + gen_finetune_model_args()
-     
-    
-def gen_model_title(model_dict):
-
-    raise ValueError('Deprecated')
-    # should use the same thing as get_slurm_script_name
-
-    
-    model_type_dict = {
-        'childes' : 'CHILDES BERT',
-        'adult' : 'Adult BERT',
-        'flat_unigram' : 'Flat prior',
-        'data_unigram' : 'CHILDES unigram',
-        'switchboard': 'Switchboard BERT'
-    }
-    context_dict = {
-        0 : 'same utt only',
-        20 : '+-20 utts context',
-    }
-
-    dataset_dict = {
-        'all' : '',
-        'young' : 'younger children',
-        'old' : 'older children'
-    }
-    dataset_dict.update({ k : k for k in child_models.get_child_names()})
-    
-
-    speaker_tags_dict = {
-        True : 'with tags',
-        False :  'without tags',
-    }
-
-    #<training_split>_<training_dataset>(x<tags>)(x<model_type>)(x<test_split>_<test_dataset>_<context_width>)
-    
-    model_title = \
-    model_type_dict[model_dict['model_type']] + '_' + \
-    context_dict[model_dict['context_width']] + '_' + \
-    dataset_dict[model_dict['dataset_dict']] + '_' + \
-    speaker_tags_dict[model_dict['use_tags']]  
-
-    return model_title
-    
-    
-
-def get_tag_context_str(tags, context):
-
-    raise ValueError('deprecated')
-    #Needs to be updated to something like: <training_split>_<training_dataset>(x<tags>)(x<model_type>)(x<test_split>_<test_dataset>_<context_width>)
-    
-    assert not ((tags is None) ^ (context is None)), "Both with_tags and context_width should be none, or neither."
-    
-    tag_rep = 'na' if tags is None else ('with_tags' if tags else 'no_tags')
-    context_piece = 'na' if context is None else context
-    
-    context_rep = f'{context_piece}_context'
-    return tag_rep, context_rep
-    
-
-def get_model_id(split_name, dataset_name, use_tags, context_width, model_type):
-
-    raise ValueError('deprecated')
-    
-    tag_str, context_str = get_tag_context_str(use_tags, context_width)
-    model_id = '/'.join([split_name, dataset_name, tag_str, context_str, model_type])
-    
-    return model_id
+         
 
 
 def query_model_title(split, dataset, is_tags, context_num, model_type, training_dataset):

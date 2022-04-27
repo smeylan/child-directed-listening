@@ -12,15 +12,14 @@ sys.path.append('src/.')
 from src.utils import scripts,  configuration, load_models, paths, training
 config = configuration.Config()
 
-
 if __name__ == '__main__':
     
     task_name = 'child'    
     task_phase = 'train'
     
     child_models = load_models.gen_child_model_args()     
-    # only training new models for children. In fitting and eval, I cross child models, adult models, and child test sets 
-
+    
+    # only training new models for children. In fitting and eval, cross child models, adult models, and child test sets, but for now those are set to None 
     child_models_no_context = []
     for model in child_models:        
         model['context_width'] = None #training doesn't manipulate context

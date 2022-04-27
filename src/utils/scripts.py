@@ -5,41 +5,20 @@ import subprocess
 
 from src.utils import split_gen, configuration, child_models, paths
 config = configuration.Config()
-
-def get_slurm_folder(split, dataset, task):
-
-    raise ValueError('Deprecated')
-    
-    base_paths = {
-        'non_child_train' : config.model_dir, # Non-child train
-        'non_child_fit_finetune' : config.model_dir, # Non-child train
-        'non_child_fit_shelf' : config.model_dir,
-        'non_child_eval' : config.scores_dir, # Non-child beta + time scoring
-        
-        'child_train' : config.scores_dir, # Child train 
-        'child_fit' : config.scores_dir, # Child beta and lambda fitting
-        'child_eval' : config.scores_dir, # Child scoring
-    }
-    assert task in base_paths.keys()
-    return split_gen.get_split_folder(split, dataset, base_paths[task])
-    
-    
-def get_slurm_folders_by_args(args, task):
-    
-    raise ValueError('Deprecated')
-
-
-    all_paths = []
-    
-    for this_args in args:
-        this_split = this_args['split_name']
-        this_dataset = this_args['dataset_name']
-        this_path = get_slurm_folder(this_split, this_dataset, task)
-        all_paths.append(this_path)
-    
-    return sorted(list(set(all_paths)))
     
 def gen_submit_script(task_name, task_phase):
+
+    '''
+    Generate a top-level shell script to submit all shell script associated with all files for a given task_name and task_phase
+
+    Args:
+    task_name: name for the set of models, eg "child" or "non_child" 
+    task_phase: the "phase" (sample, extract_data, train, fit, eval) for this task_name
+
+    Returns:
+        text for a top-level shell script. Also writes it to output/SLURM/submission_scripts/ as a side effect
+
+    '''
     
     text = ['#!/bin/bash -e']
         
@@ -81,19 +60,6 @@ def write_training_shell_script(split,  dataset,  is_tags, context, training_spl
     
     with open(join(dir_name, script_name), 'w') as f:
         f.writelines(get_command_func(split, dataset, is_tags, om2_user = om2_user))
-        
-
-
-
-    
-    
-    
-
-    
-# For the command text
-# 6/24/21: https://github.mit.edu/MGHPCC/OpenMind/wiki/How-to-use-Singularity-container%3F
-# and https://github.mit.edu/MGHPCC/OpenMind/issues/3392
-# including the bash line at the top
 
     
 def gen_singularity_header(om2_user = config.slurm_user):
@@ -172,7 +138,7 @@ def get_training_alloc(training_dataset):
 
 
 
-def get_run_mlm_command(training_split, training_dataset, use_tags, data_input_dir, model_output_dir, slurm_user):
+def get_run_mlm_command(training_split, training_dataset, use_tags, data_input_dir, model_output_dir, slurm_user):    
     
     this_args_dict = config.child_args if training_split == 'Providence-Child' else config.general_training_args
     
@@ -229,10 +195,6 @@ def get_run_mlm_command(training_split, training_dataset, use_tags, data_input_d
             f"--max_eval_samples 10",
         ]
 
-
-    import pdb
-    pdb.set_trace()
-
     main_command = f"singularity exec --nv -B /om,/om2/user/{slurm_user} /om2/user/{slurm_user}/vagrant/ubuntu20.simg"
     this_python_command = f' python3 src/run/run_mlm.py {" ".join(data_args + trainer_args)}'
     
@@ -240,6 +202,11 @@ def get_run_mlm_command(training_split, training_dataset, use_tags, data_input_d
 
 
 def get_python_run_command(task_file, spec_dict):
+
+    '''
+    A generic wrapper for calling a run_* file with arguments specifice by spec_dict
+
+    '''
         
     command = f"python3 {task_file} --task_name {spec_dict['task_name']} --task_phase {spec_dict['task_phase']} --test_split {spec_dict['test_split']} --test_dataset {spec_dict['test_dataset']} --context_width {spec_dict['context_width']} --use_tags {spec_dict['use_tags']} --model_type {spec_dict['model_type']} --training_split {spec_dict['training_split']} --training_dataset {spec_dict['training_dataset']}"
 

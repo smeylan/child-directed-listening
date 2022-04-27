@@ -13,7 +13,7 @@ def get_hyperparameter_search_values(hyperparam):
     Generate the range of hyperparameter values given the parameters that are in the config file
 
     Args: 
-    hyperparam: 'lambda' or 'beta'
+    hyperparam: 'lambda', 'gamma' or 'beta'
 
     Return:
     A range of values for the specified hyperparameter
@@ -30,6 +30,10 @@ def get_hyperparameter_search_values(hyperparam):
 
 def get_optimal_hyperparameter_value(this_model_dict, hyperparameter):
 
+    '''
+        Get the best hyperparameter value for a given model x test dataset
+    '''
+
 
     fitted_model_dict = copy.copy(this_model_dict)
     fitted_model_dict['task_phase'] = 'fit'
@@ -39,7 +43,7 @@ def get_optimal_hyperparameter_value(this_model_dict, hyperparameter):
 
     if hyperparameter == 'beta':     
         n_hyperparameter = config.n_beta    
-    elif hyperparameter == 'lambda':     
+    elif hyperparameter in ['lambda','gamma']:     
         n_hyperparameter = config.n_lambda       
     
     this_hyperparameter_results  =  pd.read_csv(join(fitted_model_path, hyperparameter+f'_search_results_{n_hyperparameter}.csv'))

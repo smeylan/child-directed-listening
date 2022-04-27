@@ -15,7 +15,6 @@ if __name__ == '__main__':
     task_phase = 'eval'
     task_name = 'non_child'            
 
-
     finetune_models = load_models.gen_finetune_model_args()
     shelf_models = load_models.gen_shelf_model_args() 
     unigram_models = load_models.gen_unigram_model_args() 

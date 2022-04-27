@@ -4,7 +4,7 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 import pickle5 as pickle
 
-from src.utils import utils_child, child_models
+from src.utils import utils_child, load_splits
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
@@ -21,7 +21,7 @@ def organize_auc_scores_as_grid(auc_df):
 
     '''
     
-    names = child_models.get_child_names()
+    names = load_splits.get_child_names()
     
     score_arr_list = []
     
@@ -190,7 +190,7 @@ def load_all_scores():
 
     '''
     
-    name_list = child_models.get_child_names()
+    name_list = load_splits.get_child_names()
     all_scores = pd.concat(
         [
             get_cross_augmented_scores(data_child, prior_child, model_type)
@@ -259,16 +259,16 @@ def organize_scores(is_mean, which_key, likelihood_type):
 
     results = defaultdict(list)
 
-    # name_list = child_models.get_child_names() 
-    # models = ['childes' for x in range(len(child_models.get_child_names()))] + ['childes','switchboard']    
+    # name_list = load_splits.get_child_names() 
+    # models = ['childes' for x in range(len(load_splits.get_child_names()))] + ['childes','switchboard']    
 
     # for data_name in name_list:
     #     results[data_name] = [process_score_results(data_name, name_list[i], models[i], which_key, likelihood_type,  is_mean = is_mean) for i in range(len(name_list))]
 
 
-    test_dataset_name_list = child_models.get_child_names()
+    test_dataset_name_list = load_splits.get_child_names()
     training_dataset_name_list = test_dataset_name_list + ['all', 'all'] 
-    model_type_list = ['childes' for x in range(len(child_models.get_child_names()))] + ['childes','switchboard']    
+    model_type_list = ['childes' for x in range(len(load_splits.get_child_names()))] + ['childes','switchboard']    
 
     for test_dataset_name in test_dataset_name_list:
         results[test_dataset_name] = [process_score_results(test_dataset_name, training_dataset_name_list[i], model_type_list[i], which_key, likelihood_type,  is_mean = is_mean) for i in range(len(training_dataset_name_list))]

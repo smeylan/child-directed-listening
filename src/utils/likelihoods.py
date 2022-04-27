@@ -360,36 +360,20 @@ def reduce_duplicates(wfst_dists, cmu_2syl_inchildes, initial_vocab, max_or_min,
     
     outputs a matrix `wfst_dists_by_word` where each row corresponds to a production and each column correpsonds to a word in initial_vocab
 
-    '''
-    implementation = 2
-    if implementation == 1:
-        wfst_dists_by_word = np.zeros([wfst_dists.shape[0], len(initial_vocab)])  
+    '''    
+    
+    wfst_dists_by_word = np.zeros([wfst_dists.shape[0], len(initial_vocab)])  
 
-        for target_production_index in range(wfst_dists.shape[0]):
-            for vocab_index in range(len(initial_vocab)):
-            
-                #find indices where 
-                cmu_2syl_indices = np.argwhere(cmu_2syl_inchildes.word.values == initial_vocab[vocab_index]).flatten()
-                if max_or_min == 'max':
-                    dist = np.max(wfst_dists[target_production_index,cmu_2syl_indices])
-                elif max_or_min == 'min':
-                    dist = np.min(wfst_dists[target_production_index,cmu_2syl_indices])
-            
-                wfst_dists_by_word[target_production_index, vocab_index] = dist
-
-    elif implementation == 2:
-        wfst_dists_by_word = np.zeros([wfst_dists.shape[0], len(initial_vocab)])  
-
-        for target_production_index in range(wfst_dists.shape[0]):
-            for vocab_index in range(len(initial_vocab)):
-            
-                #find indices where 
-                cmu_2syl_indices = cmu_indices_for_initial_vocab[vocab_index]
-                if max_or_min == 'max':
-                    dist = np.max(wfst_dists[target_production_index,cmu_2syl_indices])
-                elif max_or_min == 'min':
-                    dist = np.min(wfst_dists[target_production_index,cmu_2syl_indices])
-            
-                wfst_dists_by_word[target_production_index, vocab_index] = dist
+    for target_production_index in range(wfst_dists.shape[0]):
+        for vocab_index in range(len(initial_vocab)):
+        
+            #find indices where 
+            cmu_2syl_indices = cmu_indices_for_initial_vocab[vocab_index]
+            if max_or_min == 'max':
+                dist = np.max(wfst_dists[target_production_index,cmu_2syl_indices])
+            elif max_or_min == 'min':
+                dist = np.min(wfst_dists[target_production_index,cmu_2syl_indices])
+        
+            wfst_dists_by_word[target_production_index, vocab_index] = dist
 
     return wfst_dists_by_word

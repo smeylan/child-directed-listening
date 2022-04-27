@@ -11,11 +11,10 @@ from src.utils import load_models, transformers_bert_completions, load_splits, l
 config = configuration.Config()
 
 def assemble_scores_no_order(hyperparameter_set):
-    """
-    Assumes order of the the model vs age loop doesn't matter.
-    """
     
-    # hyperparameter_set: wfst or levdist
+    """
+    Load all of the non_child models for a given hyperparameter
+    """
     
     model_args = finetune_models = load_models.gen_finetune_model_args() + load_models.gen_shelf_model_args() + load_models.gen_unigram_args() 
 
@@ -53,9 +52,6 @@ def assemble_scores_no_order(hyperparameter_set):
 
 
             score_store.append(data_df)
-
-
-
                       
     return score_store
 
@@ -88,14 +84,22 @@ def successes_and_failures_across_time_per_model(age, success_ids, yyy_ids, mode
         priors_for_age_interval = transformers_bert_completions.compare_successes_failures_unigram_model(
             all_tokens_phono, success_ids, 
             yyy_ids, **model['kwargs'])
+    else:
+        raise ValueError('model_type not recognized!')
 
     # run the best model    
     if likelihood_type == 'wfst':
         likelihood_matrix, ipa = likelihoods.get_wfst_distance_matrix(all_tokens_phono, priors_for_age_interval, initial_vocab,  cmu_in_initial_vocab, config.fst_path, config.fst_sym_path)
         likelihood_matrix = -1 * np.log(likelihood_matrix + 10**-20) # yielding a surprisal
+    elif likelihood_type == 'wfst-child':
+        child_specific_fst_path = os.path.join(config.project_root, 'output/fst/', model['training_dataset']+'-1.txt')
+        likelihood_matrix, ipa = likelihoods.get_wfst_distance_matrix(all_tokens_phono, priors_for_age_interval, initial_vocab,  cmu_in_initial_vocab, child_specific_fst_path, config.fst_sym_path)
+        likelihood_matrix = -1 * np.log(likelihood_matrix + 10**-20) # yielding a surprisal
     elif likelihood_type == 'levdist':
         likelihood_matrix = likelihoods.get_edit_distance_matrix(all_tokens_phono, 
             priors_for_age_interval, cmu_in_initial_vocab)            
+    else:
+        raise ValueError('Likelihood not recognized!')
 
     # likelihood_matrix has all pronunciation variants     
     likelihood_matrix = likelihoods.reduce_duplicates(likelihood_matrix, cmu_in_initial_vocab, initial_vocab, 'min', cmu_indices_for_initial_vocab)
@@ -110,10 +114,10 @@ def successes_and_failures_across_time_per_model(age, success_ids, yyy_ids, mode
 
         #this_bert_token_ids = unigram.get_sample_bert_token_ids()
         posteriors_for_age_interval = transformers_bert_completions.get_posteriors(priors_for_age_interval, likelihood_matrix, initial_vocab, this_bert_token_ids, scaling_value = beta_value, examples_mode = model['examples_mode'])
+    else:
+        raise ValueError('model_type not recognized!')
 
     posteriors_for_age_interval['scores']['age'] = age
 
-
-    
     return copy.deepcopy(posteriors_for_age_interval['scores'])
    

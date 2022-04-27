@@ -4,61 +4,50 @@ import copy
 from os.path import join, exists
 sys.path.append('.')
 sys.path.append('src/.')
+import copy
 
-
-sys.path.append('.')
-sys.path.append('src/.')
 from src.gen import gen_training_scripts, gen_eval_scripts
-from src.utils import split_gen, scripts, configuration, child_models, fitting, load_models
+from src.utils import split_gen, scripts, configuration, child_models, load_models, paths, fitting
 config = configuration.Config()
 
 
+
 if __name__ == '__main__':
-            
-    for task_name in ['non_child_fit_shelf','non_child_fit_finetune']:
-        sh_fit_loc = f'output/SLURM/scripts_{task_name}'
-        if not exists(sh_fit_loc):
-            os.makedirs(sh_fit_loc)
+    
+    task_phase = 'fit'
+    task_name = 'non_child'            
 
 
     finetune_models = load_models.gen_finetune_model_args()
     shelf_models = load_models.gen_shelf_model_args() 
+    unigram_models = load_models.gen_unigram_model_args() 
 
     partitions = {
         'finetune' : finetune_models,
         'shelf' : shelf_models,
+        'unigram': unigram_models
     }    
-
-    sh_fit_loc = f'output/SLURM/scripts_non_child_fit_shelf'
-    shelf_model_args = []
-    for model in partitions['shelf']:            
-        model['task_name'] = 'non_child_fit_shelf'
-        model['training_dataset_name'] = model['dataset_name']
-        model['training_split_name'] = model['split_name']
-        shelf_model_args.append(copy.copy(model))
     
-    
-    for shelf_arg in shelf_model_args:
-        fit_file, fit_commands = fitting.gen_fitting_commands(**shelf_arg)
+    for subtask in ['shelf', 'finetune', 'unigram']:
 
-        with open(join(sh_fit_loc, fit_file), 'w') as f:
+        subtask_name = task_name + '_' + subtask
+        sh_fit_loc = f'output/SLURM/{subtask_name}_{task_phase}'
+        if not exists(sh_fit_loc):
+            os.makedirs(sh_fit_loc) 
+        
+        model_args = []
+        for model in partitions[subtask]:            
+            model['task_name'] = subtask_name
+            model['test_split'] = 'Providence'
+            model['test_dataset'] = 'all'       
+            model['task_phase'] = task_phase
+            model['n_samples'] = config.n_across_time                
+            model_args.append(copy.copy(model))
+        
+        for arg_set in model_args:
+            fit_file, fit_commands = fitting.gen_fitting_commands(arg_set)
+
+            with open(fit_file, 'w') as f:
                 f.writelines(fit_commands)
 
-    scripts.gen_submit_script('non_child_fit_shelf', shelf_arg, 'non_child_fit_shelf')
-
-    sh_fit_loc = f'output/SLURM/scripts_non_child_fit_finetune'
-    finetune_model_args = []
-    for model in partitions['finetune']:         
-        model['task_name'] = 'non_child_fit_finetune'
-        model['training_dataset_name'] = model['dataset_name']
-        model['training_split_name'] = model['split_name']           
-        finetune_model_args.append(copy.copy(model))                        
-    
-
-    for finetune_arg in finetune_model_args:
-        fit_file, fit_commands = fitting.gen_fitting_commands(**finetune_arg)
-
-        with open(join(sh_fit_loc, fit_file), 'w') as f:
-                f.writelines(fit_commands)
-
-    scripts.gen_submit_script('non_child_fit_finetune', finetune_arg, 'non_child_fit_finetune')
+        scripts.gen_submit_script(subtask_name, task_phase)

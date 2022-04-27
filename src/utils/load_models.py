@@ -6,7 +6,7 @@ import transformers
 import json
 import copy
 from transformers import BertTokenizer, BertForMaskedLM
-from src.utils import configuration, transformers_bert_completions, split_gen, load_splits, child_models
+from src.utils import configuration, transformers_bert_completions, split_gen, load_splits, child_models, paths
 config = configuration.Config()
 
 def gen_finetune_model_args():
@@ -29,41 +29,50 @@ def gen_finetune_model_args():
                 model_arg_set['context_width'] = context
                 finetune_model_args.append(copy.copy(model_arg_set))
 
-    return finetune_model_args
+    return finetune_model_args    
+    
+def gen_unigram_model_args():
+    
+    unigram_model_args = []
+        
+    for model_arg_set in config.unigram_model_args:
+        model_arg_set['use_tags'] = False
+        model_arg_set['context_width'] = 0
+        unigram_model_args.append(copy.copy(model_arg_set))
+    
+    return unigram_model_args
 
-
-def gen_adult_model_args():
+def gen_shelf_model_args():
 
     shelf_model_args = []
     
     for model_arg_set in config.shelf_model_args:        
-        for context in config.context_list:
-            model_arg_set['use_tags'] = False
-            model_arg_set['context_width'] = context
-            
+        
+        model_arg_set['use_tags'] = False
+        if not model_arg_set['model_type'] in ['flat_unigram', 'data_unigram']:
+            for context in config.context_list:
+                model_arg_set['context_width'] = context
+                shelf_model_args.append(copy.copy(model_arg_set))        
+        else:
+            model_arg_set['context_width'] = 0 # unigram models do not use context
             shelf_model_args.append(copy.copy(model_arg_set))        
 
-    return shelf_model_args
-    
-def gen_unigram_args():
-    
-    load_args = []
-    
-    # Two unigram baselines
-    for unigram_name in ['flat_unigram', 'data_unigram']:
-        load_args.append({
-                    'split_name': 'all', 
-                    'dataset_name': 'all',  
-                    'use_tags' : False,
-                    'context_width' : 0,
-                    'model_type': unigram_name
-                })
-    
-    return load_args
 
-def gen_shelf_model_args():
-    
-    return gen_adult_model_args() + gen_unigram_args()
+    return shelf_model_args    
+
+
+def gen_child_model_args():
+
+    child_model_args =  []
+
+    for model_arg_set in config.child_model_args:        
+
+        model_arg_set['use_tags'] = True
+        model_arg_set['context_width'] = 20
+        child_model_args.append(copy.copy(model_arg_set))
+
+    return child_model_args
+
 
 def gen_all_model_args():
     
@@ -71,11 +80,15 @@ def gen_all_model_args():
     Generate all of the model arguments used in the analysis.
     Order: (split, dataset, tags, context, model_type)
     """
-    
-    return gen_adult_model_args() + gen_finetune_model_args() + gen_unigram_args()
+
+    return gen_shelf_model_args() + gen_finetune_model_args()
      
     
-def gen_model_title(split, dataset, is_tags, context_num, model_type, training_dataset=None):
+def gen_model_title(model_dict):
+
+    raise ValueError('Deprecated')
+    # should use the same thing as get_slurm_script_name
+
     
     model_type_dict = {
         'childes' : 'CHILDES BERT',
@@ -101,17 +114,23 @@ def gen_model_title(split, dataset, is_tags, context_num, model_type, training_d
         True : 'with tags',
         False :  'without tags',
     }
+
+    #<training_split>_<training_dataset>(x<tags>)(x<model_type>)(x<test_split>_<test_dataset>_<context_width>)
     
-    if training_dataset is None:
-        model_title = f'{model_type_dict[model_type]} {speaker_tags_dict[is_tags]}, {dataset_dict[dataset]}, {context_dict[context_num]}'
-    else:
-        model_title = f'{model_type_dict[model_type]} {speaker_tags_dict[is_tags]}, {dataset_dict[dataset]}, {dataset_dict[training_dataset]}, {context_dict[context_num]}'
-    
+    model_title = \
+    model_type_dict[model_dict['model_type']] + '_' + \
+    context_dict[model_dict['context_width']] + '_' + \
+    dataset_dict[model_dict['dataset_dict']] + '_' + \
+    speaker_tags_dict[model_dict['use_tags']]  
+
     return model_title
     
     
 
 def get_tag_context_str(tags, context):
+
+    raise ValueError('deprecated')
+    #Needs to be updated to something like: <training_split>_<training_dataset>(x<tags>)(x<model_type>)(x<test_split>_<test_dataset>_<context_width>)
     
     assert not ((tags is None) ^ (context is None)), "Both with_tags and context_width should be none, or neither."
     
@@ -123,6 +142,8 @@ def get_tag_context_str(tags, context):
     
 
 def get_model_id(split_name, dataset_name, use_tags, context_width, model_type):
+
+    raise ValueError('deprecated')
     
     tag_str, context_str = get_tag_context_str(use_tags, context_width)
     model_id = '/'.join([split_name, dataset_name, tag_str, context_str, model_type])
@@ -149,7 +170,7 @@ def get_vocab_tok_modules():
     return adult_tokenizer, adult_softmax_mask, initial_tokenizer, initial_vocab
     
     
-def get_shelf_dict(split, dataset, with_tags, context):
+def get_shelf_dict(fitted_dict):
     """
     Adult BERT models, no finetuning
     """
@@ -159,26 +180,24 @@ def get_shelf_dict(split, dataset, with_tags, context):
     
     adult_tokenizer, adult_softmax_mask, _, _ = get_vocab_tok_modules()
     
-    return {
-            'title': gen_model_title('all', 'all', False, context, 'adult'), 
-            'kwargs': {'modelLM': adult_bertMaskedLM,
+    fitted_dict['title'] = paths.get_file_identifier(fitted_dict)
+    fitted_dict['kwargs'] = {'modelLM': adult_bertMaskedLM,
                         'tokenizer': adult_tokenizer,
                         'softmax_mask': adult_softmax_mask,
-                        'context_width_in_utts': context,
-                       'use_speaker_labels':False
-                       },
-             'type': 'BERT'
-         }
+                        'context_width_in_utts': fitted_dict['context_width'],
+                       'use_speaker_labels':fitted_dict['use_tags']
+                       }
+    return(fitted_dict)
 
 
 
-def get_data_unigram_dict(split, dataset, with_tags, context):
+def get_data_unigram_dict(fitted_dict):
     
     adult_tokenizer, adult_softmax_mask, _, initial_vocab = get_vocab_tok_modules()
     
-    return {
-        'title': 'CHILDES Unigram',
-        'kwargs': {'child_counts_path': f'{config.finetune_dir}/all/all/chi_vocab_train.csv',
+
+    fitted_dict['title'] = paths.get_file_identifier(fitted_dict)
+    fitted_dict['kwargs'] = {'child_counts_path': f'{config.finetune_dir}/all/all/chi_vocab_train.csv',
                     'tokenizer': adult_tokenizer,
                     'softmax_mask': adult_softmax_mask,
                     'vocab': initial_vocab,
@@ -186,24 +205,19 @@ def get_data_unigram_dict(split, dataset, with_tags, context):
                     # Added these default args 7/9/21 for compatibility with rest of the code
                     'context_width_in_utts': 0,
                     'use_speaker_labels': False,
-                   },
-         'type': 'unigram'
-        }
+                   }
+    return(fitted_dict)
 
-
-
-
-def get_flat_unigram_dict(split, dataset, with_tags, context):
+def get_flat_unigram_dict(fitted_dict):
     
     adult_tokenizer, adult_softmax_mask, _, initial_vocab = get_vocab_tok_modules()
     
-    return {
-            'title': 'Flat Unigram',
+    fitted_dict['title'] = paths.get_file_identifier(fitted_dict)
             # Note that this assumes that flat prior = no information at all.
             # That means it doesn't observe any train/val split.
             # It just assigns uniform probability to every single word,
             # regardless of if that word appears in the train set or not. 
-            'kwargs': {'child_counts_path': None,
+    fitted_dict['kwargs'] = {'child_counts_path': None,
                         'tokenizer': adult_tokenizer,
                         'softmax_mask': adult_softmax_mask,
                         'vocab': initial_vocab,
@@ -211,27 +225,30 @@ def get_flat_unigram_dict(split, dataset, with_tags, context):
                         # Added these default args 7/9/21 for compatibility with rest of the code
                         'context_width_in_utts': 0,
                         'use_speaker_labels': False,
-                       },
-             'type': 'unigram'
-        } 
-    
+                       }
+    return(fitted_dict)
 
-    
-def get_finetune_dict(split, dataset, with_tags, context_width):
-    
-    this_dict = {
-        'title' : gen_model_title(split, dataset, with_tags, context_width, 'childes'),
-        'kwargs' : get_model_from_split(split, dataset,
-                                        with_tags = with_tags),
-        'type' : 'BERT',
-    }
-    this_dict['kwargs'].update({'context_width_in_utts' : context_width})
-    
-    return this_dict
+       
+        
+def get_finetune_dict(fitted_dict):
+
+    # make a model dict 
+    model_dict = copy.copy(fitted_dict)
+    model_dict['task_phase'] = 'train'
+    model_dict['test_dataset'] = None
+    model_dict['test_split'] = None  
+    model_dict['context_width'] = None  
 
 
+    fitted_dict['title'] =  paths.get_file_identifier(fitted_dict)
+    fitted_dict['kwargs'] = get_model_from_split(model_dict)    
+    fitted_dict['kwargs']['context_width_in_utts'] = fitted_dict['context_width']
+    fitted_dict['kwargs']['use_speaker_labels'] = fitted_dict['use_tags']
+    return fitted_dict
 
-def get_model_dict(split, dataset, with_tags, context, model_type):
+
+
+def get_fitted_model_dict(fitted_dict):
     """
     Only for age/all splits. Child loading is in utils_child/child_models.py
     """
@@ -243,25 +260,23 @@ def get_model_dict(split, dataset, with_tags, context, model_type):
     # If it's a pretrained BERT model with no finetuning, it has /shelf added to its model id
     # If it's a unigram model, it's just: split name/dataset name/unigram_{unigram type}
     
-    if model_type == 'childes': 
-        model_dict = get_finetune_dict(split, dataset, with_tags, context)
-    if model_type == 'switchboard': 
-        model_dict = get_finetune_dict(split, dataset, with_tags, context)
-    elif model_type == 'adult':
-        model_dict = get_shelf_dict(split, dataset, with_tags, context)
-    elif model_type == 'data_unigram': 
-        model_dict = get_data_unigram_dict(split, dataset, with_tags, context)
-    elif model_type == 'flat_unigram':
-        model_dict = get_flat_unigram_dict(split, dataset, with_tags, context)
-    
-    # Update the tokenizers if needed.
-    
-    # 7/9/21: So childes doesn't need to re-add the tokens, and it works fine with the tokens, manually checked via prints    
-    if model_type != 'childes':
-        model_dict['kwargs']['tokenizer'].add_tokens(['[chi]','[cgv]'])
+    if fitted_dict['model_type'] == 'BERT':
+        if fitted_dict['training_split'] == 'adult-written': 
+            model_dict = get_shelf_dict(fitted_dict)
+        else:
+            model_dict = get_finetune_dict(fitted_dict)
+        
+        vocab = [x for x in model_dict['kwargs']['tokenizer'].vocab]
 
-    # Always add tokens to the new models.
-    model_dict['kwargs']['tokenizer'].add_tokens(['yyy','xxx']) #must maintain xxx and yyy for alignment,        
+        for token in ['[chi]','[cgv]', 'yyy','xxx']:
+            if token not in vocab:
+                model_dict['kwargs']['tokenizer'].add_tokens(token)
+        
+
+    elif fitted_dict['model_type'] == 'data_unigram': 
+        model_dict = get_data_unigram_dict(fitted_dict)
+    elif fitted_dict['model_type'] == 'flat_unigram':
+        model_dict = get_flat_unigram_dict(fitted_dict)
     
     return model_dict
     
@@ -296,30 +311,10 @@ def get_initial_vocab_info(initial_tokenizer = None):
     return initial_vocab, cmu_2syl_inchildes, cmu_indices_for_initial_vocab
 
 
-def get_model_path(split, dataset, with_tags):
+def get_model_from_split(model_dict):
     
-    """
-    7/15/21: New function, just breaking up an old function.
-    """
-    
-    tag_folder = 'with_tags' if with_tags else 'no_tags'
-    this_path = join(split_gen.get_split_folder(split, dataset, config.model_dir), tag_folder)
-    
-    return this_path
-
-def get_model_from_split(split, dataset, with_tags):
-    
-    """
-    For getting models trained on OM2.
-    7/15/21: Split out get model path orthogonally from this
-    """
-    
-    this_path = get_model_path(split, dataset, with_tags)
-    return get_model_from_path(this_path, with_tags)
-    
-    
-def get_model_from_path(model_path, with_tags):
-    
+    model_path = paths.get_directory(model_dict)
+        
     word_info_all = get_cmu_dict_info()
     word_info = word_info_all.word 
     
@@ -335,7 +330,7 @@ def get_model_from_path(model_path, with_tags):
     tokenizer = BertTokenizer.from_pretrained(model_path)
     softmax_mask, vocab = transformers_bert_completions.get_softmax_mask(tokenizer, word_info)
     
-    return {'modelLM' : model, 'tokenizer' : tokenizer, 'softmax_mask' : softmax_mask, 'use_speaker_labels' : with_tags }
+    return {'modelLM' : model, 'tokenizer' : tokenizer, 'softmax_mask' : softmax_mask, 'use_speaker_labels' : model_dict['use_tags']}
  
 
     

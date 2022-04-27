@@ -42,7 +42,7 @@ def assemble_scores_no_order(hyperparameter_set):
 
 
 
-def successes_and_failures_across_time_per_model(age, success_ids, yyy_ids, model, all_tokens_phono, beta_value, examples_mode, likelihood_type):
+def successes_and_failures_across_time_per_model(age, success_ids, yyy_ids, model, all_tokens_phono, beta_value, likelihood_type):
     """
     model = a dict of a model like that in the yyy analysis 
     vocab is only invoked for unigram, which correspond to original yyy analysis.
@@ -60,12 +60,12 @@ def successes_and_failures_across_time_per_model(age, success_ids, yyy_ids, mode
     # causing runtime error -> program doesn't run to completion.
     # This is very unlikely for large samples, but potentially causes runtime errors in the middle of running.
     
-    if model['type'] == 'BERT':
+    if model['model_type'] == 'BERT':
         priors_for_age_interval = transformers_bert_completions.compare_successes_failures(
             all_tokens_phono, success_ids, 
             yyy_ids, **model['kwargs'])
 
-    elif model['type'] == 'unigram':
+    elif model['model_type'] in ['data_unigram', 'flat_unigram']:
         priors_for_age_interval = transformers_bert_completions.compare_successes_failures_unigram_model(
             all_tokens_phono, success_ids, 
             yyy_ids, **model['kwargs'])
@@ -82,17 +82,16 @@ def successes_and_failures_across_time_per_model(age, success_ids, yyy_ids, mode
     likelihood_matrix = likelihoods.reduce_duplicates(likelihood_matrix, cmu_in_initial_vocab, initial_vocab, 'min', cmu_indices_for_initial_vocab)
 
 
-    if model['type'] == 'BERT':
+    if model['model_type'] == 'BERT':
         posteriors_for_age_interval = transformers_bert_completions.get_posteriors(priors_for_age_interval, 
-            likelihood_matrix, initial_vocab, scaling_value = beta_value, examples_mode = examples_mode)
-    elif model['type'] == 'unigram':
+            likelihood_matrix, initial_vocab, scaling_value = beta_value, examples_mode = model['examples_mode'])
+    elif model['model_type'] in ['data_unigram', 'flat_unigram']:
         # special unigram hack
         this_bert_token_ids = all_tokens_phono.loc[all_tokens_phono.partition.isin(('success','yyy'))].bert_token_id
 
         #this_bert_token_ids = unigram.get_sample_bert_token_ids()
-        posteriors_for_age_interval = transformers_bert_completions.get_posteriors(priors_for_age_interval, likelihood_matrix, initial_vocab, this_bert_token_ids, scaling_value = beta_value, examples_mode = examples_mode)
+        posteriors_for_age_interval = transformers_bert_completions.get_posteriors(priors_for_age_interval, likelihood_matrix, initial_vocab, this_bert_token_ids, scaling_value = beta_value, examples_mode = model['examples_mode'])
 
-    posteriors_for_age_interval['scores']['model'] = model['title']
     posteriors_for_age_interval['scores']['age'] = age
 
 

@@ -89,12 +89,16 @@ class Config:
         # get the path of the current file
         config_dir = os.path.dirname(os.path.abspath(__file__))
         self.project_root =  os.path.split(os.path.split(config_dir)[0])[0]
-        self.json_path = os.path.join(self.project_root, 'config.json')
 
+        if '/rdma/vast-rdma/vast/cpl/' in self.project_root:
+            self.project_root = self.project_root.replace('/rdma/vast-rdma/vast/cpl/', '/om2/user/') # these paths are more robust, no one knows why
+
+        self.json_path = os.path.join(self.project_root, 'config.json')
         
         # read in the JSON path and set everything
         f = open(self.json_path,)
         data = json.load(f)
+
         
         #set keys and vals from the JSON
         for key, value in data.items():

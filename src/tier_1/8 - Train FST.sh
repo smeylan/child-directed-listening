@@ -46,7 +46,7 @@ conda activate task1
 
 # Overwrite the data directory for SigMorphon 2020 / FST 
 rm -rf data
-cp -r ../../../output/fst data
+cp -r ../../../output/fst/ data 
 
 
 # overwrite the local version of sweep with the one with edits so that it learns models for orders 1-3 and retains the symbol file rather than deleting it
@@ -58,8 +58,16 @@ cp ../../../../../src/external/sweep .
 
 # copy the resulting FST and symbol files back into the main codebase so that they can be called by existing code
 fstprint checkpoints/chi-1.fst checkpoints/chi-1.txt
-cp checkpoints/chi-1.fst ../../../../../output/fst/
-cp checkpoints/chi-1.txt ../../../../../output/fst/
+fstprint checkpoints/Alex-1.fst checkpoints/Alex-1.txt
+fstprint checkpoints/Ethan-1.fst checkpoints/Ethan-1.txt
+fstprint checkpoints/Lily-1.fst checkpoints/Lily-1.txt
+fstprint checkpoints/Naima-1.fst checkpoints/Naima-1.txt
+fstprint checkpoints/Violet-1.fst checkpoints/Violet-1.txt
+fstprint checkpoints/William-1.fst checkpoints/William-1.txt
+
+
+cp checkpoints/*-1.fst ../../../../../output/fst/
+cp checkpoints/*-1.txt ../../../../../output/fst/
 
 
 # deactivate the conda environment

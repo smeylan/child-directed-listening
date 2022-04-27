@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# 2c: eval the finetune models, fit the child specific models
+
+
+#SBATCH -N 1
+#SBATCH -p cpl
+#SBATCH -t 00:10:00
+#SBATCH --mem=9G
+#SBATCH --output=./output/logs/%j_gen-scripts_2b.out 
+
+module load openmind/singularity/3.2.0
+
+chmod u+x ./output/SLURM/submission_scripts/submit_non_child_finetune_eval.sh
+chmod u+x ./output/SLURM/submission_scripts/submit_child_fit.sh
+
+
+./output/SLURM/submission_scripts/submit_non_child_finetune_eval.sh
+./output/SLURM/submission_scripts/submit_child_fit.sh

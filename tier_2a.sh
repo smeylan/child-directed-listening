@@ -1,19 +1,20 @@
 #!/bin/bash
 
+# 2a: train the finetune models, fit the shelf and unigram models
+
 
 #SBATCH -N 1
 #SBATCH -p cpl
 #SBATCH -t 00:10:00
 #SBATCH --mem=1G
-#SBATCH --output=./%j_gen-scripts_2a.out 
+#SBATCH --output=./output/logs/%j_gen-scripts_2a.out 
 
 export TOKENIZERS_PARALLELISM=true # Possibly only needed for wandb, but adding to avoid warning in case.
 
 module load openmind/singularity/3.2.0
 
-# scripts for nonchild, scripts for shelf models, scripts for finetune models
+# generate all training, fitting, and eval scripts except for child-specific models (which require fine-tuning a base model first)
 
-# generate the training, fitting, and eval scripts 
 singularity exec --nv -B /om,/om2/user/${CDL_SLURM_USER} ${CDL_SINGULARITY_PATH} python3 src/gen/gen_training_scripts.py; 
 singularity exec --nv -B /om,/om2/user/${CDL_SLURM_USER} ${CDL_SINGULARITY_PATH} python3 src/gen/gen_fitting_scripts.py; 
 singularity exec --nv -B /om,/om2/user/${CDL_SLURM_USER} ${CDL_SINGULARITY_PATH} python3 src/gen/gen_eval_scripts.py; 

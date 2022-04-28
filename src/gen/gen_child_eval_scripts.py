@@ -4,7 +4,7 @@ from os.path import join, exists
 
 sys.path.append('.')
 sys.path.append('src/.')
-from src.utils import split_gen, scripts, configuration, child_models, fitting, load_models, paths, evaluation, load_splits  
+from src.utils import split_gen, scripts, configuration, fitting, load_models, paths, evaluation, load_splits  
 config = configuration.Config()
 
 

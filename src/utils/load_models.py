@@ -6,7 +6,7 @@ import transformers
 import json
 import copy
 from transformers import BertTokenizer, BertForMaskedLM
-from src.utils import configuration, transformers_bert_completions, split_gen, load_splits, child_models, paths
+from src.utils import configuration, transformers_bert_completions, split_gen, load_splits, paths
 config = configuration.Config()
 
 def gen_finetune_model_args():

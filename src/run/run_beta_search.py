@@ -9,7 +9,7 @@ import sys
 
 sys.path.append('.')
 sys.path.append('src/.')
-from src.utils import load_splits, load_models, split_gen, parsers, hyperparameter_utils, sample_across_models, child_models, configuration, paths
+from src.utils import load_splits, load_models, split_gen, parsers, hyperparameter_utils, sample_across_models, configuration, paths
 config = configuration.Config()
 
 def fit_child_specific_wfst(fitting_dict):

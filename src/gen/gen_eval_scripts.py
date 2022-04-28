@@ -7,7 +7,7 @@ sys.path.append('src/.')
 import copy
 
 from src.gen import gen_training_scripts, gen_eval_scripts
-from src.utils import split_gen, scripts, configuration, child_models, load_models, paths, evaluation
+from src.utils import split_gen, scripts, configuration, load_models, paths, evaluation
 config = configuration.Config()
 
 if __name__ == '__main__':

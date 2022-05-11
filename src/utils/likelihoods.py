@@ -287,9 +287,14 @@ def get_wfst_distance_matrix(all_tokens_phono, prior_data, initial_vocab,  cmu_2
     
     # [X] Load the transducer, create a covering symbol set, and change the transducer to the data symbol set
     fit_model_superset = pd.read_csv(path_to_baum_welch_transducer, sep='\t', header=None)
+       
     
-    utf8_sym_path = get_utf8_sym_table(fit_model_superset)
+    #utf8_sym_path = get_utf8_sym_table(fit_model_superset)
+    #utf8_sym = pywrapfst.SymbolTable.read_text(utf8_sym_path)
+
+    utf8_sym_path = os.path.join(config.project_root,'src/external/all_child_phones.sym')
     utf8_sym = pywrapfst.SymbolTable.read_text(utf8_sym_path)
+
 
     #fit_model_superset, superset_chi = reconcile_symbols(fit_model, path_to_chi_phones_sym)
     #superset_chi_sym = pywrapfst.SymbolTable.read_text(os.path.join(config.project_root, 'output/fst/superset_chi.sym'))

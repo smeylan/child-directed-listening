@@ -12,6 +12,7 @@ for TRAIN_TSV in "${DATA}/train/"*"_train.tsv"; do
     DEV_TSV="${TRAIN_TSV//train/dev}"
     TEST_TSV="${TRAIN_TSV//train/test}"
     LANGUAGE="$(basename $TRAIN_TSV _train.tsv)"
+    
     # Output symbols.
     # cut -f2 "${TRAIN_TSV}" "${DEV_TSV}" \
     #     | ngramsymbols \
@@ -31,10 +32,19 @@ for TRAIN_TSV in "${DATA}/train/"*"_train.tsv"; do
         --seed="${SEED}" \
         --random_starts="${RANDOM_STARTS}" \
         --tsv_path="${TRAIN_TSV}" \
-        --input_token_type=utf8 \
-        --output_token_type=utf8 \
+        --input_token_type=all_child_phones.sym \
+        --output_token_type=all_child_phones.sym \
         --encoder_path="${LANGUAGE}.enc" \
         --far_path="${LANGUAGE}.far"
+
+    # ./align.py \
+    #     --seed="${SEED}" \
+    #     --random_starts="${RANDOM_STARTS}" \
+    #     --tsv_path="${TRAIN_TSV}" \
+    #     --input_token_type=chi_phones.sym \
+    #     --output_token_type=chi_phones.sym \
+    #     --encoder_path="${LANGUAGE}.enc" \
+    #     --far_path="${LANGUAGE}.far"
 
     # Loops over LM orders from 3 (trigram) to 9. 
     for ORDER in $(seq 1 1); do

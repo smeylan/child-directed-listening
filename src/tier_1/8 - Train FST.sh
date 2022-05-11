@@ -52,6 +52,8 @@ cp -r ../../../output/fst/ data
 # overwrite the local version of sweep with the one with edits so that it learns models for orders 1-3 and retains the symbol file rather than deleting it
 cd baselines/fst
 cp ../../../../../src/external/sweep .
+# copy over the symbol file that covers all of the children
+cp ../../../../../src/external/all_child_phones.sym .
 
 # actually execute the aligment and modeling files
 ./sweep

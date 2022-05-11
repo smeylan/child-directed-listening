@@ -1,11 +1,15 @@
+import os
+import copy
+import glob
 import pandas as pd
 import numpy as np
 from collections import defaultdict
 import matplotlib.pyplot as plt
 import pickle5 as pickle
 
-from src.utils import utils_child, load_splits
+from src.utils import load_splits, configuration, paths
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+config = configuration.Config()
 
 
 def organize_auc_scores_as_grid(auc_df):
@@ -242,6 +246,8 @@ def process_score_results(data_child, prior_child, model_type, which_key, likeli
     
     return stats
 
+
+
     
 def organize_scores(is_mean, which_key, likelihood_type):
     
@@ -257,8 +263,6 @@ def organize_scores(is_mean, which_key, likelihood_type):
 
     '''
 
-    results = defaultdict(list)
-
     # name_list = load_splits.get_child_names() 
     # models = ['childes' for x in range(len(load_splits.get_child_names()))] + ['childes','switchboard']    
 
@@ -266,11 +270,23 @@ def organize_scores(is_mean, which_key, likelihood_type):
     #     results[data_name] = [process_score_results(data_name, name_list[i], models[i], which_key, likelihood_type,  is_mean = is_mean) for i in range(len(name_list))]
 
 
-    test_dataset_name_list = load_splits.get_child_names()
-    training_dataset_name_list = test_dataset_name_list + ['all', 'all'] 
-    model_type_list = ['childes' for x in range(len(load_splits.get_child_names()))] + ['childes','switchboard']    
+    # test_dataset_name_list = load_splits.get_child_names()
+    # training_dataset_name_list = test_dataset_name_list + ['all', 'all'] 
+    # model_type_list = ['childes' for x in range(len(load_splits.get_child_names()))] + ['childes','switchboard']    
 
-    for test_dataset_name in test_dataset_name_list:
+
+    raw_scores = assemble_child_scores_no_order('wfst')
+
+    prior_prorabilities = [process_model_score(x, 'prior_probability', 'mean')
+        for x in raw_scores]
+    posterior_prorabilities = [process_model_score(x, 'prior_probability', 'mean')
+        for x in raw_scores]
+
+    print('reached pdb')
+    import pdb
+    pdb.set_trace()
+
+    for dataset in test_dataset_name_list:
         results[test_dataset_name] = [process_score_results(test_dataset_name, training_dataset_name_list[i], model_type_list[i], which_key, likelihood_type,  is_mean = is_mean) for i in range(len(training_dataset_name_list))]
 
     
@@ -281,3 +297,116 @@ def organize_scores(is_mean, which_key, likelihood_type):
     results_df = pd.DataFrame.from_records(results)
     
     return results_df, scores_arr, test_dataset_name_list, training_dataset_name_list
+
+
+def process_model_score(model_score, which_key, func):
+    scores = model_score.loc[(model_score.set == 'success')]    
+
+    if func == 'std':
+        agg_func = lambda s : np.std(s, ddof = 1)        
+    elif func == 'mean':
+        agg_func = np.mean
+    else:
+        raise ValueError('func must be either `mean` or `std`')
+    
+    stats = agg_func(-np.log2(scores[which_key]))
+    return(stats)
+
+
+def assemble_child_scores_no_order(hyperparameter_set):
+    
+    """
+    Load all of the non_child models for a given hyperparameter
+    """
+
+    task_name = 'analysis'
+    task_phase = 'eval'         
+    child_names = load_splits.get_child_names()
+
+    # cross each child with the Providence testing data for each other child
+    child_arg_list = []
+    for training_child in child_names:      
+        for test_child in child_names:
+            child_arg_list.append(
+                {'training_split': 'Providence-Child',
+                'training_dataset': training_child,
+                'test_split': 'Providence-Child',
+                'test_dataset': test_child,
+                'model_type':'BERT', 
+                'use_tags':True,
+                'context_width':20,
+                'task_name': task_name,
+                'n_samples' : config.n_across_time,
+                'task_phase': task_phase})
+
+    
+    # Pretends that Switchboard is a kid and cross with the Providence testing data for each other child
+    for test_child in child_names:
+        child_arg_list.append(
+            {'training_split': 'Switchboard',
+                'training_dataset': 'all',
+                'test_split': 'Providence-Child',
+                'test_dataset': test_child,
+                'model_type':'BERT', 
+                'use_tags':False,
+                'context_width':20,
+                'task_name': task_name,
+                'n_samples' : config.n_across_time,
+                'task_phase': task_phase})
+
+
+    # Pretends that Switchboard is a kid and cross with the Providence testing data for each other child
+    for test_child in child_names:
+        child_arg_list.append(
+            {'training_split': 'Providence',
+                'training_dataset': 'all',
+                'test_split': 'Providence-Child',
+                'test_dataset': test_child,
+                'model_type':'BERT', 
+                'use_tags':True,
+                'context_width':20,
+                'task_name': task_name,
+                'n_samples' : config.n_across_time,
+                'task_phase': task_phase})
+
+
+    score_store = []
+    
+    for model_arg in child_arg_list:
+
+                
+        model_arg['n_samples'] = config.n_across_time
+        
+        # loading from 
+        results_path = paths.get_directory(model_arg)    
+
+        search_string = os.path.join(results_path, hyperparameter_set+'_run_models_across_time_*.pkl')
+        print('Searching '+search_string)
+        age_paths = glob.glob(search_string)
+        
+        single_model_store = []
+        for this_data_path in age_paths:
+            
+            #data_df = pd.read_pickle(this_data_path)
+            with open(this_data_path, "rb") as fh:
+                data_df = pickle.load(fh)
+                data_df['training_split'] = model_arg['training_split']
+                data_df['training_dataset'] = model_arg['training_dataset']
+                data_df['test_split'] = model_arg['test_split']
+                data_df['test_dataset'] = model_arg['test_dataset']
+                data_df['model_type'] = model_arg['model_type']
+            
+
+                data_df['split'] = data_df.training_split + '_' + data_df.training_dataset
+                data_df['model'] = paths.get_file_identifier(model_arg)
+
+                single_model_store.append(copy.copy(data_df))
+
+        if len(single_model_store) > 0:
+            score_store.append(pd.concat(single_model_store))
+                      
+    return score_store
+
+
+
+

@@ -14,7 +14,7 @@ config = configuration.Config()
 
 def use_child_specific_wfst(fitting_dict):
     # we should only get the results of the child-specific WFST when the child and the training data are the same
-    return((fitting_dict['training_split'] == 'Providence-Child') and (fitting_dict['training_split'] == fitting_dict['test_split']))  
+    return((fitting_dict['training_split'] == 'Providence-Child') and (fitting_dict['training_dataset'] == fitting_dict['test_dataset']))  
     
 def call_single_across_time_model(sample_dict, all_tokens_phono, this_model_dict):
 
@@ -59,7 +59,7 @@ def call_single_across_time_model(sample_dict, all_tokens_phono, this_model_dict
         percentage_done = idx / float(len(ages)) * 100
         
         if int(percentage_done) % 10 == 0: print(f'{percentage_done}%')
-            
+        
         this_pool = sample_dict[age_str]
         this_success_pool = this_pool['success']
         this_yyy_pool = this_pool['yyy']
@@ -105,7 +105,7 @@ if __name__ == '__main__':
     
                                                                     
     all_phono = load_splits.load_phono()
-    this_sample_dict = load_splits.load_sample_model_across_time_args()
+    this_sample_dict = load_splits.load_sample_model_across_time_args()    
     this_model_dict = load_models.get_fitted_model_dict(this_model_args)
 
      

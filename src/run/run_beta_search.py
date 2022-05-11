@@ -25,7 +25,7 @@ def fit_child_specific_wfst(fitting_dict):
 
 
     # we should only get the results of the child-specific WFST when the child and the training data are the same
-    return((fitting_dict['training_split'] == 'Providence-Child') and (fitting_dict['training_split'] == fitting_dict['test_split']))
+    return((fitting_dict['training_split'] == 'Providence-Child') and (fitting_dict['training_dataset'] == fitting_dict['test_dataset']))
 
 def optimize_beta_and_lambda(fitting_dict):
     '''

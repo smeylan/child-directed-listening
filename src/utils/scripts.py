@@ -3,7 +3,7 @@ import os
 from os.path import join, exists
 import subprocess
 
-from src.utils import split_gen, configuration, child_models, paths
+from src.utils import split_gen, configuration, paths
 config = configuration.Config()
     
 def gen_submit_script(task_name, task_phase):

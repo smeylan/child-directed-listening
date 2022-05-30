@@ -285,7 +285,7 @@ def get_wfst_distance_matrix(all_tokens_phono, prior_data, initial_vocab,  cmu_2
 
     iv = cmu_2syl_inchildes
     
-    # [X] Load the transducer, create a covering symbol set, and change the transducer to the data symbol set
+        # [X] Load the transducer, create a covering symbol set, and change the transducer to the data symbol set
     fit_model_superset = pd.read_csv(path_to_baum_welch_transducer, sep='\t', header=None)
        
     
@@ -314,12 +314,17 @@ def get_wfst_distance_matrix(all_tokens_phono, prior_data, initial_vocab,  cmu_2
     tail[[4]] = [int(x) if not np.isnan(x) else '' for x in tail[4]]
 
     conditioned = pd.concat([conditioned, tail])
-    write_out_edited_fst(conditioned, os.path.join(config.project_root, 'output/fst/chi_conditioned_fst.csv'))
-    
-    chi_conditioned_path = os.path.join(config.project_root, 'output/fst/chi_conditioned.fst')
 
-    os.system('fstcompile --arc_type=standard output/fst/chi_conditioned_fst.csv '+chi_conditioned_path)    
-    transducer = pywrapfst.Fst.read(os.path.join(config.project_root, "output/fst/chi_conditioned.fst"))
+    output_txt_path = path_to_baum_welch_transducer.replace('.txt', '_conditioned_fst.csv')
+    output_fst_path = path_to_baum_welch_transducer.replace('.txt', '_conditioned.fst')
+
+    # write out a child-specific fst
+
+    write_out_edited_fst(conditioned, output_txt_path)
+
+    os.system('fstcompile --arc_type=standard '+output_txt_path+ ' ' + output_fst_path)    
+    transducer = pywrapfst.Fst.read(output_fst_path)
+    print('Loaded transducer')    
             
     #[X] translate all words in the vocab into FSAs (w_fsas)and compose with the n-gram transducer
     
@@ -331,9 +336,14 @@ def get_wfst_distance_matrix(all_tokens_phono, prior_data, initial_vocab,  cmu_2
         w_fsas[w['ipa_short']] = w_in.arcsort(sort_type="ilabel")
         ws.append(w['ipa_short'])
 
-    fst_cache_path = os.path.join(config.project_root, config.fst_cache_path)
+    if (os.path.basename(path_to_baum_welch_transducer) == 'chi-1.txt'): 
+        fst_cache_path = os.path.join(config.project_root, config.fst_cache_path)
+    else: 
+        child_specific_dir = os.path.basename(path_to_baum_welch_transducer).replace('.txt','')
+        fst_cache_path = os.path.join(config.project_root, 'output/unigram_child_fst_cache/', child_specific_dir)
+    
     if not os.path.exists(fst_cache_path):
-        os.mkdir(fst_cache_path)
+        os.makedirs(fst_cache_path)
         
     #[X] translate all observed words (data) into FSAs (d_fsas)
     serial_inputs = [(string_to_fsa(d, utf8_sym).arcsort(sort_type="olabel"), w_fsas, ws, d, fst_cache_path) for d in ipa.actual_phonology_no_dia]
@@ -354,7 +364,7 @@ def get_wfst_distance_matrix(all_tokens_phono, prior_data, initial_vocab,  cmu_2
     # yield the matrix of distances
     
     # !!! make sure that the ordering of the results is not permuted 
-    
+
     return(np.vstack(distances), ipa)   
 
 def reduce_duplicates(wfst_dists, cmu_2syl_inchildes, initial_vocab, max_or_min, cmu_indices_for_initial_vocab):

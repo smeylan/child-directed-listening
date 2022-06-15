@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from collections import defaultdict
 from datetime import datetime
+import copy
 
 sys.path.append('.')
 sys.path.append('src/.')
@@ -12,9 +13,9 @@ from utils import load_models, load_splits, data_cleaning, parsers, hyperparamet
 config = configuration.Config()
 
 
-def use_child_specific_wfst(fitting_dict):
-    # we should only get the results of the child-specific WFST when the child and the training data are the same
-    return((fitting_dict['training_split'] == 'Providence-Child') and (fitting_dict['training_dataset'] == fitting_dict['test_dataset']))  
+# def use_child_specific_wfst(fitting_dict):
+#     # we should only get the results of the child-specific WFST when the child and the training data are the same
+#     return((fitting_dict['training_split'] == 'Providence-Child') and (fitting_dict['training_dataset'] == fitting_dict['test_dataset']))  
     
 def call_single_across_time_model(sample_dict, all_tokens_phono, this_model_dict):
 
@@ -22,14 +23,14 @@ def call_single_across_time_model(sample_dict, all_tokens_phono, this_model_dict
         Load the best performing hyperparameter values for a given model and test dataset and run all eval data, saving the data by each 6 month time period
     '''       
 
-    if use_child_specific_wfst(this_model_dict):
-        # re-use the lambda bounds for Gamma
-        optimal_gamma_value = [hyperparameter_utils.get_optimal_hyperparameter_value(this_model_dict, 'gamma')]
-        if config.fail_on_lambda_edge:
-            if optimal_gamma_value[0] >= config.lambda_high:
-                raise ValueError('Lambda value is too high for a child-specific dataset; examine the range for WFST scaling.')
-            if optimal_gamma_value[0] <= config.lambda_low:
-                raise ValueError('Lambda value is too low for a child-specific dataset; examine the range for WFST Distance scaling.')
+    
+    # re-use the lambda bounds for Gamma
+    optimal_gamma_value = [hyperparameter_utils.get_optimal_hyperparameter_value(this_model_dict, 'gamma')]
+    if config.fail_on_lambda_edge:
+        if optimal_gamma_value[0] >= config.lambda_high:
+            raise ValueError('Lambda value is too high for a child-specific dataset; examine the range for WFST scaling.')
+        if optimal_gamma_value[0] <= config.lambda_low:
+            raise ValueError('Lambda value is too low for a child-specific dataset; examine the range for WFST Distance scaling.')
 
     # Load the optimal beta and lambda
     optimal_lambda_value = [hyperparameter_utils.get_optimal_hyperparameter_value(this_model_dict, 'lambda')]
@@ -67,6 +68,10 @@ def call_single_across_time_model(sample_dict, all_tokens_phono, this_model_dict
         if (this_success_pool.shape[0] == 0) and (this_yyy_pool.shape[0] == 0): continue
 
         scores_output_path = paths.get_directory(this_model_dict)
+
+        #if use_child_specific_wfst(this_model_dict):
+        best_gamma_scores = sample_models_across_time.successes_and_failures_across_time_per_model(age, this_success_pool.utterance_id, this_yyy_pool.utterance_id, this_model_dict, all_tokens_phono, optimal_gamma_value[0], 'wfst-child')
+        best_gamma_scores.to_pickle(join(scores_output_path, f'wfst-child_run_models_across_time_{age_str}.pkl'))
          
         best_beta_scores = sample_models_across_time.successes_and_failures_across_time_per_model(age, this_success_pool.utterance_id, this_yyy_pool.utterance_id, this_model_dict, all_tokens_phono, optimal_beta_value[0], 'levdist')        
         best_beta_scores.to_pickle(join(scores_output_path, f'levdist_run_models_across_time_{age_str}.pkl'))
@@ -74,13 +79,6 @@ def call_single_across_time_model(sample_dict, all_tokens_phono, this_model_dict
         
         best_lambda_scores = sample_models_across_time.successes_and_failures_across_time_per_model(age, this_success_pool.utterance_id, this_yyy_pool.utterance_id, this_model_dict, all_tokens_phono, optimal_lambda_value[0], 'wfst')
         best_lambda_scores.to_pickle(join(scores_output_path, f'wfst_run_models_across_time_{age_str}.pkl'))
-
-        if use_child_specific_wfst(this_model_dict):
-            best_gamma_scores = sample_models_across_time.successes_and_failures_across_time_per_model(age, this_success_pool.utterance_id, this_yyy_pool.utterance_id, this_model_dict, all_tokens_phono, optimal_gamma_value[0], 'wfst-child')
-            best_gamma_scores.to_pickle(join(scores_output_path, f'wfst-child_run_models_across_time_{age_str}.pkl'))
-    else:
-        best_gamma_scores = None
-
 
 
     return best_beta_scores, best_lambda_scores, best_gamma_scores
@@ -105,7 +103,42 @@ if __name__ == '__main__':
     
                                                                     
     all_phono = load_splits.load_phono()
-    this_sample_dict = load_splits.load_sample_model_across_time_args()    
+    
+    # this logic needs to be tested
+    
+    
+    if (this_model_args['test_split'] == 'Providence') and (this_model_args['test_dataset'] == 'all'): 
+        this_sample_dict = load_splits.load_sample_model_across_time_args()    
+        
+    elif (this_model_args['test_split'] == 'Providence-Child'):
+        #think about where this was in the notebooks        
+
+        this_sample_dict = {}
+        
+        eval_samples = all_phono.loc[(all_phono.phase_child_sample == 'eval') & (all_phono.target_child_name == this_model_args['test_dataset'])]
+
+        for age in [x for x in np.unique(eval_samples.year) if not np.isnan(x)]:
+
+            eval_samples_age =  eval_samples.loc[eval_samples.year == age]
+
+
+            success_utts = eval_samples_age[eval_samples_age.success_token][['utterance_id']].drop_duplicates()
+            failure_utts = eval_samples_age[eval_samples_age.yyy_token][['utterance_id']].drop_duplicates()
+
+            if success_utts.shape[0] > config.n_across_time:
+                success_utts = success_utts.iloc[0:config.n_across_time]
+
+            if failure_utts.shape[0] > config.n_across_time:
+                failure_utts = failure_utts.iloc[0:config.n_across_time]
+
+            rdict = {'success': success_utts, 'yyy': failure_utts}
+
+            this_sample_dict[str(age)] = copy.copy(rdict)
+
+    else:
+        raise NotImplementedError
+
+
     this_model_dict = load_models.get_fitted_model_dict(this_model_args)
 
      

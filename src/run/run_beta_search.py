@@ -12,20 +12,20 @@ sys.path.append('src/.')
 from src.utils import load_splits, load_models, split_gen, parsers, hyperparameter_utils, sample_across_models, configuration, paths
 config = configuration.Config()
 
-def fit_child_specific_wfst(fitting_dict):
-    '''
-        Determines whether a child-specific FST should be evaluated for this particular fitting_dict
+# def fit_child_specific_wfst(fitting_dict):
+#     '''
+#         Determines whether a child-specific FST should be evaluated for this particular fitting_dict
 
-        Args:
-        fitting_dict: a dictionary with keys for training_split, training_dataset, test_split, test_dataset, etc. See utils/paths.py for a full description
+#         Args:
+#         fitting_dict: a dictionary with keys for training_split, training_dataset, test_split, test_dataset, etc. See utils/paths.py for a full description
 
-        Return: Boolean as to whether the model should use a child-specific wfst
+#         Return: Boolean as to whether the model should use a child-specific wfst
 
-    '''
+#     '''
 
 
-    # we should only get the results of the child-specific WFST when the child and the training data are the same
-    return((fitting_dict['training_split'] == 'Providence-Child') and (fitting_dict['training_dataset'] == fitting_dict['test_dataset']))
+#     # we should only get the results of the child-specific WFST when the child and the training data are the same
+#     return((fitting_dict['training_split'] == 'Providence-Child') and (fitting_dict['training_dataset'] == fitting_dict['test_dataset']))
 
 def optimize_beta_and_lambda(fitting_dict):
     '''
@@ -40,11 +40,7 @@ def optimize_beta_and_lambda(fitting_dict):
 
     beta_sample = hyperparameter_utils.get_hyperparameter_search_values('beta')
     lambda_sample = hyperparameter_utils.get_hyperparameter_search_values('lambda')
-    if fit_child_specific_wfst(fitting_dict): # fit a parameter for the child-specific FST iff it's a fine-tuned child model
-        gamma_sample = hyperparameter_utils.get_hyperparameter_search_values('lambda')
-    else:
-        gamma_sample = None
-
+    gamma_sample = hyperparameter_utils.get_hyperparameter_search_values('lambda')    
         
     # initial_vocab determines the softmax mask used by BERT, leave it as mask for all evaluations/training
     
@@ -58,19 +54,11 @@ def optimize_beta_and_lambda(fitting_dict):
     success_utts_sample  = pd.read_csv(success_utts_sample_path).utterance_id
         
     # Don't use failures for beta search
-    if fit_child_specific_wfst(fitting_dict):
-        hyperparam_search_results = sample_across_models.sample_across_models(success_utts_sample, [], fitting_dict, beta_sample, lambda_sample, gamma_sample, child_name = fitting_dict['training_dataset'])
-    else:
-        hyperparam_search_results = sample_across_models.sample_across_models(success_utts_sample, [], fitting_dict, beta_sample, lambda_sample, gamma_sample)
-
+    hyperparam_search_results = sample_across_models.sample_across_models(success_utts_sample, [], fitting_dict, beta_sample, lambda_sample, gamma_sample, child_name = fitting_dict['training_dataset'])
     
     this_raw_beta_results = hyperparam_search_results.loc[hyperparam_search_results.likelihood_type == 'levdist']
     this_raw_lambda_results = hyperparam_search_results.loc[hyperparam_search_results.likelihood_type == 'wfst']
-    if (fitting_dict['training_split'] == 'Providence-Child') and (fitting_dict['training_split'] == fitting_dict['test_split']):
-        this_raw_gamma_results = hyperparam_search_results.loc[hyperparam_search_results.likelihood_type == 'wfst-child']
-    else:
-        this_raw_gamma_results = None
-
+    this_raw_gamma_results = hyperparam_search_results.loc[hyperparam_search_results.likelihood_type == 'wfst-child']    
 
     # Log the beta results
     this_beta_results_surp = hyperparam_search_results.loc[hyperparam_search_results.likelihood_type == 'levdist'].groupby(['beta_value']).posterior_probability.agg(lambda x: np.mean(-1 * np.log(x))).reset_index()
@@ -90,16 +78,12 @@ def optimize_beta_and_lambda(fitting_dict):
     print("Writing lambda results to", {lambda_results_path})
     #plot_hyperparameter_optimization(fitting_path, 'lambda', lambda_sample, this_lambda_results_surp['posterior_surprisal'], split_name, dataset_name)
     
-    # log the gamma results if necessary
-    if fit_child_specific_wfst(fitting_dict):
-        this_gamma_results_surp = hyperparam_search_results.loc[hyperparam_search_results.likelihood_type == 'wfst-child'].groupby(['gamma_value']).posterior_probability.agg(lambda x: np.mean(-1 * np.log(x))).reset_index()
-        this_gamma_results_surp = this_gamma_results_surp.rename(columns = {'posterior_probability' : 'posterior_surprisal'})
-        gamma_results_path = join(fitting_path, f'gamma_search_results_{config.n_beta}.csv')
-        this_gamma_results_surp.to_csv(gamma_results_path)
-        print("Writing gamma results to", {gamma_results_path})
-    else:
-        this_gamma_results_surp = None
-
+    # log the gamma results if necessary    
+    this_gamma_results_surp = hyperparam_search_results.loc[hyperparam_search_results.likelihood_type == 'wfst-child'].groupby(['gamma_value']).posterior_probability.agg(lambda x: np.mean(-1 * np.log(x))).reset_index()
+    this_gamma_results_surp = this_gamma_results_surp.rename(columns = {'posterior_probability' : 'posterior_surprisal'})
+    gamma_results_path = join(fitting_path, f'gamma_search_results_{config.n_beta}.csv')
+    this_gamma_results_surp.to_csv(gamma_results_path)
+    print("Writing gamma results to", {gamma_results_path})
 
     return this_raw_beta_results, this_beta_results_surp, this_raw_lambda_results, this_lambda_results_surp, this_raw_gamma_results, this_gamma_results_surp    
     

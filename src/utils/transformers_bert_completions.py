@@ -187,9 +187,10 @@ def get_stats_for_failure(all_tokens, selected_utt_id, bertMaskedLM, tokenizer, 
     t1 = time.time()    
     utt_df = all_tokens.loc[all_tokens.utterance_id == selected_utt_id]
         
-    if utt_df.shape[0] == 0:
+    if (utt_df.shape[0] == 0) or (utt_df.loc[utt_df.partition == 'yyy'].shape[0] == 0):
         return None
     else:
+        
         # convert the @ back to a mask for the target word
         utt_df.loc[utt_df.partition == 'yyy','token'] = '[MASK]'
         utt_df.loc[utt_df.token == '[MASK]','token_id'] = 103

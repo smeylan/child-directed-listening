@@ -89,11 +89,18 @@ def successes_and_failures_across_time_per_model(age, success_ids, yyy_ids, mode
 
     # run the best model    
     if likelihood_type == 'wfst':
-        likelihood_matrix, ipa = likelihoods.get_wfst_distance_matrix(all_tokens_phono, priors_for_age_interval, initial_vocab,  cmu_in_initial_vocab, config.fst_path, config.fst_sym_path)
+        child_general_fst_path = os.path.join(config.project_root,  config.fst_path)
+        child_general_sym_path = os.path.join(config.project_root,  config.fst_sym_path)
+
+        likelihood_matrix, ipa = likelihoods.get_wfst_distance_matrix(all_tokens_phono, priors_for_age_interval, initial_vocab,  cmu_in_initial_vocab, child_general_fst_path, child_general_sym_path)
         likelihood_matrix = -1 * np.log(likelihood_matrix + 10**-20) # yielding a surprisal
+    
     elif likelihood_type == 'wfst-child':
-        child_specific_fst_path = os.path.join(config.project_root, 'output/fst/', model['training_dataset']+'-1.txt')
-        likelihood_matrix, ipa = likelihoods.get_wfst_distance_matrix(all_tokens_phono, priors_for_age_interval, initial_vocab,  cmu_in_initial_vocab, child_specific_fst_path, config.fst_sym_path)
+        child_specific_fst_path = os.path.join(config.project_root,  model['training_dataset']+'-1.txt')
+        child_specific_sym_path = os.path.join(config.project_root,  config.fst_sym_path)
+
+        likelihood_matrix, ipa = likelihoods.get_wfst_distance_matrix(all_tokens_phono, priors_for_age_interval, initial_vocab,  cmu_in_initial_vocab, child_specific_fst_path, child_specific_sym_path)
+
         likelihood_matrix = -1 * np.log(likelihood_matrix + 10**-20) # yielding a surprisal
     elif likelihood_type == 'levdist':
         likelihood_matrix = likelihoods.get_edit_distance_matrix(all_tokens_phono, 

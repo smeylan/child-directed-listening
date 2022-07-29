@@ -70,7 +70,7 @@ lxml==4.6.3
 MarkupSafe==1.1.1
 matplotlib==3.3.4
 matplotlib-inline==0.1.2
-mistune==0.8.4
+mistune==2.0.3
 more-itertools==8.3.0
 mosestokenizer==1.1.0
 multiprocess==0.70.11.1

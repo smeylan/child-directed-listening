@@ -76,7 +76,7 @@ mosestokenizer==1.1.0
 multiprocess==0.70.11.1
 mxnet-mkl==1.6.0
 nbclient==0.5.1
-nbconvert==6.0.7
+nbconvert==6.5.1
 nbformat==5.0.8
 nest-asyncio==1.4.3
 notebook==6.1.5

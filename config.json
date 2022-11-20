@@ -52,8 +52,8 @@
     "fst_sym_path":"output/fst/chi_phones.sym",
     "fst_cache_path":"output/unigram_fst_cache",
     "task_phases": ["sample", "extract_data", "train", "fit", "eval", "analyze"],
-    "training_datasets": [["Providence", "all"],],
-    "test_datasets": [["Providence", "all"],],
+    "training_datasets": [["Providence", "all"]],
+    "test_datasets": [["Providence", "all"]],
     "spec_dict_params": [
             "test_split", 
             "training_split",

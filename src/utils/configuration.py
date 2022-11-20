@@ -89,7 +89,7 @@ class Config:
         # get the path of the current file
         config_dir = os.path.dirname(os.path.abspath(__file__))
         self.project_root =  os.path.split(os.path.split(config_dir)[0])[0]
-
+        
         if '/rdma/vast-rdma/vast/cpl/' in self.project_root:
             self.project_root = self.project_root.replace('/rdma/vast-rdma/vast/cpl/', '/om2/user/') # these paths are more robust, no one knows why
 
@@ -116,12 +116,12 @@ class Config:
     def set_defaults(self):
         # compute defaults
         
-        self.reproducibility_modifier = '_for_rep' if self.for_reproducible else ''
-        self.finetune_dir_name = f'finetune{self.reproducibility_modifier}'
+
+        self.finetune_dir_name = 'finetune'
         self.finetune_dir = join(self.project_root, 'output', self.finetune_dir_name)
 
         # Beta and across time evaluations
-        self.prov_dir = join(self.project_root, 'output', f'prov{self.reproducibility_modifier}') # Location of data for evaluations (in yyy)
+        self.prov_dir = join(self.project_root, 'output', 'prov') # Location of data for evaluations (in yyy)
 
         self.prov_csv_dir = join(self.project_root, 'output', 'prov_csv')
         self.cmu_path = join(self.project_root, 'output', 'pkl/cmu_in_childes.pkl') # The location of the cmu dictionary

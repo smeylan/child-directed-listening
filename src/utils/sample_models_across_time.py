@@ -16,7 +16,7 @@ def assemble_scores_no_order(hyperparameter_set):
     Load all of the non_child models for a given hyperparameter
     """
     
-    model_args = finetune_models = load_models.gen_finetune_model_args() + load_models.gen_shelf_model_args() + load_models.gen_unigram_args() 
+    model_args = finetune_models = load_models.gen_finetune_model_args() + load_models.gen_shelf_model_args() + load_models.gen_unigram_args() + load_models.gen_ngram_args() 
 
     score_store = []
     
@@ -79,6 +79,10 @@ def successes_and_failures_across_time_per_model(age, success_ids, yyy_ids, mode
         priors_for_age_interval = transformers_bert_completions.compare_successes_failures(
             all_tokens_phono, success_ids, 
             yyy_ids, **model['kwargs'])
+    elif model['model_type'] == 'ngram':
+        priors_for_age_interval = transformers_bert_completions.compare_successes_failures_ngram_model(
+            all_tokens_phono, success_ids, 
+            yyy_ids, **model['kwargs'])
 
     elif model['model_type'] in ['data_unigram', 'flat_unigram']:
         priors_for_age_interval = transformers_bert_completions.compare_successes_failures_unigram_model(
@@ -114,6 +118,11 @@ def successes_and_failures_across_time_per_model(age, success_ids, yyy_ids, mode
     if model['model_type'] == 'BERT':
         posteriors_for_age_interval = transformers_bert_completions.get_posteriors(priors_for_age_interval, 
             likelihood_matrix, initial_vocab, scaling_value = beta_value, examples_mode = model['examples_mode'])
+    
+    elif model['model_type'] == 'ngram':
+        posteriors_for_age_interval = transformers_bert_completions.get_posteriors(priors_for_age_interval, 
+            likelihood_matrix, initial_vocab, scaling_value = beta_value, examples_mode = model['examples_mode'])
+
     elif model['model_type'] in ['data_unigram', 'flat_unigram']:
         # special unigram hack
         this_bert_token_ids = all_tokens_phono.loc[all_tokens_phono.partition.isin(('success','yyy'))].bert_token_id

@@ -10,6 +10,22 @@
     "subsamples" : [2, 1000, 5000],
     "val_ratio" : ".2",
     "child_val_eval_num" : 3,
+    "ngram_model_args": [
+        {
+            "training_split": "Providence",
+            "training_dataset": "all",              
+            "model_type": "srilm",
+            "order": 3,
+            "contextualized":0
+        },        
+        {
+            "training_split": "Providence",
+            "training_dataset": "all",              
+            "model_type": "srilm",
+            "order": 3,
+            "contextualized":1
+        }
+    ],
     "unigram_model_args": [
         {
             "training_split": "Providence",
@@ -77,7 +93,7 @@
     "child_context_width" : 0,
     "verbose" : 1,
     "age_split" : 30,
-    "context_list" : [0, 20],
+    "context_list" : [0, 20, [0, 20]],
     "beta_low" : 2.5,
     "beta_high" : 4.5,
     "beta_num_values" : 20,
@@ -107,6 +123,3 @@
             "task_phase"
     ]
 }
-
-
-

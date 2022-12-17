@@ -199,11 +199,20 @@ def get_stats_for_failure(all_tokens, selected_utt_id, bertMaskedLM, tokenizer, 
 
         # limit to the current transcript
         this_transcript_id = utt_df.iloc[0].transcript_id
-
         this_seq_utt_id = utt_df.iloc[0].seq_utt_id
-        before_utt_df = all_tokens.loc[(all_tokens.seq_utt_id < this_seq_utt_id) & (all_tokens.seq_utt_id > (this_seq_utt_id - (context_width_in_utts+1))) & (all_tokens['transcript_id'] == this_transcript_id)]
 
-        after_utt_df = all_tokens.loc[(all_tokens.seq_utt_id > this_seq_utt_id) & (all_tokens.seq_utt_id < this_seq_utt_id + (context_width_in_utts + 1)) & (all_tokens.transcript_id == this_transcript_id)]
+        if length(context_width_in_utts) == 1:
+            # context width is symmetric
+            before_utt_df = all_tokens.loc[(all_tokens.seq_utt_id < this_seq_utt_id) & (all_tokens.seq_utt_id > (this_seq_utt_id - (context_width_in_utts+1))) & (all_tokens['transcript_id'] == this_transcript_id)]
+
+            after_utt_df = all_tokens.loc[(all_tokens.seq_utt_id > this_seq_utt_id) & (all_tokens.seq_utt_id < this_seq_utt_id + (context_width_in_utts + 1)) & (all_tokens.transcript_id == this_transcript_id)]
+        else:
+            # context width is asymmetric
+            before_utt_df = all_tokens.loc[(all_tokens.seq_utt_id < this_seq_utt_id) & (all_tokens.seq_utt_id > (this_seq_utt_id - (context_width_in_utts[0]+1))) & (all_tokens['transcript_id'] == this_transcript_id)]
+
+            after_utt_df = all_tokens.loc[(all_tokens.seq_utt_id > this_seq_utt_id) & (all_tokens.seq_utt_id < this_seq_utt_id + (context_width_in_utts[1] + 1)) & (all_tokens.transcript_id == this_transcript_id)]
+
+
     
         # ready to use before_utt_df and after_utt_df    
         sep_row = pd.DataFrame({'token':['[SEP]'], 'token_id':tokenizer.convert_tokens_to_ids(['[SEP]'])})
@@ -301,10 +310,22 @@ def get_stats_for_success(all_tokens, selected_utt_id, bertMaskedLM, tokenizer, 
             this_transcript_id = utt_df.iloc[0].transcript_id
 
             this_seq_utt_id = utt_df_local.iloc[0].seq_utt_id
+
+            if length(context_width_in_utts) == 1:
+                # context width is symmetrical
+
+                before_utt_df = all_tokens.loc[(all_tokens.seq_utt_id < this_seq_utt_id) & (all_tokens.seq_utt_id > this_seq_utt_id - (context_width_in_utts+1)) & (all_tokens.transcript_id == this_transcript_id)]
             
-            before_utt_df = all_tokens.loc[(all_tokens.seq_utt_id < this_seq_utt_id) & (all_tokens.seq_utt_id > this_seq_utt_id - (context_width_in_utts+1)) & (all_tokens.transcript_id == this_transcript_id)]
+                after_utt_df = all_tokens.loc[(all_tokens.seq_utt_id > this_seq_utt_id) & (all_tokens.seq_utt_id < this_seq_utt_id + (context_width_in_utts + 1)) & (all_tokens.transcript_id == this_transcript_id)]
+            else:
+                # context width is asymmetrical
+
+                # from eg 20 before
+                before_utt_df = all_tokens.loc[(all_tokens.seq_utt_id < this_seq_utt_id) & (all_tokens.seq_utt_id > this_seq_utt_id - (context_width_in_utts[0]+1)) & (all_tokens.transcript_id == this_transcript_id)]
             
-            after_utt_df = all_tokens.loc[(all_tokens.seq_utt_id > this_seq_utt_id) & (all_tokens.seq_utt_id < this_seq_utt_id + (context_width_in_utts + 1)) & (all_tokens.transcript_id == this_transcript_id)]
+                after_utt_df = all_tokens.loc[(all_tokens.seq_utt_id > this_seq_utt_id) & (all_tokens.seq_utt_id < this_seq_utt_id + (context_width_in_utts[1] + 1)) & (all_tokens.transcript_id == this_transcript_id)]
+
+
         
             # ready to use before_utt_df and after_utt_df    
             sep_row = pd.DataFrame({'token':['[SEP]'], 'token_id':tokenizer.convert_tokens_to_ids(['[SEP]'])})
@@ -547,6 +568,266 @@ def compare_successes_failures_unigram_model(all_tokens, selected_success_utts, 
     return(rdict)
 
 
+def compare_successes_failures_ngram_model(all_tokens, selected_success_utts, selected_yyy_utts, vocab, ngram_path, order, contexualized):
+    '''
+        Get prior probaiblities, completions, and scores from a SRILM-style ngram model for a list of utterance ids for communicative successes and a list of utterance ids for communicative failures 
+
+        Args:
+        all_tokens: data frame containing selected_utt_id plus surrounding context
+        selected_suuccess_utts: utterance ids known to be communicative successes
+        selected_yyy_utts: utterance ids known to be communicative failures                
+        vocab:  words to test as priors under the model, 
+        softmax_positions: locations for each of the vocab words in the softmax mask for consistency with vector operations from BERT
+        ngram_path: path to a SRILM model
+        order: highest order to use for retrieval with the ngram model        
+
+        Returns: dictionary with two keys:            
+            priors: n * m matrix of prior probabilities, where n is the number of communicative failures + communicative successes, and m is the size of the vocab identified by the softmax map. Failures are stacked on top of successes and are identified by a bert_token_id
+            scores: a datframe of length n containing concatenated entropy scores, ranks, probabilities. Failures are stacked on top of successes and are identified by a bert_token_id
+    '''    
+    
+    #!!! like the BERT verwsion of this, and unlike the unigram / uniform versions, need to grab the tokens in the context    
+
+    ngram_lm = srilm.load(ngram_path, lower=True)
+    
+    print('Computing failure scores')
+    failure_priors_store = []
+    failure_scores_store = []
+
+    for sample_yyy_id in selected_yyy_utts: 
+        
+        rv = get_ngram_success_stats(all_tokens, selected_utt_id, vocab, ngram_lm,  order)
+
+        prior, score = rv        
+        failure_scores_store.append(score)
+        failure_priors_store.append(prior)
+
+    rdict = {}    
+    if len(failure_scores_store) > 0:
+        failure_scores = pd.concat(failure_scores_store)
+        failure_scores['set'] = 'failure'         
+        failure_priors = np.vstack(failure_priors_store)
+    else:        
+        failure_scores = pd.DataFrame()
+        failure_priors = None
+    
+    print('Computing success scores')
+    success_priors_store = []
+    success_scores_store = []
+
+    
+    for success_id in selected_success_utts:
+    
+        rv = get_ngram_failure_stats(all_tokens, selected_utt_id, vocab, ngram_lm,  order)
+        if rv is None:
+            pass
+            #!!! may want to pass throug a placeholder here 
+        else:
+            prior, score = rv
+            success_scores_store.append(score)
+            success_priors_store.append(prior)
+    
+    if len(success_scores_store) > 0:
+        success_scores = pd.concat(success_scores_store)    
+        success_scores['set'] = 'success' 
+        success_priors = np.vstack(success_priors_store)
+    else:
+        success_scores = pd.DataFrame()
+        success_priors = None
+
+    rdict['scores'] = pd.concat([failure_scores, success_scores])
+    
+    rdict['priors'] = np.vstack([x for x in [failure_priors, success_priors] if x is not None])
+
+    warnings.filterwarnings('default')
+
+    return(rdict)
+
+def srilm_word_by_word_prob(sentence, n, lm, append_sos_bos, exclude_special, vocab, print_debug=False):
+
+    # sentence: sentence as a space-separated string
+    # n: order of the n-gram
+    # lm: SRILM model to use
+    # append_sos_bos: add <s> and </s>? Usually yes, but no for continuous models
+    # exclude_special: drop sos and transition tokens when reporting probabilities
+    # print_debug: show current and preceding
+    
+    # same output as 
+    # `ngram -lm /shared_hd0/corpora/BNC/SRILM/BNC_merged.LM -tolower -ppl  fox.txt -debug 2`
+    if append_sos_bos:
+        sentence_token_list = ['<s>'] + [x.lower() for x in sentence.split(' ')] + ['</s>']
+    else:
+        sentence_token_list =  [x.lower() for x in sentence.split(' ')]
+        
+    
+    prior_vecs = []
+    continuations = []
+
+    for idx in range(len(sentence_token_list)):        
+        preceding = sentence_list[max(0, idx - (n-1)):max(0,idx)]
+        preceding_reversed = preceding[::-1]
+        current = sentence_list[idx]     
+        
+        if print_debug:
+            print(idx)
+            print(current)
+            print(preceding_reversed)
+            print('==========')
+        
+        # iterate through the vocab
+        prior_prob_per_candidate_in_vocab = np.array(len(vocab))
+        i = -1
+        for candidate_word in vocab:
+            i += 1
+            prior_prob_per_candidate_in_vocab[i] = 10. ** lm.logprob_strings(candidate_word, preceding_reversed)
+
+        continuations_for_word = pd.DataFrame({
+            'word': vocab, 
+            'probability':  prior_prob_per_candidate_in_vocab
+        }).sort_values(by='probability', ascending=False)
+
+
+        continuations.append(continuations_for_word.copy())
+        prior_vecs.append(prior_prob_per_candidate_in_vocab)
+
+    rdf = pd.DataFrame({'word':sentence_token_list, 'prior_vec': prior_vecs,
+        'continuations': continuations})
+
+    rdf['index'] = range(rdf.shape[0])
+
+    excludes = ['</s>','<s>','[cgv]', '[chi]', '[cgv]2[cgv]', 
+               '[chi]2[chi]', '[chi]2[cgv]','[cgv]2[chi]']
+    
+    if exclude_special:
+        rdf = rdf.loc[~rdf.word.isin(excludes)]
+    
+    return(rdf)
+
+
+def get_prob_dist_for_masked_token_fast(tokens, lm, vocab):
+    
+    # true word is defined only if this is a success
+
+    mask_idx = tokens.index("[mask]")
+    
+    # prior doesn't care if this is a success -- that is only in the score
+    prior_vec = np.zeros(len(vocab))
+    for i in range(len(vocab)):    
+        temp_tokens = tokens.copy()
+        temp_tokens[mask_idx] = vocab[i]
+        prior_vec[i] = 10. ** lm.total_logprob_strings(temp_tokens)
+    
+    prior_vec[np.isinf(prior_vec)] = 0
+    # normalize it
+    prior_vec = prior / np.sum(prior_vec)
+
+
+    continuations_table = pd.DataFrame({
+        'word': vobab,
+        'probability': prior_vec
+    })
+    continuations_table = continuations_table.sort_values(by=['probablity'], ascending=False)
+
+    return(prior_vec, continuations_table)
+
+
+
+def get_ngram_failure_stats(all_tokens, selected_utt_id, vocab, ngram_lm,  order, contextualized):
+
+    # get_stats_for_failure looks for the one yyy item in the selected_utt_id
+    
+    # replace the yyy with mask
+    utt_df = all_tokens.loc[all_tokens.utterance_id == selected_utt_id]
+    if (utt_df.shape[0] == 0) or (utt_df.loc[utt_df.partition == 'yyy'].shape[0] == 0):
+        return None
+    else:
+        utt_df.loc[utt_df.partition == 'yyy','token'] = '[mask]'
+
+    if contextualized:
+        # marginalize across all of the possible completions 
+        tokens  = utt_df.token
+        print('check that these tokens make sense...')
+        import pdb
+        pdb.set_trace()       
+        prior_vec = get_prob_dist_for_masked_token_fast(tokens, lm = ngram_lm, vocab)
+
+    else: 
+
+        # just get the probability distribution for the next word (no marginalization)
+        word_by_word = srilm_word_by_word_prob(sentence, n, lm = ngram_lm, append_sos_bos, exclude_special, vocab, 
+            print_debug=False)
+        prior_vec_for_failure =  prior_vec.iloc[prior_vec.word == '[mask]']['prior_vec']
+
+    prior_rank = np.nan
+    prior_prob = np.nan  
+    entropy = scipy.stats.entropy(prior_vec_for_failure, base=2)  
+
+    score_df = pd.DataFrame({
+        'prior_rank':[prior_rank], 
+        'prior_prob': [prior_prob],
+        'entropy':[entropy], 
+        'num_tokens_in_context':[utt_df.shape[0]-1],
+        'bert_token_id' : utt_df.loc[utt_df.token == '[MASK]'].bert_token_id.astype({'num_tokens_in_context' : 'int32'})})
+
+    return(prior_vec_for_failure, score_df)
+
+
+def get_ngram_success_stats(all_tokens, selected_utt_id, vocab, ngram_lm,  order, contextualized):
+
+    # replace the yyy with mask
+    utt_df = all_tokens.loc[all_tokens.utterance_id == selected_utt_id]
+    if (utt_df.shape[0] == 0):
+        return None
+        
+
+    if contextualized:
+
+        # iterating through the words in the utt_df with a mask
+        prior_vecs = []
+        continuations = [] 
+
+        for i in range(utt_df.shape):
+            tokens = copy.copy(utt_df.token)
+            tokens[i] = '[mask]'
+            prior_vec, continuations_table = get_prob_dist_for_masked_token_fast(tokens, lm = ngram_lm, vocab)
+            prior_vecs.append(prior_vec)
+            continuations.append(continuations_table) 
+
+        word_by_word = copy.copy(utt_df)
+        word_by_word['prior_vec' ] = prior_vecs
+        word_by_word['continuations' ] = continuations
+
+        prior_vecs_for_success =  np.hstack(word_by_word['prior_vec'])
+
+    else: 
+
+        # just get the probability distribution for the next word (no marginalization)
+        word_by_word = srilm_word_by_word_prob(sentence, n, lm = ngram_lm, append_sos_bos, exclude_special, vocab, 
+            print_debug=False)
+    
+    prior_vecs_for_success =  np.hstack(word_by_word['prior_vec'])
+    continuations = word_by_word['continuations']
+
+    # iterating over the token in word_by_word, get the rank and the probability from the continutions
+    score_store = []
+    for word_dict in word_by_word.to_dict('records'):
+        target_word = word_dict['token']
+        prior_rank = np.argwhere(word_dict['continutations'].word == target_word)
+        prior_prob = word_dict['continutations'].loc[word_dict['continutations'].word == target_word].probability
+        entropy = scipy.stats.entropy(prior_vec_for_failure, base=2)  
+
+        score_df = pd.DataFrame({
+            'prior_rank':[prior_rank], 
+            'prior_prob': [prior_prob],
+            'entropy':[entropy], 
+            'num_tokens_in_context':np.nan
+            'bert_token_id' word_dict.bert_token_id})
+
+    scores = pd.concat(score_store)
+    
+    return(prior_vecs_for_success, continuations, scores)
+
+
 def augment_with_ipa(utterances, tokens_with_phono,tokenizer, field):
     '''
         Get a vector of ipa forms corresponding to the length of utterances. If more than one token piece, then jump ahead by the number of token pieces
@@ -599,7 +880,7 @@ def get_posteriors(prior_data, levdists, initial_vocab, bert_token_ids=None, sca
         levdists: a matrix of levenshtein distance. for n target words, n,m is the distance of the nth form to the mth word in the initial vocab
         initial_vocab: natural language vocabulary
         bert_token_ids: set of bert_token_ids to limit the contents of prior_data and levdists. This handles the fact that a few utterances are not retrievalbe through BERT but 
-        are retrievable through the unigram model query (it is necessary to exclude such forms) 
+        are retrievable through the unigram model query (it is necessary to exclude such forms). So this is None for BERT models, and then defined for subsequent models
         scaling_value: free parameter in the likelihood; see the paper. Higher values assign lower probabilities to larger edit distances
         examples_mode: Whether or not to maintain data related to highest probability words -- used for Examples notebooks, disabled for memory savings.
     '''

@@ -43,6 +43,10 @@ def sample_across_models(success_ids, yyy_ids, model, beta_values, lambda_values
         priors_for_age_interval = transformers_bert_completions.compare_successes_failures_unigram_model(
             all_tokens_phono, success_ids, 
             yyy_ids, **model['kwargs'])
+    elif model['model_type'] == ['ngram']:
+        priors_for_age_interval = transformers_bert_completions.compare_successes_failures_ngram_model(
+            all_tokens_phono, success_ids, 
+            yyy_ids, **model['kwargs'])        
     else:
         raise ValueError('model_type not recognized')
       
@@ -69,11 +73,10 @@ def sample_across_models(success_ids, yyy_ids, model, beta_values, lambda_values
         # get the posteriors        
         if model['model_type'] == 'BERT':
             posteriors_for_age_interval = transformers_bert_completions.get_posteriors(priors_for_age_interval, 
-                child_wfst_distances_for_age_interval, initial_vocab, None, gamma_value, examples_mode = examples_mode)
+                child_wfst_distances_for_age_interval, initial_vocab, None, gamma_value, examples_mode = examples_mode)        
 
-        elif model['model_type'] in ['data_unigram', 'flat_unigram']:
-            posteriors_for_age_interval = transformers_bert_completions.get_posteriors(priors_for_age_interval, child_wfst_distances_for_age_interval, initial_vocab, this_bert_token_ids, gamma_value, examples_mode = examples_mode)
-            print('If possible compare the bert_token_id in sample_across_models to the bert_token_id in one of the other scores sets from bert.')
+        elif model['model_type'] in ['data_unigram', 'flat_unigram', 'ngram']:
+            posteriors_for_age_interval = transformers_bert_completions.get_posteriors(priors_for_age_interval, child_wfst_distances_for_age_interval, initial_vocab, this_bert_token_ids, gamma_value, examples_mode = examples_mode)            
         else:
             raise ValueError('model_type not recognized')
             
@@ -103,7 +106,7 @@ def sample_across_models(success_ids, yyy_ids, model, beta_values, lambda_values
             posteriors_for_age_interval = transformers_bert_completions.get_posteriors(priors_for_age_interval, 
                 wfst_distances_for_age_interval, initial_vocab, None, lambda_value, examples_mode = examples_mode)
 
-        elif model['model_type'] in ['data_unigram', 'flat_unigram']:
+        elif model['model_type'] in ['data_unigram', 'flat_unigram', 'ngram']:
             posteriors_for_age_interval = transformers_bert_completions.get_posteriors(priors_for_age_interval, wfst_distances_for_age_interval, initial_vocab, this_bert_token_ids, lambda_value, examples_mode = examples_mode)
             print('If possible compare the bert_token_id in sample_across_models to the bert_token_id in one of the other scores sets from bert.')
         else:
@@ -135,7 +138,7 @@ def sample_across_models(success_ids, yyy_ids, model, beta_values, lambda_values
             posteriors_for_age_interval = transformers_bert_completions.get_posteriors(priors_for_age_interval, 
                 edit_distances_for_age_interval, initial_vocab, None, beta_value, examples_mode = examples_mode)
 
-        elif model['model_type'] in ['data_unigram', 'flat_unigram']:
+        elif model['model_type'] in ['data_unigram', 'flat_unigram', 'ngram']:
             # special unigram hack
             
             posteriors_for_age_interval = transformers_bert_completions.get_posteriors(priors_for_age_interval, edit_distances_for_age_interval, 

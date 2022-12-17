@@ -42,6 +42,17 @@ def gen_unigram_model_args():
     
     return unigram_model_args
 
+
+def gen_ngram_model_args():
+    
+    ngram = []
+        
+    for model_arg_set in config.ngram_model_args:        
+        ngram_model_args.append(copy.copy(ngram_model_args))
+    
+    return gen_ngram_model_args
+
+
 def gen_shelf_model_args():
 
     shelf_model_args = []

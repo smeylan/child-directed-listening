@@ -45,12 +45,15 @@ def gen_unigram_model_args():
 
 def gen_ngram_model_args():
     
-    ngram = []
+    ngram_model_args = []
         
-    for model_arg_set in config.ngram_model_args:        
-        ngram_model_args.append(copy.copy(ngram_model_args))
-    
-    return gen_ngram_model_args
+    for model_arg_set in config.ngram_model_args:                
+        model_arg_set['use_tags'] = -99
+        model_arg_set['context_width'] = -99
+        ngram_model_args.append(copy.copy(model_arg_set))
+        
+    print('Generating ngram model args')    
+    return ngram_model_args
 
 
 def gen_shelf_model_args():
@@ -150,7 +153,7 @@ def get_shelf_dict(fitted_dict):
     fitted_dict['kwargs'] = {'modelLM': adult_bertMaskedLM,
                         'tokenizer': adult_tokenizer,
                         'softmax_mask': adult_softmax_mask,
-                        'context_width_in_utts': fitted_dict['context_width'],
+                        'context_width_in_utts': process_context_width(fitted_dict['context_width']),
                        'use_speaker_labels':fitted_dict['use_tags']
                        }
     return(fitted_dict)
@@ -174,6 +177,18 @@ def get_data_unigram_dict(fitted_dict):
                    }
     return(fitted_dict)
 
+
+def get_ngram_dict(fitted_dict):
+    
+    fitted_dict['title'] = paths.get_file_identifier(fitted_dict)
+    fitted_dict['kwargs'] = {
+            'contextualized': fitted_dict['contextualized'],
+            'order': fitted_dict['order'],
+            'ngram_path': fitted_dict['ngram_path']
+        }
+    
+    return(fitted_dict)
+
 def get_flat_unigram_dict(fitted_dict):
     
     adult_tokenizer, adult_softmax_mask, _, initial_vocab = get_vocab_tok_modules()
@@ -194,6 +209,13 @@ def get_flat_unigram_dict(fitted_dict):
                        }
     return(fitted_dict)
 
+
+def process_context_width(context_width):
+    # either yield a list or an int from the context_width
+    if '[' in context_width:
+        return([int(x) for x in  context_width.strip('][').split(', ')])
+    else:
+        return(int(context_width))
        
         
 def get_finetune_dict(fitted_dict):
@@ -208,7 +230,7 @@ def get_finetune_dict(fitted_dict):
 
     fitted_dict['title'] =  paths.get_file_identifier(fitted_dict)
     fitted_dict['kwargs'] = get_model_from_split(model_dict)    
-    fitted_dict['kwargs']['context_width_in_utts'] = fitted_dict['context_width']
+    fitted_dict['kwargs']['context_width_in_utts'] = process_context_width(fitted_dict['context_width'])
     fitted_dict['kwargs']['use_speaker_labels'] = fitted_dict['use_tags']
     return fitted_dict
 
@@ -243,6 +265,9 @@ def get_fitted_model_dict(fitted_dict):
         model_dict = get_data_unigram_dict(fitted_dict)
     elif fitted_dict['model_type'] == 'flat_unigram':
         model_dict = get_flat_unigram_dict(fitted_dict)
+
+    elif fitted_dict['model_type'] == 'ngram':
+        model_dict = get_ngram_dict(fitted_dict)    
     
     return model_dict
     

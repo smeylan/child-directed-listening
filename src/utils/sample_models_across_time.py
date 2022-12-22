@@ -82,7 +82,7 @@ def successes_and_failures_across_time_per_model(age, success_ids, yyy_ids, mode
     elif model['model_type'] == 'ngram':
         priors_for_age_interval = transformers_bert_completions.compare_successes_failures_ngram_model(
             all_tokens_phono, success_ids, 
-            yyy_ids, **model['kwargs'])
+            yyy_ids, initial_vocab, **model['kwargs'])
 
     elif model['model_type'] in ['data_unigram', 'flat_unigram']:
         priors_for_age_interval = transformers_bert_completions.compare_successes_failures_unigram_model(
@@ -99,8 +99,8 @@ def successes_and_failures_across_time_per_model(age, success_ids, yyy_ids, mode
         likelihood_matrix = -1 * np.log(likelihood_matrix + 10**-20) # yielding a surprisal
     
     elif likelihood_type == 'wfst-child':
-        child_specific_fst_path = os.path.join(config.project_root,  model['training_dataset']+'-1.txt')
-        child_specific_sym_path = os.path.join(config.project_root,  config.fst_sym_path)
+        child_specific_fst_path = os.path.join(config.project_root,  'output/fst', model['training_dataset']+'-1.txt')
+        child_specific_sym_path = os.path.join(config.project_root,  'output/fst', config.fst_sym_path)
 
         likelihood_matrix, ipa = likelihoods.get_wfst_distance_matrix(all_tokens_phono, priors_for_age_interval, initial_vocab,  cmu_in_initial_vocab, child_specific_fst_path, child_specific_sym_path)
         likelihood_matrix = -1 * np.log(likelihood_matrix + 10**-20) # yielding a surprisal

@@ -37,21 +37,19 @@ def sample_across_models(success_ids, yyy_ids, model, beta_values, lambda_values
     if model['model_type'] == 'BERT':
         priors_for_age_interval = transformers_bert_completions.compare_successes_failures(
             all_tokens_phono, success_ids, 
-            yyy_ids, **model['kwargs'])
+            yyy_ids, **model['kwargs'])        
 
     elif model['model_type'] in ['data_unigram', 'flat_unigram']:
         priors_for_age_interval = transformers_bert_completions.compare_successes_failures_unigram_model(
             all_tokens_phono, success_ids, 
             yyy_ids, **model['kwargs'])
-    elif model['model_type'] == ['ngram']:
-        priors_for_age_interval = transformers_bert_completions.compare_successes_failures_ngram_model(
-            all_tokens_phono, success_ids, 
-            yyy_ids, **model['kwargs'])        
+    elif model['model_type'] == 'ngram':
+
+        priors_for_age_interval = transformers_bert_completions.compare_successes_failures_ngram_model(all_tokens_phono, success_ids, yyy_ids, initial_vocab, **model['kwargs'])        
     else:
         raise ValueError('model_type not recognized')
       
     score_store_single_model = []
-
     
     print('Computing child-specific WFST path lengths')    
 
@@ -92,7 +90,7 @@ def sample_across_models(success_ids, yyy_ids, model, beta_values, lambda_values
     
     print('Computing WFST path lengths...')
     wfst_distances_for_age_interval_unreduced, ipa = likelihoods.get_wfst_distance_matrix(all_tokens_phono, priors_for_age_interval, initial_vocab,  cmu_2syl_inchildes, os.path.join(config.project_root, config.fst_path), config.fst_sym_path)    
-    wfst_distances_for_age_interval_unreduced = -1 * np.log(wfst_distances_for_age_interval_unreduced + 10**-20) # convert this back to log space
+    wfst_distances_for_age_interval_unreduced = -1 * np.log(wfst_distances_for_age_interval_unreduced + 10**-20) # convert this back to log space, tiny amount of smooothing
 
     #for each word, find the citation pronunciation that is most likely to generate the observed data 
     wfst_distances_for_age_interval = likelihoods.reduce_duplicates(wfst_distances_for_age_interval_unreduced, cmu_2syl_inchildes, initial_vocab, 'min', cmu_indices_for_initial_vocab) # min for smallest surprisal

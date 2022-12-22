@@ -14,16 +14,20 @@
         {
             "training_split": "Providence",
             "training_dataset": "all",              
-            "model_type": "srilm",
-            "order": 3,
-            "contextualized":0
+            "model_type": "ngram",
+            "order": 3,            
+            "contextualized":0,
+            "use_tags":1,
+            "ngram_path": "output/ngram/childes_chi_sep_punct.LM"
         },        
         {
             "training_split": "Providence",
             "training_dataset": "all",              
-            "model_type": "srilm",
+            "model_type": "ngram",
             "order": 3,
-            "contextualized":1
+            "contextualized":1,
+            "use_tags":1,
+            "ngram_path": "output/ngram/childes_chi_sep_punct.LM"
         }
     ],
     "unigram_model_args": [
@@ -120,6 +124,9 @@
             "use_tags",
             "context_width",        
             "task_name",
-            "task_phase"
+            "task_phase",
+            "contextualized",
+            "order",
+            "ngram_path"            
     ]
 }

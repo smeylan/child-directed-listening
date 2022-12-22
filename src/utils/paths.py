@@ -6,6 +6,9 @@ config = configuration.Config()
 
 def validate_spec_dict(spec_dict, spec_dict_params):
 	''' make sure all necessary keys are specified for the spec_dict'''
+	if spec_dict['model_type'] == 'ngram':
+		spec_dict_params += ['contextualized','order','ngram_path']
+
 	for key in spec_dict_params:
 		if key not in spec_dict:
 			print(spec_dict)
@@ -64,7 +67,7 @@ def get_directory(spec_dict):
 
 	config = configuration.Config()
 
-	validate_spec_dict(spec_dict, config.spec_dict_params)	
+	#validate_spec_dict(spec_dict, config.spec_dict_params)	
 	validate_phase(spec_dict['task_phase'], config.task_phases)
 	validate_training_params(spec_dict)	
 
@@ -102,14 +105,24 @@ def get_directory(spec_dict):
 
 	elif spec_dict['task_phase'] in ('fit','eval'):
 
+		if spec_dict['model_type'] == 'ngram':
+			confirm_values_are_not_none(spec_dict, ['training_split', 'training_dataset', 'n_samples', 'test_split', 'test_dataset', 'contextualized', 'order', 'use_tags'])
+			validate_test_params(spec_dict)
+					
+			tags_str = 'with_tags' if spec_dict['use_tags'] else 'no_tags'
+			n_str = 'n='+str(spec_dict['n_samples'])
 
-		confirm_values_are_not_none(spec_dict, ['training_split', 'training_dataset','use_tags', 'n_samples', 'test_split', 'test_dataset', 'context_width'])
-		validate_test_params(spec_dict)
-				
-		tags_str = 'with_tags' if spec_dict['use_tags'] else 'no_tags'
-		n_str = 'n='+str(spec_dict['n_samples'])
+			path = join(config.exp_dir, spec_dict['task_phase'], n_str, spec_dict['training_split'] + '_' + spec_dict['training_dataset'] + '_'  + tags_str + 'x' + spec_dict['model_type'] + '_' +  spec_dict['test_split'] + '_' + spec_dict['test_dataset'] + '_' + str(spec_dict['order']) + '_' + str(spec_dict['contextualized']))
 
-		path = join(config.exp_dir, spec_dict['task_phase'], n_str, spec_dict['training_split'] + '_' + spec_dict['training_dataset'] + '_'  + tags_str + 'x' + spec_dict['model_type'] + '_' +  spec_dict['test_split'] + '_' + spec_dict['test_dataset'] + '_' + str(spec_dict['context_width']))
+
+		else: 
+			confirm_values_are_not_none(spec_dict, ['training_split', 'training_dataset','use_tags', 'n_samples', 'test_split', 'test_dataset', 'context_width'])
+			validate_test_params(spec_dict)
+					
+			tags_str = 'with_tags' if spec_dict['use_tags'] else 'no_tags'
+			n_str = 'n='+str(spec_dict['n_samples'])
+
+			path = join(config.exp_dir, spec_dict['task_phase'], n_str, spec_dict['training_split'] + '_' + spec_dict['training_dataset'] + '_'  + tags_str + 'x' + spec_dict['model_type'] + '_' +  spec_dict['test_split'] + '_' + spec_dict['test_dataset'] + '_' + str(spec_dict['context_width']))
 
 	else:
 		raise ValueError('Task phase not recognized. Must be one of '+config.task_phases)
@@ -121,8 +134,11 @@ def get_file_identifier(spec_dict):
 	tags_str = 'with_tags' if spec_dict['use_tags'] else 'no_tags'    
 	if spec_dict['task_phase'] == 'train':        	
 		path =  spec_dict['task_phase']+'_'+spec_dict['training_split']+'_'+spec_dict['training_dataset']+'_'+tags_str+'_'+spec_dict['model_type']
-	elif spec_dict['task_phase'] in ['eval','analysis', 'fit']:        	
-		path =  spec_dict['task_phase']+'_'+spec_dict['training_split']+'_'+spec_dict['training_dataset']+'_'+tags_str+'_'+spec_dict['model_type']+'_'+spec_dict['test_split']+'_'+spec_dict['test_dataset']+'_'+str(spec_dict['context_width'])
+	elif spec_dict['task_phase'] in ['eval','analysis', 'fit']:       
+		if spec_dict['model_type'] == 'ngram':
+			path =  spec_dict['task_phase']+'_'+spec_dict['training_split']+'_'+spec_dict['training_dataset']+'_'+tags_str+'_'+spec_dict['model_type']+'_'+spec_dict['test_split']+'_'+spec_dict['test_dataset']+'_'+str(spec_dict['order'])+'_'+str(spec_dict['contextualized'])
+		else:
+			path =  spec_dict['task_phase']+'_'+spec_dict['training_split']+'_'+spec_dict['training_dataset']+'_'+tags_str+'_'+spec_dict['model_type']+'_'+spec_dict['test_split']+'_'+spec_dict['test_dataset']+'_'+str(spec_dict['context_width'])
 	else:
 		raise NotImplementedError
 	return(path)

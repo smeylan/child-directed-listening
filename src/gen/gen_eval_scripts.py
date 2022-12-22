@@ -18,14 +18,16 @@ if __name__ == '__main__':
     finetune_models = load_models.gen_finetune_model_args()
     shelf_models = load_models.gen_shelf_model_args() 
     unigram_models = load_models.gen_unigram_model_args() 
+    ngram_models = load_models.gen_ngram_model_args() 
 
     partitions = {
         'finetune' : finetune_models,
         'shelf' : shelf_models,
-        'unigram': unigram_models
+        'unigram': unigram_models,
+        'ngram': ngram_models
     }    
     
-    for subtask in ['shelf', 'finetune', 'unigram']:
+    for subtask in ['shelf', 'finetune', 'unigram', 'ngram']:
 
         subtask_name = task_name + '_' + subtask
         sh_fit_loc = f'output/SLURM/{subtask_name}_{task_phase}'

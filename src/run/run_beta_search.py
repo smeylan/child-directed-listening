@@ -55,6 +55,7 @@ def optimize_beta_and_lambda(fitting_dict):
         
     # Don't use failures for beta search
     hyperparam_search_results = sample_across_models.sample_across_models(success_utts_sample, [], fitting_dict, beta_sample, lambda_sample, gamma_sample, child_name = fitting_dict['training_dataset'])
+    print('Finished sample across models!')
     
     this_raw_beta_results = hyperparam_search_results.loc[hyperparam_search_results.likelihood_type == 'levdist']
     this_raw_lambda_results = hyperparam_search_results.loc[hyperparam_search_results.likelihood_type == 'wfst']

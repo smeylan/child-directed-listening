@@ -207,8 +207,13 @@ def get_python_run_command(task_file, spec_dict):
     A generic wrapper for calling a run_* file with arguments specifice by spec_dict
 
     '''
-        
-    command = f"python3 {task_file} --task_name {spec_dict['task_name']} --task_phase {spec_dict['task_phase']} --test_split {spec_dict['test_split']} --test_dataset {spec_dict['test_dataset']} --context_width {spec_dict['context_width']} --use_tags {spec_dict['use_tags']} --model_type {spec_dict['model_type']} --training_split {spec_dict['training_split']} --training_dataset {spec_dict['training_dataset']}"
+    if spec_dict['model_type'] == 'ngram':
+    
+        command = f"python3 {task_file} --task_name {spec_dict['task_name']} --task_phase {spec_dict['task_phase']} --test_split {spec_dict['test_split']} --test_dataset {spec_dict['test_dataset']} --context_width {spec_dict['context_width']} --use_tags {spec_dict['use_tags']} --model_type {spec_dict['model_type']} --training_split {spec_dict['training_split']} --training_dataset {spec_dict['training_dataset']} --order {spec_dict['order']} --contextualized {spec_dict['contextualized']} --ngram_path {spec_dict['ngram_path']}"
+
+    else:
+
+        command = f"python3 {task_file} --task_name {spec_dict['task_name']} --task_phase {spec_dict['task_phase']} --test_split {spec_dict['test_split']} --test_dataset {spec_dict['test_dataset']} --context_width {spec_dict['context_width']} --use_tags {spec_dict['use_tags']} --model_type {spec_dict['model_type']} --training_split {spec_dict['training_split']} --training_dataset {spec_dict['training_dataset']}"
 
     return command    
 

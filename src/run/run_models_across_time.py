@@ -13,9 +13,9 @@ from utils import load_models, load_splits, data_cleaning, parsers, hyperparamet
 config = configuration.Config()
 
 
-# def use_child_specific_wfst(fitting_dict):
+def use_child_specific_wfst(fitting_dict):
 #     # we should only get the results of the child-specific WFST when the child and the training data are the same
-#     return((fitting_dict['training_split'] == 'Providence-Child') and (fitting_dict['training_dataset'] == fitting_dict['test_dataset']))  
+    return((fitting_dict['training_split'] == 'Providence-Child') and (fitting_dict['training_dataset'] == fitting_dict['test_dataset']))  
     
 def call_single_across_time_model(sample_dict, all_tokens_phono, this_model_dict):
 
@@ -68,10 +68,16 @@ def call_single_across_time_model(sample_dict, all_tokens_phono, this_model_dict
         if (this_success_pool.shape[0] == 0) and (this_yyy_pool.shape[0] == 0): continue
 
         scores_output_path = paths.get_directory(this_model_dict)
+        if not os.path.exists(scores_output_path):
+            os.makedirs(scores_output_path)
 
-        #if use_child_specific_wfst(this_model_dict):
-        best_gamma_scores = sample_models_across_time.successes_and_failures_across_time_per_model(age, this_success_pool.utterance_id, this_yyy_pool.utterance_id, this_model_dict, all_tokens_phono, optimal_gamma_value[0], 'wfst-child')
-        best_gamma_scores.to_pickle(join(scores_output_path, f'wfst-child_run_models_across_time_{age_str}.pkl'))
+        if use_child_specific_wfst(this_model_dict):
+
+            # only evaluate the child-specific wfst in certain cases
+            best_gamma_scores = sample_models_across_time.successes_and_failures_across_time_per_model(age, this_success_pool.utterance_id, this_yyy_pool.utterance_id, this_model_dict, all_tokens_phono, optimal_gamma_value[0], 'wfst-child')
+            best_gamma_scores.to_pickle(join(scores_output_path, f'wfst-child_run_models_across_time_{age_str}.pkl'))
+        else:
+            best_gamma_scores = None
          
         best_beta_scores = sample_models_across_time.successes_and_failures_across_time_per_model(age, this_success_pool.utterance_id, this_yyy_pool.utterance_id, this_model_dict, all_tokens_phono, optimal_beta_value[0], 'levdist')        
         best_beta_scores.to_pickle(join(scores_output_path, f'levdist_run_models_across_time_{age_str}.pkl'))

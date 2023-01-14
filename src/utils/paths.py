@@ -1,21 +1,28 @@
 from os.path import join, exists
 import os
+import copy
 from src.utils import configuration
 config = configuration.Config()
 
 
-def validate_spec_dict(spec_dict, spec_dict_params):
-	''' make sure all necessary keys are specified for the spec_dict'''
+def validate_spec_dict(spec_dict, spec_dict_params):	
+	''' make sure all necessary keys are specified for the spec_dict'''	
+	spec_dict_params_local = copy.copy(spec_dict_params)
 	if spec_dict['model_type'] == 'ngram':
-		spec_dict_params += ['contextualized','order','ngram_path']
+		if 'contextualized' not in spec_dict_params_local:
+			spec_dict_params_local += ['contextualized','order','ngram_path']
 
-	for key in spec_dict_params:
+	if spec_dict['model_type'] == 'GPT-2':
+		if 'contextualized' not in spec_dict_params_local:
+			spec_dict_params_local += ['contextualized']
+
+	for key in spec_dict_params_local:
 		if key not in spec_dict:
 			print(spec_dict)
 			raise ValueError('spec_dict must contain the key '+key)
 	
 	for key in spec_dict:
-		if key not in spec_dict_params:
+		if key not in spec_dict_params_local:
 			if key not in ['title','kwargs','examples_mode']: # some reseved keys for building model fitting and eval dicts
 				raise ValueError('spec_dict has extraneous key '+key)
 
@@ -114,6 +121,14 @@ def get_directory(spec_dict):
 
 			path = join(config.exp_dir, spec_dict['task_phase'], n_str, spec_dict['training_split'] + '_' + spec_dict['training_dataset'] + '_'  + tags_str + 'x' + spec_dict['model_type'] + '_' +  spec_dict['test_split'] + '_' + spec_dict['test_dataset'] + '_' + str(spec_dict['order']) + '_' + str(spec_dict['contextualized']))
 
+		elif spec_dict['model_type'] == 'GPT-2':
+			confirm_values_are_not_none(spec_dict, ['training_split', 'training_dataset','use_tags', 'n_samples', 'test_split', 'test_dataset', 'context_width', 'contextualized'])
+			validate_test_params(spec_dict)
+					
+			tags_str = 'with_tags' if spec_dict['use_tags'] else 'no_tags'
+			n_str = 'n='+str(spec_dict['n_samples'])
+
+			path = join(config.exp_dir, spec_dict['task_phase'], n_str, spec_dict['training_split'] + '_' + spec_dict['training_dataset'] + '_'  + tags_str + 'x' + spec_dict['model_type'] + '_' +  spec_dict['test_split'] + '_' + spec_dict['test_dataset'] + '_' + str(spec_dict['context_width']) + '_' + str(spec_dict['contextualized']))
 
 		else: 
 			confirm_values_are_not_none(spec_dict, ['training_split', 'training_dataset','use_tags', 'n_samples', 'test_split', 'test_dataset', 'context_width'])
@@ -137,6 +152,9 @@ def get_file_identifier(spec_dict):
 	elif spec_dict['task_phase'] in ['eval','analysis', 'fit']:       
 		if spec_dict['model_type'] == 'ngram':
 			path =  spec_dict['task_phase']+'_'+spec_dict['training_split']+'_'+spec_dict['training_dataset']+'_'+tags_str+'_'+spec_dict['model_type']+'_'+spec_dict['test_split']+'_'+spec_dict['test_dataset']+'_'+str(spec_dict['order'])+'_'+str(spec_dict['contextualized'])
+		elif spec_dict['model_type'] == 'GPT-2':
+			path =  spec_dict['task_phase']+'_'+spec_dict['training_split']+'_'+spec_dict['training_dataset']+'_'+tags_str+'_'+spec_dict['model_type']+'_'+spec_dict['test_split']+'_'+spec_dict['test_dataset']+'_'+str(spec_dict['context_width']) + '_' + str(spec_dict['contextualized']) 
+
 		else:
 			path =  spec_dict['task_phase']+'_'+spec_dict['training_split']+'_'+spec_dict['training_dataset']+'_'+tags_str+'_'+spec_dict['model_type']+'_'+spec_dict['test_split']+'_'+spec_dict['test_dataset']+'_'+str(spec_dict['context_width'])
 	else:

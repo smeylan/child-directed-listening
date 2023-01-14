@@ -16,7 +16,7 @@ def assemble_scores_no_order(hyperparameter_set):
     Load all of the non_child models for a given hyperparameter
     """
     
-    model_args = finetune_models = load_models.gen_finetune_model_args() + load_models.gen_shelf_model_args() + load_models.gen_unigram_args() + load_models.gen_ngram_args() 
+    model_args = load_models.gen_finetune_model_args() + load_models.gen_shelf_model_args() + load_models.gen_unigram_args() + load_models.gen_ngram_model_args() 
 
     score_store = []
     

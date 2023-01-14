@@ -137,8 +137,45 @@ def get_training_alloc(training_dataset):
     return mem, time, n_tasks, cpus_per_task
 
 
+def get_run_clm_command(spec_dict, data_input_dir, model_output_dir, slurm_user):    
 
-def get_run_mlm_command(training_split, training_dataset, use_tags, data_input_dir, model_output_dir, slurm_user):    
+    training_split = spec_dict['training_split']
+    training_dataset = spec_dict['training_dataset']
+          
+    this_args_dict = config.child_args if training_split == 'Providence-Child' else config.general_training_args
+    
+    if spec_dict['task_name'] == 'child':
+        validation_filename = 'val.txt'
+    elif spec_dict['task_name'] == 'non_child':
+        validation_filename = 'eval.txt'
+    else:
+        raise ValueError('task_name not recognized for CLM training')
+
+
+    data_args = [
+            f"--train_file {data_input_dir}/train.txt",
+            f"--validation_file {data_input_dir}/{validation_filename}", 
+            f"--output_dir {model_output_dir}",
+            f"--use_tags {str(int(spec_dict['use_tags']))}"
+        ]
+    
+    trainer_args = [
+        f"--batch_size 7"        
+    ]
+
+
+    main_command = f"singularity exec --nv -B /om,/om2/user/{slurm_user} /om2/user/{slurm_user}/vagrant/ubuntu20.simg"
+    this_python_command = f' python3 src/run/run_clm.py {" ".join(data_args + trainer_args)}'
+    
+    return f"{main_command}{this_python_command}"
+
+
+
+def get_run_mlm_command(spec_dict, data_input_dir, model_output_dir, slurm_user):    
+
+    training_split = spec_dict['training_split']
+    training_dataset = spec_dict['training_dataset']
+    use_tags = spec_dict['use_tags']
     
     this_args_dict = config.child_args if training_split == 'Providence-Child' else config.general_training_args
     
@@ -162,6 +199,7 @@ def get_run_mlm_command(training_split, training_dataset, use_tags, data_input_d
         #models_get_split_folder('all', 'all', is_tags)
     
     else:
+        base_model_spec = spec_dict
         base_model_path = 'bert-base-uncased'
         
     this_args_dict['model_name_or_path'] = base_model_path
@@ -209,11 +247,16 @@ def get_python_run_command(task_file, spec_dict):
     '''
     if spec_dict['model_type'] == 'ngram':
     
-        command = f"python3 {task_file} --task_name {spec_dict['task_name']} --task_phase {spec_dict['task_phase']} --test_split {spec_dict['test_split']} --test_dataset {spec_dict['test_dataset']} --context_width {spec_dict['context_width']} --use_tags {spec_dict['use_tags']} --model_type {spec_dict['model_type']} --training_split {spec_dict['training_split']} --training_dataset {spec_dict['training_dataset']} --order {spec_dict['order']} --contextualized {spec_dict['contextualized']} --ngram_path {spec_dict['ngram_path']}"
+        command = f"python3 {task_file} --task_name {spec_dict['task_name']} --task_phase {spec_dict['task_phase']} --test_split {spec_dict['test_split']} --test_dataset {spec_dict['test_dataset']} --context_width \"{spec_dict['context_width']}\" --use_tags {spec_dict['use_tags']} --model_type {spec_dict['model_type']} --training_split {spec_dict['training_split']} --training_dataset {spec_dict['training_dataset']} --order {spec_dict['order']} --contextualized {spec_dict['contextualized']} --ngram_path {spec_dict['ngram_path']}"
+
+    elif spec_dict['model_type'] == 'GPT-2':
+
+        command = f"python3 {task_file} --task_name {spec_dict['task_name']} --task_phase {spec_dict['task_phase']} --test_split {spec_dict['test_split']} --test_dataset {spec_dict['test_dataset']} --context_width \"{spec_dict['context_width']}\" --use_tags {spec_dict['use_tags']} --model_type {spec_dict['model_type']} --training_split {spec_dict['training_split']} --training_dataset {spec_dict['training_dataset']} --contextualized {spec_dict['contextualized']}"
+
 
     else:
 
-        command = f"python3 {task_file} --task_name {spec_dict['task_name']} --task_phase {spec_dict['task_phase']} --test_split {spec_dict['test_split']} --test_dataset {spec_dict['test_dataset']} --context_width {spec_dict['context_width']} --use_tags {spec_dict['use_tags']} --model_type {spec_dict['model_type']} --training_split {spec_dict['training_split']} --training_dataset {spec_dict['training_dataset']}"
+        command = f"python3 {task_file} --task_name {spec_dict['task_name']} --task_phase {spec_dict['task_phase']} --test_split {spec_dict['test_split']} --test_dataset {spec_dict['test_dataset']} --context_width \"{spec_dict['context_width']}\" --use_tags {spec_dict['use_tags']} --model_type {spec_dict['model_type']} --training_split {spec_dict['training_split']} --training_dataset {spec_dict['training_dataset']}"
 
     return command    
 

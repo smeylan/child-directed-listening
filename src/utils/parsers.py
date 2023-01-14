@@ -37,6 +37,8 @@ def split_parser():
 
     parser.add_argument('--ngram_path', type=str, default = None, help = "path to the n-gram model in LM format")
 
+    parser.add_argument('--batch_size', default = 2, type=int, help = "Size of the batch to use in GPT-2 baseed models, default is 2")
+
     return parser 
 
 # end parser structure taken from cite

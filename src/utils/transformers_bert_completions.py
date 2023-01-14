@@ -2,6 +2,7 @@ import torch
 import numpy as np
 import pandas as pd
 import scipy.stats
+import gc
 import copy
 import time
 from string import punctuation
@@ -162,7 +163,7 @@ def get_completions_for_mask(utt_df, true_word, bertMaskedLM, tokenizer, softmax
     return_df = pd.DataFrame({'prior_rank':[prior_rank], 'prior_prob': [prior_prob], 'entropy':[entropy], 'num_tokens_in_context':[utt_df.shape[0]-1],
     'bert_token_id' : utt_df.loc[utt_df.token == '[MASK]'].bert_token_id}).astype({'num_tokens_in_context' : 'int32'})
     
-    return(priors, completions , return_df)
+    return(priors, completions, return_df)
 
     # end cites
 
@@ -201,18 +202,18 @@ def get_stats_for_failure(all_tokens, selected_utt_id, bertMaskedLM, tokenizer, 
 
         # limit to the current transcript
         this_transcript_id = utt_df.iloc[0].transcript_id
-        this_seq_utt_id = utt_df.iloc[0].seq_utt_id
+        this_utt_order = utt_df.iloc[0].utterance_order
 
         if len(context_width_in_utts) == 1:
             # context width is symmetric
-            before_utt_df = all_tokens.loc[(all_tokens.seq_utt_id < this_seq_utt_id) & (all_tokens.seq_utt_id > (this_seq_utt_id - (context_width_in_utts+1))) & (all_tokens['transcript_id'] == this_transcript_id)]
+            before_utt_df = all_tokens.loc[(all_tokens.utterance_order < this_utt_order) & (all_tokens.utterance_order > (this_utt_order - (context_width_in_utts+1))) & (all_tokens['transcript_id'] == this_transcript_id)]
 
-            after_utt_df = all_tokens.loc[(all_tokens.seq_utt_id > this_seq_utt_id) & (all_tokens.seq_utt_id < this_seq_utt_id + (context_width_in_utts + 1)) & (all_tokens.transcript_id == this_transcript_id)]
+            after_utt_df = all_tokens.loc[(all_tokens.utterance_order > this_utt_order) & (all_tokens.utterance_order < this_utt_order + (context_width_in_utts + 1)) & (all_tokens.transcript_id == this_transcript_id)]
         else:
             # context width is asymmetric
-            before_utt_df = all_tokens.loc[(all_tokens.seq_utt_id < this_seq_utt_id) & (all_tokens.seq_utt_id > (this_seq_utt_id - (context_width_in_utts[0]+1))) & (all_tokens['transcript_id'] == this_transcript_id)]
+            before_utt_df = all_tokens.loc[(all_tokens.utterance_order < this_utt_order) & (all_tokens.utterance_order > (this_utt_order - (context_width_in_utts[0]+1))) & (all_tokens['transcript_id'] == this_transcript_id)]
 
-            after_utt_df = all_tokens.loc[(all_tokens.seq_utt_id > this_seq_utt_id) & (all_tokens.seq_utt_id < this_seq_utt_id + (context_width_in_utts[1] + 1)) & (all_tokens.transcript_id == this_transcript_id)]
+            after_utt_df = all_tokens.loc[(all_tokens.utterance_order > this_utt_order) & (all_tokens.utterance_order < this_utt_order + (context_width_in_utts[1] + 1)) & (all_tokens.transcript_id == this_transcript_id)]
 
 
     
@@ -220,7 +221,7 @@ def get_stats_for_failure(all_tokens, selected_utt_id, bertMaskedLM, tokenizer, 
         sep_row = pd.DataFrame({'token':['[SEP]'], 'token_id':tokenizer.convert_tokens_to_ids(['[SEP]'])})
 
         if before_utt_df.shape[0] > 0:
-            before_by_sent = [x[1] for x in before_utt_df.groupby(['seq_utt_id'])]    
+            before_by_sent = [x[1] for x in before_utt_df.groupby(['utterance_order'])]    
             i = n = 1
             while i < len(before_by_sent):
                 before_by_sent.insert(i, sep_row)
@@ -230,7 +231,7 @@ def get_stats_for_failure(all_tokens, selected_utt_id, bertMaskedLM, tokenizer, 
             before_by_sent_df = pd.DataFrame()
 
         if after_utt_df.shape[0] > 0:
-            after_by_sent = [x[1] for x in after_utt_df.groupby(['seq_utt_id'])]    
+            after_by_sent = [x[1] for x in after_utt_df.groupby(['utterance_order'])]    
             i = n = 1
             while i < len(after_by_sent):
                 after_by_sent.insert(i, sep_row)
@@ -260,6 +261,406 @@ def get_stats_for_failure(all_tokens, selected_utt_id, bertMaskedLM, tokenizer, 
     else:
         print('Empty tokens for utterance '+str(selected_utt_id))
         return(None)
+
+def get_stats_for_failure_gpt2(all_tokens, selected_utt_id, gptLM, tokenizer, vocab, contextualized, context_width_in_utts, use_speaker_labels):
+    
+    '''
+        Retrieve completions for a communicative failure (containing one mask corresponding to a yyy token)
+        
+        Args:
+        all_tokens: data frame containing selected_utt_id plus surrounding context
+        selected_utt_id: utternce id to pull from all_tokens as the target utterance
+        gptLM: masked language model in the transformers format
+        tokenizer: BERT tokenizer
+        vocab: list of words to evaluate as completions, corresponding to softmax_mask
+        contextualized: compute probabilities using a right context if 1, otherwise just left contexts
+        context_width_in_utts: number of utterances on either side of the target utterance to feed as context to the model
+        use_speaker_labels: is the first token of every utterance sequence (after [SEP]) a speaker identification token like [cgv] or [chi]        
+
+        Returns: (returns directly from get_completions_for_mask)
+        priors: an n * m  matrix of prior probabilities (n tokens/predictions, m vocabulary, reflecting the softmax mask)
+        completions: a list of dataframes of length n with the rank and probability for each completion
+        scores: a datagrame with n rows, containing surprisal (wrt true_word) and entropy 
+    
+    '''    
+    t1 = time.time()    
+    utt_df = all_tokens.loc[all_tokens.utterance_id == selected_utt_id]
+        
+    if (utt_df.shape[0] == 0) or (utt_df.loc[utt_df.partition == 'yyy'].shape[0] == 0):
+        return None
+    else:
+        
+        # convert the @ back to a mask for the target word
+        utt_df.loc[utt_df.partition == 'yyy','token'] = '[MASK]'
+        
+
+    # build the following and preceding utts as context
+    if context_width_in_utts is  None:   
+
+        raise ValueError('context_width_in_utts must be passed')
+
+    else:
+
+        # limit to the current transcript
+        this_transcript_id = utt_df.iloc[0].transcript_id
+        this_utt_order = utt_df.iloc[0].utterance_order
+
+        if len(context_width_in_utts) == 1:
+            # context width is symmetric
+            before_utt_df = all_tokens.loc[(all_tokens.utterance_order < this_utt_order) & (all_tokens.utterance_order > (this_utt_order - (context_width_in_utts+1))) & (all_tokens['transcript_id'] == this_transcript_id)]
+
+            after_utt_df = all_tokens.loc[(all_tokens.utterance_order > this_utt_order) & (all_tokens.utterance_order < this_utt_order + (context_width_in_utts + 1)) & (all_tokens.transcript_id == this_transcript_id)]
+        else:
+            # context width is asymmetric
+            before_utt_df = all_tokens.loc[(all_tokens.utterance_order < this_utt_order) & (all_tokens.utterance_order > (this_utt_order - (context_width_in_utts[0]+1))) & (all_tokens['transcript_id'] == this_transcript_id)]
+
+            after_utt_df = all_tokens.loc[(all_tokens.utterance_order > this_utt_order) & (all_tokens.utterance_order < this_utt_order + (context_width_in_utts[1] + 1)) & (all_tokens.transcript_id == this_transcript_id)]
+
+
+        if before_utt_df.shape[0] > 0:
+            before_by_sent = [x[1] for x in before_utt_df.groupby(['utterance_order'])]    
+            i = n = 1
+            while i < len(before_by_sent):
+                before_by_sent.insert(i, sep_row)
+                i += (n+1)
+            before_by_sent_df = pd.concat(before_by_sent)
+        else:
+            before_by_sent_df = pd.DataFrame()
+
+        if after_utt_df.shape[0] > 0:
+            after_by_sent = [x[1] for x in after_utt_df.groupby(['utterance_order'])]    
+            i = n = 1
+            while i < len(after_by_sent):
+                after_by_sent.insert(i, sep_row)
+                i += (n+1)
+            after_by_sent_df = pd.concat(after_by_sent)
+        else:
+            after_by_sent_df = pd.DataFrame()
+
+        utt_df = pd.concat([before_by_sent_df, sep_row, utt_df, sep_row, after_by_sent_df])
+
+
+        # sanity check
+        if np.sum(utt_df.token == '[MASK]') > 1:
+            print('Multiple masks in the surrounding context')
+            import pdb
+            pdb.set_trace()        
+    
+        if not use_speaker_labels:
+            # remove the speaker labels
+            utt_df = utt_df.loc[~utt_df.token.isin(['[CHI]','[CGV]'])]           
+
+
+        print('Utterances constructed!')
+        import pdb
+        pdb.set_trace()
+
+
+        # handle the "contextualized" variable.
+
+        if int(contextualized):
+            # discard everything after the MASK in the 
+
+            print('Reached data prep for contextualized  GPT-2')
+            import pdb
+            pdb.set_trace()
+
+            utt_df['idx'] = np.range(0,utt_df.shape[0])  
+            mask_idx = utt_df.loc[utt_df.token == '[MASK]'].idx
+            utt_df =  utt_df.loc[ utt_df.idx <= mask_idx]
+        else:
+            print('Reached data prep for contextualized  GPT-2')
+            import pdb
+            pdb.set_trace()
+            raise NotImplementedError
+        
+    # may need soemthing that handles long utterances
+           
+    if utt_df.shape[0] > 0:
+        
+        print('Reached probability computation for GPT-2')
+        import pdb
+        pdb.set_trace()
+        
+
+        test_phrase = ' '.join(utt_df.token)
+
+        if contextualized:
+            # this computes the completion probability for each item in vocab, considering the right context as continuations
+            priors, completions = get_prob_dist_for_gpt_completion(test_phrase, vocab, gptLM)            
+        
+            print(completions.head(5).word.to_list())
+
+        else: 
+            # this computes the probability of the next item in the vocab, with no right continuations
+            priors, completions = get_prob_dist_for_next_token(test_phrase, vocab, gptLM)
+        # create a summary representation called "scores"
+        entropy = scipy.stats.entropy(completions.prior_prob, base=2)        
+        scores = pd.DataFrame({'prior_rank':[np.nan], 'prior_prob': [np.nan], 'entropy':[entropy], 'num_tokens_in_context':[utt_df.shape[0]-1],
+        'bert_token_id' : utt_df.loc[utt_df.idx == mask_idx].bert_token_id})
+
+
+        return(priors, completions, scores)
+
+    else:
+        print('Empty tokens for utterance '+str(selected_utt_id))
+        return(None)
+
+
+def get_stats_for_success_gpt2(all_tokens, selected_utt_id, gptLM, tokenizer, vocab, contextualized, context_width_in_utts, use_speaker_labels):
+    
+    '''
+        Retrieve completions for all successes in a success_utt 
+        
+        Args:
+        all_tokens: data frame containing selected_utt_id plus surrounding context
+        selected_utt_id: utternce id to pull from all_tokens as the target utterance
+        gptLM: masked language model in the transformers format
+        tokenizer: BERT tokenizer
+        vocab: list of words to evaluate as completions, corresponding to softmax_mask
+        contextualized: compute probabilities using a right context if 1, otherwise just left contexts
+        context_width_in_utts: number of utterances on either side of the target utterance to feed as context to the model
+        use_speaker_labels: is the first token of every utterance sequence (after [SEP]) a speaker identification token like [cgv] or [chi]        
+
+        Returns: (returns directly from get_completions_for_mask)
+        priors: an n * m  matrix of prior probabilities (n tokens/predictions, m vocabulary, reflecting the softmax mask)
+        completions: a list of dataframes of length n with the rank and probability for each completion
+        scores: a datagrame with n rows, containing surprisal (wrt true_word) and entropy 
+    
+    '''    
+    t1 = time.time()    
+    utt_df = all_tokens.loc[all_tokens.utterance_id == selected_utt_id]
+
+    if not use_speaker_labels:
+        # remove the speaker labels
+        utt_df = utt_df.loc[~utt_df.token.isin(['[CHI]','[CGV]','[chi]','[cgv]'])]           
+    
+
+    # initialzie the vars that we will add to at each mask position
+    priors = []
+    completions = [] 
+    stats = []
+
+    if utt_df.loc[utt_df.partition == 'success'].shape[0] == 0:
+        return(None)
+    else:
+        mask_positions = np.argwhere((utt_df['partition'] == 'success').to_numpy())   
+
+
+    for mask_position in mask_positions.flatten().tolist(): 
+        
+        utt_df_local = copy.deepcopy(utt_df)    
+        true_word  = utt_df_local.iloc[mask_position].token
+        utt_df_local.iloc[mask_position, np.argwhere(utt_df_local.columns == 'token')[0][0]] = ['[MASK]']
+        utt_df_local.iloc[mask_position,np.argwhere(utt_df_local.columns == 'token_id')[0][0]] = tokenizer.convert_tokens_to_ids(['[MASK]'])
+
+        if context_width_in_utts is  None:   
+            raise ValueError('context_width_in_utts must be passed')
+
+        # limit to the current transcript
+        this_transcript_id = utt_df.iloc[0].transcript_id
+        this_utt_order = utt_df.iloc[0].utterance_order
+
+        if type(context_width_in_utts) is int:
+            # context width is symmetric
+            before_utt_df = all_tokens.loc[(all_tokens.utterance_order < this_utt_order) & (all_tokens.utterance_order > (this_utt_order - (context_width_in_utts+1))) & (all_tokens['transcript_id'] == this_transcript_id)]
+
+            after_utt_df = all_tokens.loc[(all_tokens.utterance_order > this_utt_order) & (all_tokens.utterance_order < this_utt_order + (context_width_in_utts + 1)) & (all_tokens.transcript_id == this_transcript_id)]
+        elif type(context_width_in_utts) is list:
+            # context width is asymmetric
+            before_utt_df = all_tokens.loc[(all_tokens.utterance_order < this_utt_order) & (all_tokens.utterance_order > (this_utt_order - (context_width_in_utts[0]+1))) & (all_tokens['transcript_id'] == this_transcript_id)]
+
+            after_utt_df = all_tokens.loc[(all_tokens.utterance_order > this_utt_order) & (all_tokens.utterance_order < this_utt_order + (context_width_in_utts[1] + 1)) & (all_tokens.transcript_id == this_transcript_id)]
+        else:
+            raise('Failed to parse context_width_in_utts')
+
+        utt_df_local = pd.concat([before_utt_df, utt_df_local,  after_utt_df])
+        if not use_speaker_labels:
+            utt_df_local = utt_df_local.loc[~utt_df_local.token.isin(['[CHI]','[CGV]','[chi]','[cgv]'])]
+
+
+        if not int(contextualized):            
+            # of not contextualized, discard everything after the MASK in the data input
+            utt_df_local['idx'] = range(0, utt_df_local.shape[0]) 
+            mask_idx = utt_df_local.loc[utt_df_local.token == '[MASK]'].iloc[0].idx
+
+            utt_df_local =  utt_df_local.loc[ utt_df_local.idx <= mask_idx]
+            
+        else:
+            # if contextualized, keep the whole input
+            pass
+            
+               
+        if utt_df_local.shape[0] > 0:                        
+
+            
+            # these capitalization rules only work when the speaker labels are present
+            if use_speaker_labels:
+                by_word = utt_df_local.token.to_list()
+                for i in range(1, len(by_word)):
+                    if not by_word[i] ==  '[MASK]' and by_word[i-1] in ['[CGV]', '[CHI]', '[cgv]', '[chi]']:
+                        by_word[i] = by_word[i].title()         
+            else:                
+                
+                # check if the utterance id is different than the previous
+                previous_utt = [0] +  utt_df_local.utterance_id.to_list()
+                diff = np.array(utt_df_local.utterance_id.to_list() + [0]) !=  np.array(previous_utt)
+                utt_df_local['new_utt'] = diff[0: utt_df_local.shape[0]] 
+                utt_df_local['capitalized'] = utt_df_local.token                                                
+
+                utt_df_local.loc[utt_df_local.new_utt, 'capitalized'] = [x.title()  for x in utt_df_local.loc[utt_df_local.new_utt, 'capitalized'] ]
+                utt_df_local.loc[utt_df_local.capitalized == '[Mask]', 'capitalized'] = '[MASK]'  
+                utt_df_local.loc[utt_df_local.capitalized == 'Xxx', 'capitalized'] = 'xxx' 
+                utt_df_local.loc[utt_df_local.capitalized == 'Yyy', 'capitalized'] = 'yyy'  
+                by_word = utt_df_local.capitalized.to_list() 
+
+            test_phrase = ' '.join(by_word).replace(' ##','').replace(' ?','?').replace(' ...','...').replace(' .','.').replace(' !','!').replace('[cgv]','[CGV]').replace('[chi]','[CHI]').replace(" ' ","'").replace(' i ', ' I ').replace('Yyy','yyy').replace('Xxx','xxx')
+
+            # also needs punctuation fixes, capturalization of first letter, capitalization of little  
+
+
+            if int(contextualized):
+                # this computes the completion probability for each item in vocab, considering the right context as continuations
+
+                print('Reached probability computation for contextualized, success GPT-2')
+                print(test_phrase)                
+                this_priors, this_completions = get_prob_dist_for_gpt_completion(test_phrase, vocab, gptLM)            
+                print(this_completions.head(5).word.to_list())
+                import pdb
+                pdb.set_trace()
+            else: 
+
+                print('Reached probability computation for non-contextualized, success GPT-2')
+                # this computes the probability of the next item in the vocab, with no right continuations
+                import pdb
+                pdb.set_trace()
+                this_priors, this_completions = get_prob_dist_for_next_token(test_phrase, vocab, gptLM)
+                print(this_completions.head(5).word.to_list())
+
+
+            # create a summary representation called "scores"            
+            entropy = scipy.stats.entropy(this_completions.prior_prob, base=2)                
+            
+            prior_rank = this_completions.word.to_list().index(true_word)
+            prior_prob = this_completions.loc[this_completions.word == true_word].prior_prob
+
+            this_stats = pd.DataFrame({
+            'prior_rank':prior_rank, 
+            'prior_prob': prior_prob,
+            'token': true_word,
+            'entropy':entropy, 
+            'num_tokens_in_context': utt_df_local.shape[0] -1,
+            'bert_token_id': utt_df.iloc[mask_position]['bert_token_id']})
+                
+
+            priors.append(this_priors)
+            completions.append(this_completions)
+            stats.append(this_stats)
+
+            
+        else:
+            print('Empty tokens for utterance '+str(stats))
+            return(None)
+
+    return(np.vstack(priors), completions, pd.concat(stats))
+
+
+def flatten_list(nested_list):
+    return([element for sublist in nested_list for element in sublist])
+
+
+def try_gpt_batch_size(test_phrase, vocab, model, batch_size):
+    try:        
+        sentences = []    
+        lowercase_surprisal_store = []
+
+        print('Assessing lowercase completions...')
+        i=0
+        for word in vocab:
+            i += 1
+            test_phrase_temp = copy.copy(test_phrase)
+            sent = test_phrase_temp.replace('[MASK]', word)         
+            sentences.append(sent)
+
+            # batch for faster inference, but too much will exceeed the memory on the GPU        
+            if (i % batch_size == 0) or i == len(vocab):
+                scores = model.surprise(sentences) 
+                lowercase_surprisal_store.append([np.sum([y[1] for y in x if not np.isinf(y[1])]) for x in scores])    
+                sentences = []            
+                del scores
+                gc.collect()
+                torch.cuda.empty_cache()
+                #print('Processed '+str(i)+ ' completions')
+                
+        lowercase_surprisals = flatten_list(lowercase_surprisal_store)        
+
+        print('Assessing uppercase completions...')
+        sentences = []    
+        uppercase_surprisal_store = []
+        i=0
+        for word in vocab:
+            i += 1
+            test_phrase_temp = copy.copy(test_phrase)
+            sent = test_phrase_temp.replace('[MASK]', word.title()) 
+            sentences.append(sent)
+
+            # batch for faster inference, but too much will exceeed the memory on the GPU
+            if (i % batch_size == 0) or i == len(vocab):
+                scores = model.surprise(sentences) 
+                uppercase_surprisal_store.append([np.sum([y[1] for y in x if not np.isinf(y[1])]) for x in scores])    
+                sentences = []            
+                del scores
+                gc.collect()
+                torch.cuda.empty_cache()
+                #print('Processed '+str(i)+ ' completions')
+                
+        surprisals = np.array(flatten_list(lowercase_surprisal_store) + flatten_list(uppercase_surprisal_store))
+        
+        log_likelihood = -1. * np.array(surprisals)
+        exponentiated = np.exp(log_likelihood - np.max(log_likelihood))
+        prob = exponentiated / np.sum(exponentiated)
+        
+        lowercase_probs = prob[0:len(vocab)]         
+        uppercase_probs = prob[len(vocab):]
+        assert(len(lowercase_probs) == len(uppercase_probs))
+
+        normalized_prob =  lowercase_probs + uppercase_probs
+
+        assert(len(normalized_prob) == len(vocab))
+
+        return({"success": True, "normalized_prob":normalized_prob})
+    except:
+        print('FAILED (GPU OOM) with batch size of '+str(batch_size)+', backing off...')
+        return({"success": False})
+
+
+def get_prob_dist_for_gpt_completion(test_phrase, vocab, model):
+    
+    batch_size = 4000
+    rv = {"success" :False}
+
+    t1 = time.time()
+    while not rv['success']: 
+        print('Attempting batch size: '+str(batch_size))
+        rv = try_gpt_batch_size(test_phrase, vocab, model, batch_size)
+        batch_size = batch_size / 2
+
+    normalized_prob = rv['normalized_prob']    
+    t2 = time.time()
+    print('Elapsed in model retrieval: '+str(t2 - t1))
+    
+    rdf = pd.DataFrame({
+        'word': vocab,
+        'score': -1. * np.log10(normalized_prob),
+        'prior_prob': normalized_prob
+    })  
+
+    completions = rdf.sort_values(by = ['prior_prob'], ascending = False)
+    completions.rank = range(completions.shape[0])
+
+    priors = normalized_prob
+
+    return(priors, completions)    
 
 
 def get_stats_for_success(all_tokens, selected_utt_id, bertMaskedLM, tokenizer, softmax_mask, context_width_in_utts=None, use_speaker_labels=False):
@@ -310,29 +711,26 @@ def get_stats_for_success(all_tokens, selected_utt_id, bertMaskedLM, tokenizer, 
         if context_width_in_utts is not None:
 
             this_transcript_id = utt_df.iloc[0].transcript_id
-
-            this_seq_utt_id = utt_df_local.iloc[0].seq_utt_id
+            this_utt_order = utt_df_local.iloc[0].utterance_order
 
             if len(context_width_in_utts) == 1:
                 # context width is symmetrical
 
-                before_utt_df = all_tokens.loc[(all_tokens.seq_utt_id < this_seq_utt_id) & (all_tokens.seq_utt_id > this_seq_utt_id - (context_width_in_utts+1)) & (all_tokens.transcript_id == this_transcript_id)]
+                before_utt_df = all_tokens.loc[(all_tokens.utterance_order < this_utt_order) & (all_tokens.utterance_order > this_utt_order - (context_width_in_utts+1)) & (all_tokens.transcript_id == this_transcript_id)]
             
-                after_utt_df = all_tokens.loc[(all_tokens.seq_utt_id > this_seq_utt_id) & (all_tokens.seq_utt_id < this_seq_utt_id + (context_width_in_utts + 1)) & (all_tokens.transcript_id == this_transcript_id)]
+                after_utt_df = all_tokens.loc[(all_tokens.utterance_order > this_utt_order) & (all_tokens.utterance_order < this_utt_order + (context_width_in_utts + 1)) & (all_tokens.transcript_id == this_transcript_id)]
             else:
                 # context width is asymmetrical
 
                 # from eg 20 before
-                before_utt_df = all_tokens.loc[(all_tokens.seq_utt_id < this_seq_utt_id) & (all_tokens.seq_utt_id > this_seq_utt_id - (context_width_in_utts[0]+1)) & (all_tokens.transcript_id == this_transcript_id)]
+                before_utt_df = all_tokens.loc[(all_tokens.utterance_order < this_utt_order) & (all_tokens.utterance_order > this_utt_order - (context_width_in_utts[0]+1)) & (all_tokens.transcript_id == this_transcript_id)]
             
-                after_utt_df = all_tokens.loc[(all_tokens.seq_utt_id > this_seq_utt_id) & (all_tokens.seq_utt_id < this_seq_utt_id + (context_width_in_utts[1] + 1)) & (all_tokens.transcript_id == this_transcript_id)]
+                after_utt_df = all_tokens.loc[(all_tokens.utterance_order > this_utt_order) & (all_tokens.utterance_order < this_utt_order + (context_width_in_utts[1] + 1)) & (all_tokens.transcript_id == this_transcript_id)]            
 
-
-        
             # ready to use before_utt_df and after_utt_df    
             sep_row = pd.DataFrame({'token':['[SEP]'], 'token_id':tokenizer.convert_tokens_to_ids(['[SEP]'])})
             if before_utt_df.shape[0] > 0:
-                before_by_sent = [x[1] for x in before_utt_df.groupby(['seq_utt_id'])]    
+                before_by_sent = [x[1] for x in before_utt_df.groupby(['utterance_order'])]    
                 i = n = 1
                 while i < len(before_by_sent):
                     before_by_sent.insert(i, sep_row)
@@ -342,7 +740,7 @@ def get_stats_for_success(all_tokens, selected_utt_id, bertMaskedLM, tokenizer, 
                 before_by_sent_df = pd.DataFrame()
 
             if after_utt_df.shape[0] > 0:
-                after_by_sent = [x[1] for x in after_utt_df.groupby(['seq_utt_id'])]    
+                after_by_sent = [x[1] for x in after_utt_df.groupby(['utterance_order'])]    
                 i = n = 1
                 while i < len(after_by_sent):
                     after_by_sent.insert(i, sep_row)
@@ -470,6 +868,85 @@ def compare_successes_failures(all_tokens, selected_success_utts, selected_yyy_u
 
     rdict['scores'] = pd.concat([failure_scores, success_scores])
     
+    rdict['priors'] = np.vstack([x for x in [failure_priors, success_priors] if x is not None])
+
+    warnings.filterwarnings('default')
+
+    return(rdict)
+
+def compare_successes_failures_gpt2(all_tokens, selected_success_utts, selected_yyy_utts, modelLM, tokenizer, vocab, contextualized, context_width_in_utts, use_speaker_labels=False):    
+    '''
+        Get prior probabilities, completions, and scores from a GPT-2 model for a list of utterance ids for communicative successes and a list of utterance ids for communicative failures 
+
+        Args:
+        all_tokens: data frame containing selected_utt_id plus surrounding context
+        selected_suuccess_utts: utterance ids known to be communicative successes
+        selected_yyy_utts: utterance ids known to be communicative failures
+        modelLM: masked language model in the transformers format
+        tokenizer: GPT-2 tokenizer
+        vocab: list of words to evaluate, corresponding to the vocabulary items in the softmax_mask variable given to the BERT models    
+        contextualized: if 0, consider each word as a completion of the left context. If 1, consider vocab as completions for the current utterance
+        context_width_in_utts: number of utterances on either side of the target utterance to feed as context to the model
+        use_speaker_labels: is the first token of every utterance sequence (after punctuation, not including SEP) a speaker identification token like [CGV] or [CHI]        
+
+        Returns: dictionary with two keys:            
+            priors: n * m matrix of prior probabilities, where n is the number of communicative failures + communicative successes, and m is the size of the vocab identified by the softmax map. Failures are stacked on top of successes and are identified by a bert_token_id
+            scores: a datframe of length n containing concatenated entropy scores, ranks, probabilities. Failures are stacked on top of successes and are identified by a bert_token_id
+    '''
+    
+    print('Computing failure scores')
+    
+    warnings.filterwarnings('ignore')
+
+    failure_priors_store = []
+    failure_scores_store = []
+       
+    for sample_yyy_id in selected_yyy_utts:
+
+        rv = get_stats_for_failure_gpt2(all_tokens, sample_yyy_id, modelLM, tokenizer, vocab, contextualized, context_width_in_utts, use_speaker_labels) 
+
+        if rv is None:
+            pass
+        else:
+            prior, _, score = rv
+            failure_scores_store.append(score)
+            failure_priors_store.append(prior)
+    
+    rdict = {}    
+    if len(failure_scores_store) > 0:
+        failure_scores = pd.concat(failure_scores_store)
+        failure_scores['set'] = 'failure'         
+        failure_priors = np.vstack(failure_priors_store)
+    else:        
+        failure_scores = pd.DataFrame()
+        failure_priors = None
+    
+    
+    print('Computing success scores')
+    success_priors_store = []
+    success_scores_store = []
+
+    
+    for success_id in selected_success_utts:
+    
+        rv = get_stats_for_success_gpt2(all_tokens, success_id, modelLM, tokenizer, vocab, contextualized, context_width_in_utts, use_speaker_labels) 
+        if rv is None:
+            pass
+            #!!! may want to pass throug a placeholder here 
+        else:
+            prior, _, score = rv
+            success_scores_store.append(score)
+            success_priors_store.append(prior)
+    
+    if len(success_scores_store) > 0:
+        success_scores = pd.concat(success_scores_store)    
+        success_scores['set'] = 'success' 
+        success_priors = np.vstack(success_priors_store)
+    else:
+        success_scores = pd.DataFrame()
+        success_priors = None
+
+    rdict['scores'] = pd.concat([failure_scores, success_scores])    
     rdict['priors'] = np.vstack([x for x in [failure_priors, success_priors] if x is not None])
 
     warnings.filterwarnings('default')

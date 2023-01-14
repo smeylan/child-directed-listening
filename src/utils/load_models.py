@@ -3,9 +3,11 @@ from os.path import join, exists
 import pandas as pd
 import numpy as np
 import transformers 
+import surprisal
+from surprisal import AutoHuggingFaceModel
 import json
 import copy
-from transformers import BertTokenizer, BertForMaskedLM
+from transformers import BertTokenizer, BertForMaskedLM, GPT2Tokenizer
 from src.utils import configuration, transformers_bert_completions, split_gen, load_splits, paths
 config = configuration.Config()
 
@@ -143,7 +145,7 @@ def get_shelf_dict(fitted_dict):
     """
     Adult BERT models, no finetuning
     """
-    
+
     adult_bertMaskedLM = BertForMaskedLM.from_pretrained('bert-base-uncased')
     adult_bertMaskedLM.eval()
     
@@ -232,6 +234,9 @@ def get_finetune_dict(fitted_dict):
     fitted_dict['kwargs'] = get_model_from_split(model_dict)    
     fitted_dict['kwargs']['context_width_in_utts'] = process_context_width(fitted_dict['context_width'])
     fitted_dict['kwargs']['use_speaker_labels'] = fitted_dict['use_tags']
+
+    if fitted_dict['contextualized'] is not None:
+        fitted_dict['kwargs']['contextualized'] = fitted_dict['contextualized']
     return fitted_dict
 
 
@@ -259,7 +264,12 @@ def get_fitted_model_dict(fitted_dict):
         for token in ['[chi]','[cgv]', 'yyy','xxx']:
             if token not in vocab:
                 model_dict['kwargs']['tokenizer'].add_tokens(token)
-        
+
+    elif fitted_dict['model_type'] == 'GPT-2':
+       
+        model_dict = get_finetune_dict(fitted_dict)
+        for token in ['[CHI]','[CGV]']:
+            model_dict['kwargs']['tokenizer'].add_tokens(token)        
 
     elif fitted_dict['model_type'] == 'data_unigram': 
         model_dict = get_data_unigram_dict(fitted_dict)
@@ -268,7 +278,10 @@ def get_fitted_model_dict(fitted_dict):
 
     elif fitted_dict['model_type'] == 'ngram':
         model_dict = get_ngram_dict(fitted_dict)    
-    
+    else:
+        raise ValueError('Model type not recognized')
+
+
     return model_dict
     
     
@@ -309,20 +322,38 @@ def get_model_from_split(model_dict):
     word_info_all = get_cmu_dict_info()
     word_info = word_info_all.word 
     
-    try:
-        model = BertForMaskedLM.from_pretrained(model_path)
-    except BaseException as e:
-        print('Model loading failed. Does a model actually exist at '+model_path)
-        print(e)
-        raise ValueError('Terminating!')
+    if model_dict['model_type'] == 'BERT':
 
-    
-    model.eval()
-    tokenizer = BertTokenizer.from_pretrained(model_path)
-    softmax_mask, vocab = transformers_bert_completions.get_softmax_mask(tokenizer, word_info)
-    
-    return {'modelLM' : model, 'tokenizer' : tokenizer, 'softmax_mask' : softmax_mask, 'use_speaker_labels' : model_dict['use_tags']}
+        try:
+            model = BertForMaskedLM.from_pretrained(model_path)
+        except BaseException as e:
+            print('Model loading failed. Does a model actually exist at '+model_path)
+            print(e)
+            raise ValueError('Terminating!')
+
+        
+        model.eval()
+        tokenizer = BertTokenizer.from_pretrained(model_path)
+        softmax_mask, vocab = transformers_bert_completions.get_softmax_mask(tokenizer, word_info)
+        
+        return {'modelLM' : model, 'tokenizer' : tokenizer, 'softmax_mask' : softmax_mask, 'use_speaker_labels' : model_dict['use_tags']}
  
+    elif model_dict['model_type'] == 'GPT-2':
+
+        print('Loading a GPT-2 model...')        
+
+        try:
+            model = AutoHuggingFaceModel.from_pretrained(model_path, device='cuda:0')
+        except BaseException as e:
+            print('Model loading failed. Does a model actually exist at '+model_path)
+            print(e)
+            raise ValueError('Terminating!')
+                
+        gpt2_tokenizer = GPT2Tokenizer.from_pretrained(model_path)
+        bert_tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')#!!! this may be different
+        softmax_mask, vocab = transformers_bert_completions.get_softmax_mask(bert_tokenizer, word_info)
+        
+        return {'modelLM' : model, 'tokenizer' : gpt2_tokenizer, 'vocab' : vocab, 'use_speaker_labels' : model_dict['use_tags']}
 
     
 

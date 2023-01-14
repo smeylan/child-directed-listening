@@ -27,7 +27,9 @@ def sample_across_models(success_ids, yyy_ids, model, beta_values, lambda_values
     '''
      
     if all_tokens_phono is None:
-        all_tokens_phono = load_splits.load_phono()
+        all_tokens_phono = load_splits.load_phono()  
+        print('Loaded all_tokens_phono')
+
     this_bert_token_ids = all_tokens_phono.loc[all_tokens_phono.partition.isin(('success','yyy'))].bert_token_id
     initial_vocab, cmu_2syl_inchildes, cmu_indices_for_initial_vocab = load_models.get_initial_vocab_info()
 
@@ -36,6 +38,11 @@ def sample_across_models(success_ids, yyy_ids, model, beta_values, lambda_values
     # get the priors
     if model['model_type'] == 'BERT':
         priors_for_age_interval = transformers_bert_completions.compare_successes_failures(
+            all_tokens_phono, success_ids, 
+            yyy_ids, **model['kwargs'])        
+
+    elif model['model_type'] == 'GPT-2':
+        priors_for_age_interval = transformers_bert_completions.compare_successes_failures_gpt2(
             all_tokens_phono, success_ids, 
             yyy_ids, **model['kwargs'])        
 

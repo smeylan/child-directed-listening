@@ -48,12 +48,13 @@ def gen_training_commands(spec_dict):
         os.makedirs(sh_loc)
 
     # Construct the python/training-related commands
-    slurm_commands.append(scripts.get_run_mlm_command(
-        spec_dict['training_split'], 
-        spec_dict['training_dataset'], 
-        spec_dict['use_tags'],
-        data_input_dir, model_output_dir, config.slurm_user))
-        
+    if spec_dict['model_type'] == 'BERT':
+        slurm_commands.append(scripts.get_run_mlm_command(spec_dict, data_input_dir, model_output_dir, config.slurm_user))
+    
+    elif spec_dict['model_type'] == 'GPT-2':
+        slurm_commands.append(scripts.get_run_clm_command(spec_dict, data_input_dir, model_output_dir, config.slurm_user))    
+
+
     slurm_filename = os.path.join(sh_loc, paths.get_slurm_script_name(spec_dict))
     print(slurm_filename)
     

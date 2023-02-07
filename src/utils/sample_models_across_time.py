@@ -29,8 +29,10 @@ def assemble_scores_no_order(hyperparameter_set):
         model_arg['n_samples'] = config.n_across_time
 
         
-        # loading from 
+        # loading from
         results_path = paths.get_directory(model_arg)    
+            
+
         search_string = join(results_path, hyperparameter_set+'_run_models_across_time_*.pkl')
         print('Searching '+search_string)
         age_paths = glob.glob(search_string)
@@ -84,6 +86,11 @@ def successes_and_failures_across_time_per_model(age, success_ids, yyy_ids, mode
             all_tokens_phono, success_ids, 
             yyy_ids, initial_vocab, **model['kwargs'])
 
+    elif model['model_type'] == 'GPT-2':
+        priors_for_age_interval = transformers_bert_completions.compare_successes_failures_gpt2(
+            all_tokens_phono, success_ids, 
+            yyy_ids, **model['kwargs'])
+
     elif model['model_type'] in ['data_unigram', 'flat_unigram']:
         priors_for_age_interval = transformers_bert_completions.compare_successes_failures_unigram_model(
             all_tokens_phono, success_ids, 
@@ -115,7 +122,7 @@ def successes_and_failures_across_time_per_model(age, success_ids, yyy_ids, mode
     likelihood_matrix = likelihoods.reduce_duplicates(likelihood_matrix, cmu_in_initial_vocab, initial_vocab, 'min', cmu_indices_for_initial_vocab)
 
 
-    if model['model_type'] == 'BERT':
+    if model['model_type'] in ['BERT','GPT-2']:
         posteriors_for_age_interval = transformers_bert_completions.get_posteriors(priors_for_age_interval, 
             likelihood_matrix, initial_vocab, scaling_value = beta_value, examples_mode = model['examples_mode'])
     

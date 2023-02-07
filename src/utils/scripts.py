@@ -76,7 +76,7 @@ def format_time(args):
     return (args[0],) + new_args
   
 
-def gen_command_header(mem_alloc_gb, time_alloc_hrs, n_tasks, cpus_per_task, two_gpus = False):
+def gen_command_header(mem_alloc_gb, time_alloc_hrs, n_tasks, cpus_per_task, num_gpus, gpu_constraint):
 
     slurm_folder = config.slurm_log_dir
     
@@ -96,11 +96,12 @@ def gen_command_header(mem_alloc_gb, time_alloc_hrs, n_tasks, cpus_per_task, two
     commands.append("\n# For the command text\n# 6/24/21: https://github.mit.edu/MGHPCC/OpenMind/wiki/How-to-use-Singularity-container%3F\n# and https://github.mit.edu/MGHPCC/OpenMind/issues/3392\n# including the bash line at the top, and all but the python3 commands\n")
     
     commands.append("\n#SBATCH -N 1\n")                         
-    commands.append("#SBATCH -p cpl\n")
-    commands.append(f"#SBATCH --gres=gpu:{2 if two_gpus else 1}\n")
+    commands.append("#SBATCH -p cpl\n")    
     commands.append(f"#SBATCH -t {time_alloc_hrs_str}\n")
     commands.append(f"#SBATCH --mem={mem_alloc_gb}G\n")
-    commands.append("#SBATCH --constraint=high-capacity\n")
+    if num_gpus > 0:
+        commands.append(f"#SBATCH --gres=gpu:{num_gpus}\n")
+        commands.append(f"#SBATCH --constraint={gpu_constraint}\n")
 
     commands.append(f"#SBATCH --ntasks={n_tasks}\n")
     commands.append(f"#SBATCH --cpus-per-task={cpus_per_task}\n")
@@ -128,13 +129,26 @@ def time_and_mem_alloc():
     return this_time_alloc, this_mem_amount, this_n_tasks, this_cpus_per_task
 
 
-def get_training_alloc(training_dataset):
+def get_cluster_resources_specification(task_specification):
         
     time, mem, n_tasks, cpus_per_task = time_and_mem_alloc()
-    if training_dataset != 'Providence-Child':
-        time = 24 if not config.dev_mode else (0, 30, 0)                
     
-    return mem, time, n_tasks, cpus_per_task
+    if task_specification['training_dataset'] != 'Providence-Child':
+        time = 24 if not config.dev_mode else (0, 30, 0)            
+
+    if  task_specification['model_type'] == 'ngram':
+        num_gpus = 0
+    elif task_specification['task_phase'] == 'train' and task_specification['training_dataset'] in {'Providence', 'Providence-Age'}:
+        num_gpus =2
+    else:
+        num_gpus = 1
+
+    if task_specification['model_type'] == 'GPT-2' and int(task_specification['contextualized']):
+        gpu_constraint = 'any-A100'
+    else:
+        gpu_constraint = 'high-capacity'
+    
+    return mem, time, n_tasks, cpus_per_task, num_gpus, gpu_constraint
 
 
 def get_run_clm_command(spec_dict, data_input_dir, model_output_dir, slurm_user):    

@@ -28,17 +28,16 @@ def assemble_scores_no_order(hyperparameter_set):
         model_arg['test_dataset'] = 'all'  
         model_arg['n_samples'] = config.n_across_time
 
-        
-        # loading from 
         results_path = paths.get_directory(model_arg)    
         search_string = join(results_path, hyperparameter_set+'_run_models_across_time_*.pkl')
         print('Searching '+search_string)
-        age_paths = glob.glob(search_string)
+        age_paths = glob.glob1(results_path, hyperparameter_set+'_run_models_across_time_*.pkl')
+        print(age_paths)
         
-        for this_data_path in age_paths:
+        for file_path in age_paths:
             
-            #data_df = pd.read_pickle(this_data_path)
-            with open(this_data_path, "rb") as fh:
+            #data_df = pd.read_pickle(this_data_path)        
+            with open(os.path.join(results_path, file_path), "rb") as fh:
                 data_df = pickle.load(fh)
                 data_df['training_split'] = model_arg['training_split']
                 data_df['training_dataset'] = model_arg['training_dataset']
@@ -49,6 +48,10 @@ def assemble_scores_no_order(hyperparameter_set):
 
                 data_df['split'] = data_df.training_split + '_' + data_df.training_dataset
                 data_df['model'] = paths.get_file_identifier(model_arg)
+                #print(paths.get_file_identifier(model_arg)) 
+                #if paths.get_file_identifier(model_arg)  == "eval_Providence_all_with_tags_GPT-2_Providence_all_[20, 0]_1":
+                #    import pdb
+                #    pdb.set_trace()
 
 
             score_store.append(data_df)

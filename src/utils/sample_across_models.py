@@ -30,6 +30,9 @@ def sample_across_models(success_ids, yyy_ids, model, beta_values, lambda_values
         all_tokens_phono = load_splits.load_phono()  
         print('Loaded all_tokens_phono')
 
+    #success_ids = success_ids[0:100] #!!!!!
+    #print('Testing '+str(len(success_ids))+' success_ids')
+
     this_bert_token_ids = all_tokens_phono.loc[all_tokens_phono.partition.isin(('success','yyy'))].bert_token_id
     initial_vocab, cmu_2syl_inchildes, cmu_indices_for_initial_vocab = load_models.get_initial_vocab_info()
 
@@ -44,7 +47,7 @@ def sample_across_models(success_ids, yyy_ids, model, beta_values, lambda_values
     elif model['model_type'] == 'GPT-2':
         priors_for_age_interval = transformers_bert_completions.compare_successes_failures_gpt2(
             all_tokens_phono, success_ids, 
-            yyy_ids, **model['kwargs'])        
+            yyy_ids, **model['kwargs'])            
 
     elif model['model_type'] in ['data_unigram', 'flat_unigram']:
         priors_for_age_interval = transformers_bert_completions.compare_successes_failures_unigram_model(
@@ -76,9 +79,10 @@ def sample_across_models(success_ids, yyy_ids, model, beta_values, lambda_values
         print(f'Processing gamma value {idx + 1} of {config.lambda_num_values}') #re-using gamma parameterization
 
         # get the posteriors        
-        if model['model_type'] == 'BERT':
+        if model['model_type'] in ['BERT', 'GPT-2']:
             posteriors_for_age_interval = transformers_bert_completions.get_posteriors(priors_for_age_interval, 
                 child_wfst_distances_for_age_interval, initial_vocab, None, gamma_value, examples_mode = examples_mode)        
+
 
         elif model['model_type'] in ['data_unigram', 'flat_unigram', 'ngram']:
             posteriors_for_age_interval = transformers_bert_completions.get_posteriors(priors_for_age_interval, child_wfst_distances_for_age_interval, initial_vocab, this_bert_token_ids, gamma_value, examples_mode = examples_mode)            
@@ -107,7 +111,7 @@ def sample_across_models(success_ids, yyy_ids, model, beta_values, lambda_values
         print(f'Processing lambda value {idx + 1} of {config.lambda_num_values}')
 
         # get the posteriors        
-        if model['model_type'] == 'BERT':
+        if model['model_type'] in ['BERT','GPT-2']:
             posteriors_for_age_interval = transformers_bert_completions.get_posteriors(priors_for_age_interval, 
                 wfst_distances_for_age_interval, initial_vocab, None, lambda_value, examples_mode = examples_mode)
 
@@ -139,7 +143,7 @@ def sample_across_models(success_ids, yyy_ids, model, beta_values, lambda_values
         print(f'Processing beta value {idx + 1} of {config.beta_num_values}')
 
         # get the posteriors        
-        if model['model_type'] == 'BERT':
+        if model['model_type'] in ['BERT','GPT-2']:
             posteriors_for_age_interval = transformers_bert_completions.get_posteriors(priors_for_age_interval, 
                 edit_distances_for_age_interval, initial_vocab, None, beta_value, examples_mode = examples_mode)
 

@@ -16,12 +16,13 @@ def gen_evaluation_commands(eval_spec_dict):
     paths.validate_phase(eval_spec_dict['task_phase'], config.task_phases)
     
     
-    mem_alloc_gb, time_alloc_hrs,  n_tasks, cpus_per_task = scripts.get_training_alloc(eval_spec_dict['training_dataset'])
+    mem_alloc_gb, time_alloc_hrs,  n_tasks, cpus_per_task, num_gpus, gpu_constraint = scripts.get_cluster_resources_specification(eval_spec_dict)
 
     header_commands = scripts.gen_command_header(mem_alloc_gb = mem_alloc_gb, time_alloc_hrs = time_alloc_hrs,
         n_tasks = n_tasks,
         cpus_per_task = cpus_per_task,        
-        two_gpus = False)
+        num_gpus = num_gpus,
+        gpu_constraint = gpu_constraint)
     slurm_commands = header_commands
 
     eval_output_path = paths.get_directory(eval_spec_dict)    

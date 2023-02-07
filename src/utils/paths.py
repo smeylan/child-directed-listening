@@ -152,8 +152,10 @@ def get_file_identifier(spec_dict):
 	elif spec_dict['task_phase'] in ['eval','analysis', 'fit']:       
 		if spec_dict['model_type'] == 'ngram':
 			path =  spec_dict['task_phase']+'_'+spec_dict['training_split']+'_'+spec_dict['training_dataset']+'_'+tags_str+'_'+spec_dict['model_type']+'_'+spec_dict['test_split']+'_'+spec_dict['test_dataset']+'_'+str(spec_dict['order'])+'_'+str(spec_dict['contextualized'])
-		elif spec_dict['model_type'] == 'GPT-2':
+		elif spec_dict['model_type'] == 'GPT-2':			
 			path =  spec_dict['task_phase']+'_'+spec_dict['training_split']+'_'+spec_dict['training_dataset']+'_'+tags_str+'_'+spec_dict['model_type']+'_'+spec_dict['test_split']+'_'+spec_dict['test_dataset']+'_'+str(spec_dict['context_width']) + '_' + str(spec_dict['contextualized']) 
+			import pdb
+			pdb.set_trace()
 
 		else:
 			path =  spec_dict['task_phase']+'_'+spec_dict['training_split']+'_'+spec_dict['training_dataset']+'_'+tags_str+'_'+spec_dict['model_type']+'_'+spec_dict['test_split']+'_'+spec_dict['test_dataset']+'_'+str(spec_dict['context_width'])

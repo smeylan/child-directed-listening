@@ -13,20 +13,21 @@ def gen_training_commands(spec_dict):
 
     paths.validate_spec_dict(spec_dict, config.spec_dict_params)
     paths.validate_phase(spec_dict['task_phase'], config.task_phases)
+    spec_dict['task_phase'] = 'train'
 
-    mem_alloc_gb, time_alloc_hrs,  n_tasks, cpus_per_task = scripts.get_training_alloc(spec_dict['training_dataset'])
+    mem_alloc_gb, time_alloc_hrs,  n_tasks, cpus_per_task, num_gpus, gpu_constraint  = scripts.get_cluster_resources_specification(spec_dict)
     
     header_commands = scripts.gen_command_header(
         mem_alloc_gb = mem_alloc_gb, 
         time_alloc_hrs = time_alloc_hrs,
         n_tasks = n_tasks,
         cpus_per_task = cpus_per_task,
-        two_gpus = (spec_dict['training_dataset'] in {'Providence', 'Providence-Age'}))
+        num_gpus = num_gpus,
+        gpu_constraint = gpu_constraint)
     slurm_commands = header_commands
 
     # get the directory where this should be saved
     model_output_spec_dict  = copy.copy(spec_dict)
-    model_output_spec_dict['task_phase'] = 'train'
 
     model_output_dir = paths.get_directory(model_output_spec_dict)    
 

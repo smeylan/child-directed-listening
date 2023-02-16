@@ -15,9 +15,14 @@ def gen_finetune_model_args():
 
     finetune_model_args = []
     
-    for model_arg_set in config.finetune_model_args:
-                
+    for model_arg_set in config.finetune_model_args:                
         if model_arg_set['training_split'] in ('Providence'):
+
+
+        # if model_arg_set['model_type'] == 'GPT-2':
+        #     import pdb
+        #     pdb.set_trace()
+
             for use_tags in [True, False]:
                 for context in config.context_list:
                     model_arg_set['use_tags'] = use_tags

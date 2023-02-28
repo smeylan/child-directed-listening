@@ -109,7 +109,7 @@ def gen_command_header(mem_alloc_gb, time_alloc_hrs, n_tasks, cpus_per_task, num
 
     commands.append(slurm_organization_command)
     
-    commands.append(f"mkdir -p {slurm_folder}\n")
+    commands.append(f'mkdir -p "{slurm_folder}"\n')
     
     commands.append("\nmodule load openmind/singularity/3.2.0\n")
     

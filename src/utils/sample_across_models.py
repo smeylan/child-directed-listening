@@ -63,9 +63,7 @@ def sample_across_models(success_ids, yyy_ids, model, beta_values, lambda_values
     
     print('Computing child-specific WFST path lengths')    
 
-    if child_name == 'all':
-        fst_path = os.path.join(config.project_root, 'output/fst/chi-1.txt')
-    elif child_name == 'no-dataset':
+    if child_name in ('all','old', 'young', 'no-dataset'):
         fst_path = os.path.join(config.project_root, 'output/fst/chi-1.txt')
     else:
         fst_path = os.path.join(config.project_root, 'output/fst/', child_name+'-1.txt')

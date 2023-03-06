@@ -53,7 +53,7 @@ h5py==2.10.0
 hpack==3.0.0
 hstspreload==2020.11.21
 httpcore==0.9.1
-httpx==0.13.3
+httpx==0.23.0
 huggingface-hub==0.0.8
 hyperframe==5.2.0
 idna==2.10

@@ -1,38 +1,14 @@
 # Code for loading the training data that has been split.
 import os
 from os.path import join, exists
+import copy
 import glob
 import pandas as pd
 import pickle
 from collections import defaultdict
 import numpy as np
-from src.utils import split_gen, sampling, configuration
+from src.utils import split_gen, sampling, configuration, paths
 config = configuration.Config()
-
-def get_ages_sample_paths(which_type, phase):
-    
-    """
-    Gets all of the sample paths for a given split.
-    """
-
-    data_folder = join(config.prov_dir, 'across_time_samples')
-    template = join(data_folder, f'{which_type}_utts_models_across_time_{config.n_across_time}_*_{phase}.csv')
-    
-    all_age_sample_paths = glob.glob(template)
-    
-    age2path = {}
-    for path in all_age_sample_paths:
-        # The age is located at the end.
-        # 7/15/21: https://www.geeksforgeeks.org/python-os-path-splitext-method/
-        filename = os.path.splitext(path)
-        print('Loading the samples path')        
-        import pdb
-        pdb.set_trace()
-        age = filename[0].split('_')[-2]
-        # end cite
-        age2path[age] = path
-    
-    return age2path
 
     
 def apply_if_subsample(data, path = None):
@@ -52,21 +28,27 @@ def apply_if_subsample(data, path = None):
     return trunc_data    
 
 
-def load_sample_model_across_time_args():
-    
-    sample_dict = defaultdict(dict)
-    
-    success_paths = get_ages_sample_paths('success', config.eval_phase)
-    yyy_paths = get_ages_sample_paths('yyy', config.eval_phase)
-    
-    for name, path_set in zip(['success', 'yyy'], [success_paths, yyy_paths]):
-        for age, path in path_set.items():
-            this_data = pd.read_csv(path)
-            this_data = apply_if_subsample(this_data)
 
-            sample_dict[age][name] = this_data
-        
-    return sample_dict
+def load_sample_model_across_time_args2(this_model_args):
+
+    this_sample_dict = {}
+
+    for age in np.arange(.5, 4.5, .5):
+
+        success_utts_sample_path = paths.get_sample_csv_path(task_phase_to_sample_for='eval', split=this_model_args['test_split'], dataset=this_model_args['test_dataset'], data_type='success', age = age, n=config.n_beta)
+
+        yyy_utts_sample_path = paths.get_sample_csv_path(task_phase_to_sample_for='eval', split=this_model_args['test_split'], dataset=this_model_args['test_dataset'], data_type='yyy', age = age, n=config.n_beta)
+    
+        success_utts = pd.read_csv(success_utts_sample_path)
+        yyy_utts = pd.read_csv(yyy_utts_sample_path)
+
+        this_age_dict = {'success': apply_if_subsample(success_utts),
+            'yyy': apply_if_subsample(yyy_utts)}
+
+        this_sample_dict[str(age)] = copy.copy(this_age_dict)
+
+    return(this_sample_dict)
+
 
 def load_phono():
     

@@ -32,9 +32,9 @@ def gen_fitting_commands(fitting_spec_dict):
     if not exists(fitting_output_path):
         os.makedirs(fitting_output_path)    
 
-    slurm_commands += [f"rm -rf {fitting_output_path}\n"]  # clear the directory in case it had stuff in it before
-    slurm_commands += [f"mkdir -p {fitting_output_path}\n"]  # make the training directory if necessary     
-    slurm_commands += ["mkdir ~/.cache/$SLURM_JOB_ID\n"]
+    slurm_commands += [f'rm -rf "{fitting_output_path}"\n']  # clear the directory in case it had stuff in it before
+    slurm_commands += [f'mkdir -p "{fitting_output_path}"\n']  # make the training directory if necessary     
+    slurm_commands += ["mkdir -p ~/.cache/$SLURM_JOB_ID\n"]
 
 
     model_input_spec_dict = copy.copy(fitting_spec_dict)

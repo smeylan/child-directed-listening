@@ -144,7 +144,7 @@ def write_out_edited_fst(edited_fst, output_path):
         
         ats_section = edited_fst[section_start:section_end]        
         for j in range(3):
-            ats_section[[j]] = ats_section[[j]].astype('int')
+            ats_section[j] = ats_section[j].astype('int')
         #print(ats_section)
             
         if first: 
@@ -155,16 +155,16 @@ def write_out_edited_fst(edited_fst, output_path):
 
         ats_end = edited_fst.iloc[terminal_start : terminal_end]
 
-        ats_end[0,2] = ''
-        ats_end[0,3] = ''
-        ats_end[0,4] = ''
+        ats_end.iloc[0][2] = ''
+        ats_end.iloc[0][3] = ''
+        ats_end.iloc[0][4] = ''
         
         ats_end.to_csv(output_path, mode='a',index=False, header=None, sep='\t')
 
     # catch any remaining arcs
     ats_section = edited_fst[terminal_end:edited_fst.shape[0]]
     for j in range(3):
-        ats_section[[j]] = ats_section[[j]].astype('int')
+        ats_section[j] = ats_section[j].astype('int')
     
     ats_section.to_csv(output_path, mode='a',index=False, header=None, sep='\t')
 
@@ -235,7 +235,7 @@ def normalize_log_probs(vec):
 def normalize_partition(x): 
     '''for a given selection of FST arcs, for example all where input is a particular symbol, normalize the log probs'''
     df = x[1]
-    df[[4]] = -1 * np.log(normalize_log_probs(df[[4]]))
+    df[4] = -1 * np.log(normalize_log_probs(df[[4]]))
     return(df)
 
 def split(a, n):
@@ -303,15 +303,15 @@ def get_wfst_distance_matrix(all_tokens_phono, prior_data, initial_vocab,  cmu_2
     # as of 11/10/21, only works for the unigram case
     grouped = list(fit_model_superset.iloc[0:fit_model_superset.shape[0] - 1].groupby(2))
     conditioned = pd.concat([normalize_partition(x) for x in grouped ])
-    conditioned[[1]] = [int(x) if not np.isnan(x) else '' for x in conditioned[1]]
-    conditioned[[2]] = [int(x) if not np.isnan(x) else '' for x in conditioned[2]]
-    conditioned[[3]] = [int(x) if not np.isnan(x) else '' for x in conditioned[3]]
+    conditioned[1] = [int(x) if not np.isnan(x) else '' for x in conditioned[1]]
+    conditioned[2] = [int(x) if not np.isnan(x) else '' for x in conditioned[2]]
+    conditioned[3] = [int(x) if not np.isnan(x) else '' for x in conditioned[3]]
 
     tail = fit_model_superset.tail(1)
-    tail[[1]] = -1 * np.log(1)
-    tail[[2]] = [int(x) if not np.isnan(x) else '' for x in tail[2]]
-    tail[[3]] = [int(x) if not np.isnan(x) else '' for x in tail[3]]
-    tail[[4]] = [int(x) if not np.isnan(x) else '' for x in tail[4]]
+    tail[1] = -1 * np.log(1)
+    tail[2] = [int(x) if not np.isnan(x) else '' for x in tail[2]]
+    tail[3] = [int(x) if not np.isnan(x) else '' for x in tail[3]]
+    tail[4] = [int(x) if not np.isnan(x) else '' for x in tail[4]]
 
     conditioned = pd.concat([conditioned, tail])
 

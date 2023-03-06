@@ -46,6 +46,16 @@
         
         {"training_split":"Providence",
          "training_dataset":"all",
+        "model_type":"GPT-2",
+        "contextualized":0},
+
+        {"training_split":"Providence",
+         "training_dataset":"all",
+        "model_type":"GPT-2",
+        "contextualized":1},
+
+        {"training_split":"Providence",
+         "training_dataset":"all",
         "model_type":"BERT"}, 
         
         {"training_split":"Providence-Age",
@@ -97,7 +107,7 @@
     "child_context_width" : 0,
     "verbose" : 1,
     "age_split" : 30,
-    "context_list" : [0, 20, [0, 20]],
+    "context_list" : [0, 20, [20, 0]],
     "beta_low" : 2.5,
     "beta_high" : 4.5,
     "beta_num_values" : 20,
@@ -124,9 +134,6 @@
             "use_tags",
             "context_width",        
             "task_name",
-            "task_phase",
-            "contextualized",
-            "order",
-            "ngram_path"            
+            "task_phase"            
     ]
 }

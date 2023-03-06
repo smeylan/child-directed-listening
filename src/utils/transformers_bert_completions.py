@@ -162,7 +162,7 @@ def get_completions_for_mask(utt_df, true_word, bertMaskedLM, tokenizer, softmax
     # 7/29/21: https://jakevdp.github.io/PythonDataScienceHandbook/02.01-understanding-data-types.html For information on sizes of integers etc.
     
     return_df = pd.DataFrame({'prior_rank':[prior_rank], 'prior_prob': [prior_prob], 'entropy':[entropy], 'num_tokens_in_context':[utt_df.shape[0]-1],
-    'bert_token_id' : utt_df.loc[utt_df.token == '[MASK]'].bert_token_id}).astype({'num_tokens_in_context' : 'int32'})
+    'bert_token_id' : utt_df.loc[utt_df.token_id == 103].bert_token_id})
     
     return(priors, completions, return_df)
 

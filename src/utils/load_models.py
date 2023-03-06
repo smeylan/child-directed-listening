@@ -15,13 +15,14 @@ def gen_finetune_model_args():
 
     finetune_model_args = []
     
-    for model_arg_set in config.finetune_model_args:
+    for model_arg_set in config.finetune_model_args:                
+        if model_arg_set['training_split'] in ('Providence'):
+
 
         # if model_arg_set['model_type'] == 'GPT-2':
         #     import pdb
         #     pdb.set_trace()
-        
-        if model_arg_set['training_split'] in ('Providence','Providence-Age'):
+
             for use_tags in [True, False]:
                 for context in config.context_list:
                     model_arg_set['use_tags'] = use_tags
@@ -29,8 +30,16 @@ def gen_finetune_model_args():
                     model_arg_set['context_width'] = context
                     finetune_model_args.append(copy.copy(model_arg_set))
 
+        elif model_arg_set['training_split'] in ('Providence-Age'):
+            for use_tags in [True, False]:
+                for context in [0, 20]: # don't add a bidirectional context width to the Age based models
+                    model_arg_set['use_tags'] = use_tags
+
+                    model_arg_set['context_width'] = context
+                    finetune_model_args.append(copy.copy(model_arg_set))                    
+
         else:
-            for context in config.context_list:
+            for context in [0, 20]:
                 model_arg_set['use_tags'] = False
                 model_arg_set['context_width'] = context
                 finetune_model_args.append(copy.copy(model_arg_set))
@@ -49,15 +58,15 @@ def gen_unigram_model_args():
     return unigram_model_args
 
 
-def gen_ngram_model_args():
-    
+def gen_ngram_model_args():    
+
     ngram_model_args = []
         
-    for model_arg_set in config.ngram_model_args:                
-        model_arg_set['use_tags'] = -99
+    for model_arg_set in config.ngram_model_args:                        
         model_arg_set['context_width'] = -99
-        ngram_model_args.append(copy.copy(model_arg_set))
-        
+        model_arg_set['use_tags'] = bool(model_arg_set['use_tags'])
+        ngram_model_args.append(copy.copy(model_arg_set))        
+
     print('Generating ngram model args')    
     return ngram_model_args
 

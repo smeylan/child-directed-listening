@@ -171,6 +171,7 @@ def get_slurm_script_name(spec_dict):
 
 def get_sample_csv_path(task_phase_to_sample_for, split, dataset, data_type, age = None, n=None):    
 
+
     assert ( (age is None) and (task_phase_to_sample_for == 'fit' or split == 'Providence') ) or ( (age is not None) and (task_phase_to_sample_for == 'eval') )
     age_str = f'_{float(age)}' if age is not None else ''
     
@@ -192,6 +193,8 @@ def get_sample_csv_path(task_phase_to_sample_for, split, dataset, data_type, age
 
     if not exists(sample_folder):
     	os.makedirs(sample_folder)
+
+    print('Getting sample csv path')
     
     this_data_path = join(sample_folder, f'{task_phase_to_sample_for}_{data_type}_utts_{str(n)}{age_str}.csv')
     

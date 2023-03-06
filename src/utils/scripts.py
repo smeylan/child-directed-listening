@@ -27,7 +27,7 @@ def gen_submit_script(task_name, task_phase):
     text.append('for f in $FILES')
     text.append('do')
     text.append('\techo "Processing $f file..."')
-    text.append('\tsbatch $f')
+    text.append('\tsbatch "$f"')
     text.append('\tcat "$f"')
     text.append('done')
     
@@ -96,19 +96,20 @@ def gen_command_header(mem_alloc_gb, time_alloc_hrs, n_tasks, cpus_per_task, num
     commands.append("\n# For the command text\n# 6/24/21: https://github.mit.edu/MGHPCC/OpenMind/wiki/How-to-use-Singularity-container%3F\n# and https://github.mit.edu/MGHPCC/OpenMind/issues/3392\n# including the bash line at the top, and all but the python3 commands\n")
     
     commands.append("\n#SBATCH -N 1\n")                         
-    commands.append("#SBATCH -p cpl\n")    
+    #commands.append("#SBATCH -p cpl\n")    
     commands.append(f"#SBATCH -t {time_alloc_hrs_str}\n")
     commands.append(f"#SBATCH --mem={mem_alloc_gb}G\n")
     if num_gpus > 0:
         commands.append(f"#SBATCH --gres=gpu:{num_gpus}\n")
         commands.append(f"#SBATCH --constraint={gpu_constraint}\n")
 
+    commands.append(f"#SBATCH --exclude=node082,node083,node100\n")
     commands.append(f"#SBATCH --ntasks={n_tasks}\n")
     commands.append(f"#SBATCH --cpus-per-task={cpus_per_task}\n")
 
     commands.append(slurm_organization_command)
     
-    commands.append(f"mkdir -p {slurm_folder}\n")
+    commands.append(f'mkdir -p "{slurm_folder}"\n')
     
     commands.append("\nmodule load openmind/singularity/3.2.0\n")
     
@@ -146,7 +147,7 @@ def get_cluster_resources_specification(task_specification):
     if task_specification['model_type'] == 'GPT-2' and int(task_specification['contextualized']):
         gpu_constraint = 'any-A100'
     else:
-        gpu_constraint = 'high-capacity'
+        gpu_constraint = 'any-A100'
     
     return mem, time, n_tasks, cpus_per_task, num_gpus, gpu_constraint
 

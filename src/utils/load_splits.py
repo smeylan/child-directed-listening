@@ -25,6 +25,9 @@ def get_ages_sample_paths(which_type, phase):
         # The age is located at the end.
         # 7/15/21: https://www.geeksforgeeks.org/python-os-path-splitext-method/
         filename = os.path.splitext(path)
+        print('Loading the samples path')        
+        import pdb
+        pdb.set_trace()
         age = filename[0].split('_')[-2]
         # end cite
         age2path[age] = path

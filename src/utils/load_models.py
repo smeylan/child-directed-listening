@@ -218,10 +218,14 @@ def get_flat_unigram_dict(fitted_dict):
 
 def process_context_width(context_width):
     # either yield a list or an int from the context_width
-    if '[' in context_width:
+    if type(context_width) is list:
+        return(context_width)
+    if type(context_width) is int:
+        return(context_width)
+    elif '[' in context_width:
         return([int(x) for x in  context_width.strip('][').split(', ')])
     else:
-        return(int(context_width))
+        raise ValueError('Problem processing context width')
        
         
 def get_finetune_dict(fitted_dict):
@@ -346,12 +350,15 @@ def get_model_from_split(model_dict):
 
         print('Loading a GPT-2 model...')        
 
-        try:
+        try:            
             model = AutoHuggingFaceModel.from_pretrained(model_path, device='cuda:0')
         except BaseException as e:
-            print('Model loading failed. Does a model actually exist at '+model_path)
-            print(e)
-            raise ValueError('Terminating!')
+            try:
+                AutoHuggingFaceModel.from_pretrained(model_path) # no cuda
+            except BaseException as e:
+                print('Model loading failed. Does a model actually exist at '+model_path)
+                print(e)
+                raise ValueError('Terminating!')
                 
         gpt2_tokenizer = GPT2Tokenizer.from_pretrained(model_path)
         bert_tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')#!!! this may be different

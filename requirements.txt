@@ -172,7 +172,7 @@ surprisal @ git+https://github.com/smeylan/surprisal.git@5fd9f4a6e483b217c2f467f
 tensorboard==2.4.1
 tensorboard-plugin-wit==1.8.0
 tensorflow-estimator==2.4.0
-tensorflow-gpu==2.4.1
+tensorflow-gpu==2.9.3
 termcolor==1.1.0
 terminado==0.9.1
 testpath==0.4.4

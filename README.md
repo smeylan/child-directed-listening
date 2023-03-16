@@ -5,7 +5,7 @@ Analyses for "Child Directed Listening" project.
 # Corresponding Publications and Manuscripts
 Different hashed versions correspond to three separate publications/manuscripts:
 
-- "How adults understand what young children say," (ms under review) bb6fe1def63110f6dc45608b6489a604ddd3da21
+- "How adults understand what young children say," (ms under review) 60881a0e291dabae306081c86894d335e56b1136
 - "Child-directed Listening: How Caregiver Inference Enables Children's Early Verbal Communication" (CogSci, 2021), https://arxiv.org/abs/2102.03462v2
 778b677629d00f9167df9a493aeaeec9e19492ec
 - "Characterizing Child-Directed Listening with Corpus and Model-based Analyses" (ICIS, 2020)  7fe6d22065bd36f936a53f4e3ba706fa127b0811
